@@ -10,10 +10,12 @@ import sys
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, Header, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
+from starlette.background import BackgroundTask
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+import backup  # noqa: E402
 import ops  # noqa: E402
 
 API_KEY = os.environ.get("API_KEY", "")
@@ -132,6 +134,41 @@ def triage_elo(body: EloIn, x_api_key: Optional[str] = Header(None)):
         return ops.triage_elo(body.matches, body.ideas, body.anchors, body.k)
     except ValueError as e:
         raise HTTPException(400, str(e))
+
+
+# --------------------------------------------------------------------------
+# backup
+# --------------------------------------------------------------------------
+@app.get("/admin/backup")
+def admin_backup(x_api_key: Optional[str] = Header(None)):
+    """Return a pg_dump of the research database as a downloadable file.
+
+    The row estimate travels in a header so the caller can refuse a dump that
+    ran cleanly against an empty database - the failure that otherwise stays
+    invisible until you need the backup.
+    """
+    check_key(x_api_key)
+    if not backup.acquire():
+        raise HTTPException(409, "a backup is already running")
+    try:
+        path, name, size = backup.dump()
+        rows = backup.row_total()
+    except Exception as e:
+        backup.release()
+        raise HTTPException(500, str(e)[:500])
+
+    def done():
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+        backup.release()
+
+    return FileResponse(
+        path, filename=name, media_type="application/octet-stream",
+        headers={"X-Dump-Filename": name, "X-Dump-Bytes": str(size),
+                 "X-Row-Estimate": "unknown" if rows is None else str(rows)},
+        background=BackgroundTask(done))
 
 
 # --------------------------------------------------------------------------
