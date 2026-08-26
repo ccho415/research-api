@@ -139,6 +139,13 @@ def triage_elo(body: EloIn, x_api_key: Optional[str] = Header(None)):
 # --------------------------------------------------------------------------
 # backup
 # --------------------------------------------------------------------------
+@app.get("/admin/config")
+def admin_config(x_api_key: Optional[str] = Header(None)):
+    """Where the database settings came from. Never returns the password."""
+    check_key(x_api_key)
+    return backup.config_report()
+
+
 @app.get("/admin/dbstats")
 def admin_dbstats(x_api_key: Optional[str] = Header(None)):
     """Table count, row estimate and size - cheap enough to check every night."""

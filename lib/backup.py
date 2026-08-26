@@ -107,6 +107,43 @@ def row_total():
         return None
 
 
+def config_report():
+    """What the process actually sees, and where each setting came from.
+
+    "password authentication failed" cannot tell you whether the password is
+    wrong or whether a variable you deleted is still in the container from
+    before the last restart.  This answers that without printing the secret.
+    """
+    url = database_url()
+    report = {
+        "connection_url_present": bool(url),
+        "connection_url_variable": next(
+            (n for n in ("DATABASE_URL", "POSTGRES_CONNECTION_STRING")
+             if os.environ.get(n, "").strip()), None),
+        "explicitly_set": sorted(
+            k for k in ("PGHOST", "PGPORT", "PGUSER", "PGPASSWORD", "PGDATABASE")
+            if os.environ.get(k)),
+    }
+    try:
+        env = pg_env()
+    except RuntimeError as e:
+        report["resolved"] = None
+        report["error"] = str(e)
+        return report
+
+    password = env.get("PGPASSWORD", "")
+    report["resolved"] = {
+        "host": env["PGHOST"], "port": env["PGPORT"],
+        "user": env["PGUSER"], "database": env["PGDATABASE"],
+        # Never the value.  The length and whether it still looks like an
+        # unresolved ${...} reference is enough to identify the usual faults.
+        "password_length": len(password),
+        "password_looks_like_unresolved_reference":
+            password.startswith("${") and password.endswith("}"),
+    }
+    return report
+
+
 def stats():
     """Cheap facts about the database, for deciding whether to bother dumping.
 
