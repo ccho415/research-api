@@ -58,7 +58,7 @@ ROUTING = {
     "stats":    ["arxiv", "openalex", "crossref"],
     "chem":     ["openalex", "pubmed", "crossref"],
     "materials": ["openalex", "arxiv", "crossref"],
-    "env":      ["openalex", "pubmed", "crossref"],
+    "env":      ["openalex", "pubmed", "europepmc", "crossref"],
     "ecology":  ["openalex", "europepmc", "crossref"],
     "eng":      ["openalex", "arxiv", "crossref"],
     "econ":     ["openalex", "arxiv", "crossref"],
@@ -349,6 +349,21 @@ def merge(batches):
 # Controlled vocabulary
 # --------------------------------------------------------------------------
 def vocab_mesh(term):
+    """MeSH lookup, preferring E-utilities and falling back to id.nlm.nih.gov.
+
+    NCBI blocks whole hosting IP ranges from eutils - shared cloud egress gets
+    caught by other tenants' abuse - and answers 200 with an Access Denied page
+    rather than an error status.  id.nlm.nih.gov serves the same vocabulary and
+    is not covered by that block, so losing eutils need not lose MeSH.
+    """
+    try:
+        return _vocab_mesh_eutils(term)
+    except Exception as e:
+        _warn(f"E-utilities MeSH unavailable ({e}); using id.nlm.nih.gov")
+        return vocab_mesh_rdf(term)
+
+
+def _vocab_mesh_eutils(term):
     key = f"&api_key={NCBI_KEY}" if NCBI_KEY else ""
     u = ("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=mesh&retmode=json&retmax=8"
          f"&term={urllib.parse.quote(term)}{key}")
@@ -360,6 +375,77 @@ def vocab_mesh(term):
           f"&id={','.join(ids)}{key}")
     raw = _get(u2).decode("utf-8", "replace")
     return _parse_mesh(raw)
+
+
+MESH_RDF = "https://id.nlm.nih.gov/mesh"
+
+_MESH_SPARQL = """
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX meshv: <http://id.nlm.nih.gov/mesh/vocab#>
+PREFIX mesh: <http://id.nlm.nih.gov/mesh/>
+SELECT ?d ?tn ?broader ?note
+FROM <http://id.nlm.nih.gov/mesh>
+WHERE {
+  VALUES ?d { %s }
+  OPTIONAL { ?d meshv:treeNumber ?tnr . ?tnr rdfs:label ?tn }
+  OPTIONAL { ?d meshv:broaderDescriptor ?br . ?br rdfs:label ?broader }
+  OPTIONAL { ?d meshv:preferredConcept ?pc . ?pc meshv:scopeNote ?note }
+}
+"""
+
+
+def _mesh_rdf_meta(ids):
+    """Tree numbers, broader-descriptor labels and scope note, in one query.
+
+    The three OPTIONALs cross-product, so a descriptor comes back as many rows
+    carrying repeated values; collect into sets rather than reading row by row.
+    """
+    q = _MESH_SPARQL % " ".join("mesh:" + i for i in ids)
+    rows = _get_json(f"{MESH_RDF}/sparql?format=JSON&limit=5000"
+                     f"&query={urllib.parse.quote(q)}")["results"]["bindings"]
+    meta = {}
+    for b in rows:
+        e = meta.setdefault(b["d"]["value"].rsplit("/", 1)[-1],
+                            {"tree_numbers": set(), "broader": set(), "definition": ""})
+        for field in ("tree_numbers", "broader"):
+            src = "tn" if field == "tree_numbers" else "broader"
+            if src in b:
+                e[field].add(b[src]["value"])
+        if "note" in b and not e["definition"]:
+            e["definition"] = b["note"]["value"].strip()
+    return meta
+
+
+def vocab_mesh_rdf(term, limit=6):
+    """MeSH lookup against id.nlm.nih.gov, shaped exactly like _parse_mesh.
+
+    `previous_indexing` has no equivalent here and stays empty; `unique_id` is
+    new and worth having, since the D-number is what a precise MeSH query needs.
+    """
+    hits = _get_json(f"{MESH_RDF}/lookup/descriptor?match=contains&limit={limit}"
+                     f"&label={urllib.parse.quote(term)}")
+    ids = [h["resource"].rsplit("/", 1)[-1] for h in hits]
+    if not ids:
+        return []
+    meta = _mesh_rdf_meta(ids)
+
+    out = []
+    for hit, did in zip(hits, ids):
+        m = meta.get(did, {})
+        d = _get_json(f"{MESH_RDF}/lookup/details?descriptor={did}")
+        e = {"descriptor": hit["label"],
+             "definition": m.get("definition", ""),
+             "tree_numbers": sorted(m.get("tree_numbers", [])),
+             "entry_terms": [t["label"] for t in d.get("terms", [])
+                             if not t.get("preferred")],
+             "subheadings": [q["label"] for q in d.get("qualifiers", [])],
+             "see_also": [s.get("label", "") for s in d.get("seealso", [])],
+             "previous_indexing": [],
+             "broader": sorted(m.get("broader", [])),
+             "unique_id": did}
+        e["pubmed_query"] = _mesh_query(e)
+        out.append(e)
+    return out
 
 
 # Indented list blocks in the MeSH text record, keyed by the output field they fill.
