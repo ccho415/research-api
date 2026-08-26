@@ -55,12 +55,20 @@ def pg_env():
     url = database_url()
     if url:
         u = urllib.parse.urlsplit(url)
-        env["PGHOST"] = u.hostname or ""
-        env["PGPORT"] = str(u.port or 5432)
-        env["PGUSER"] = urllib.parse.unquote(u.username or "")
-        env["PGDATABASE"] = (u.path or "/").lstrip("/") or "postgres"
+        from_url = {"PGHOST": u.hostname or "",
+                    "PGPORT": str(u.port or 5432),
+                    "PGUSER": urllib.parse.unquote(u.username or ""),
+                    "PGDATABASE": (u.path or "/").lstrip("/") or "postgres"}
         if u.password:
-            env["PGPASSWORD"] = urllib.parse.unquote(u.password)
+            from_url["PGPASSWORD"] = urllib.parse.unquote(u.password)
+        for key, value in from_url.items():
+            # An explicitly set PG* variable wins over the URL.  Zeabur
+            # injects a connection string of its own pointing at the
+            # platform's default database, and letting that beat a
+            # deliberate PGDATABASE is how you end up dumping the wrong
+            # database every night without noticing.
+            if not os.environ.get(key):
+                env[key] = value
 
     env.setdefault("PGPORT", "5432")
     env.setdefault("PGCONNECT_TIMEOUT", "15")
