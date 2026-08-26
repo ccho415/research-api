@@ -89,7 +89,16 @@ def _get(url, headers=None, timeout=30, retries=2):
 
 
 def _get_json(url, **kw):
-    return json.loads(_get(url, **kw).decode("utf-8", "replace"))
+    raw = _get(url, **kw).decode("utf-8", "replace")
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        # A 200 that is not JSON is the service refusing us in prose - a rate
+        # limit page, a block notice, a maintenance banner.  The decoder's
+        # message names none of those, so carry the body across.
+        raise ValueError(f"{urllib.parse.urlsplit(url).netloc} returned "
+                         f"non-JSON ({len(raw)} bytes): "
+                         f"{' '.join(raw.split())[:200]}")
 
 
 def _warn(msg):
