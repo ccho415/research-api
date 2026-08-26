@@ -40,21 +40,34 @@ def database_url():
     return ""
 
 
-def _pg_env(url):
+def pg_env():
     """Connection settings as PG* variables rather than argv.
 
     A connection URI on the command line puts the password in the process
     list; the PG* variables do the same job without that.
+
+    Either form of configuration works: DATABASE_URL, or the PG* variables
+    set directly.  The split form is there because a URL has to
+    percent-encode the password, and a password pasted into a URL by hand is
+    the classic failure that reports itself only as "authentication failed".
     """
-    u = urllib.parse.urlsplit(url)
     env = dict(os.environ)
-    env["PGHOST"] = u.hostname or ""
-    env["PGPORT"] = str(u.port or 5432)
-    env["PGUSER"] = urllib.parse.unquote(u.username or "")
-    env["PGDATABASE"] = (u.path or "/").lstrip("/") or "postgres"
-    if u.password:
-        env["PGPASSWORD"] = urllib.parse.unquote(u.password)
+    url = database_url()
+    if url:
+        u = urllib.parse.urlsplit(url)
+        env["PGHOST"] = u.hostname or ""
+        env["PGPORT"] = str(u.port or 5432)
+        env["PGUSER"] = urllib.parse.unquote(u.username or "")
+        env["PGDATABASE"] = (u.path or "/").lstrip("/") or "postgres"
+        if u.password:
+            env["PGPASSWORD"] = urllib.parse.unquote(u.password)
+
+    env.setdefault("PGPORT", "5432")
     env.setdefault("PGCONNECT_TIMEOUT", "15")
+    missing = [k for k in ("PGHOST", "PGUSER", "PGDATABASE") if not env.get(k)]
+    if missing:
+        raise RuntimeError("database is not configured: set DATABASE_URL, "
+                           f"or set {', '.join(missing)}")
     return env
 
 
@@ -76,14 +89,11 @@ def row_total():
     These are planner estimates from pg_class, not exact counts - accurate
     enough to notice that a number collapsed, and it does not scan the tables.
     """
-    url = database_url()
-    if not url:
-        return None
     sql = ("SELECT COALESCE(SUM(GREATEST(c.reltuples, 0))::bigint, 0) "
            "FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
            "WHERE c.relkind = 'r' AND n.nspname = 'public'")
     try:
-        return int(_run(["psql", "-At", "-c", sql], _pg_env(url), 60))
+        return int(_run(["psql", "-At", "-c", sql], pg_env(), 60))
     except Exception:
         # Never let the sanity check be the reason a backup fails.
         return None
@@ -95,10 +105,7 @@ def stats():
     Read before the dump rather than after: if the database has gone empty
     there is no point spending the memory, and the alert should say so.
     """
-    url = database_url()
-    if not url:
-        raise RuntimeError("neither DATABASE_URL nor POSTGRES_CONNECTION_STRING is set")
-    env = _pg_env(url)
+    env = pg_env()
     sql = ("SELECT (SELECT count(*) FROM information_schema.tables "
            "        WHERE table_schema = 'public') || '|' || "
            "       COALESCE((SELECT SUM(GREATEST(c.reltuples, 0))::bigint "
@@ -119,11 +126,7 @@ def dump():
     header and refuses a truncated file.  A plain SQL dump would happily
     replay half a backup and leave you thinking it worked.
     """
-    url = database_url()
-    if not url:
-        raise RuntimeError("neither DATABASE_URL nor POSTGRES_CONNECTION_STRING is set")
-
-    env = _pg_env(url)
+    env = pg_env()
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     name = f"{env['PGDATABASE']}-{stamp}.dump"
 
