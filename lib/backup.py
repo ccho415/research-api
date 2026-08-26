@@ -190,3 +190,67 @@ def dump():
         os.unlink(path)
         raise RuntimeError("pg_dump produced an empty file")
     return path, name, size
+
+
+DRILL_PREFIX = "restore_drill_"
+
+
+def restore_drill(dump_path):
+    """Restore a dump into a throwaway database and report what came back.
+
+    This is the only check on a backup that means anything.  pg_dump exiting
+    zero says the file was written, not that it can be read back, and the
+    difference only shows up on the day you need it.
+
+    The scratch database is created and dropped here; the real database is
+    never a restore target, so a drill cannot damage anything.
+    """
+    env = pg_env()
+    source = stats()
+    target = DRILL_PREFIX + datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+
+    # CREATE DATABASE has to be issued from some other database, so talk to
+    # the server's default one for the create and the drop.
+    admin = dict(env, PGDATABASE="postgres")
+    _run(["createdb", target], admin, 60)
+    try:
+        into = dict(env, PGDATABASE=target)
+        restore = subprocess.run(
+            ["pg_restore", "--no-owner", "--no-privileges", "--dbname", target,
+             dump_path],
+            env=into, capture_output=True, timeout=DUMP_TIMEOUT)
+        # pg_restore warns about things like missing roles even on a clean
+        # run, so the exit code alone decides failure and the text is carried
+        # through for reading.
+        notices = restore.stderr.decode("utf-8", "replace").strip()
+
+        # reltuples is zero until the planner has looked at the new tables.
+        _run(["psql", "-At", "-c", "ANALYZE"], into, 300)
+        got = _run(["psql", "-At", "-c",
+                    "SELECT (SELECT count(*) FROM information_schema.tables "
+                    "        WHERE table_schema = 'public') || '|' || "
+                    "       COALESCE((SELECT SUM(GREATEST(c.reltuples, 0))::bigint "
+                    "        FROM pg_class c JOIN pg_namespace n "
+                    "          ON n.oid = c.relnamespace "
+                    "        WHERE c.relkind = 'r' AND n.nspname = 'public'), 0)"],
+                   into, 120)
+        tables, rows = (int(x) for x in got.split("|"))
+    finally:
+        # Drop even if the restore blew up, or the scratch databases pile up.
+        try:
+            _run(["dropdb", "--if-exists", target], admin, 60)
+            dropped = True
+        except Exception:
+            dropped = False
+
+    return {
+        "scratch_database": target,
+        "dropped_afterwards": dropped,
+        "restore_exit_code": restore.returncode,
+        "source": {"database": source["database"], "n_tables": source["n_tables"],
+                   "row_estimate": source["row_estimate"]},
+        "restored": {"n_tables": tables, "row_estimate": rows},
+        "tables_match": tables == source["n_tables"],
+        "ok": restore.returncode == 0 and tables == source["n_tables"],
+        "pg_restore_output": notices[:2000],
+    }

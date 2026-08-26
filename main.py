@@ -7,9 +7,10 @@ research data never leaves it.
 
 import os
 import sys
+import tempfile
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
@@ -186,6 +187,42 @@ def admin_backup(x_api_key: Optional[str] = Header(None)):
         headers={"X-Dump-Filename": name, "X-Dump-Bytes": str(size),
                  "X-Row-Estimate": "unknown" if rows is None else str(rows)},
         background=BackgroundTask(done))
+
+
+@app.post("/admin/restore-drill")
+async def admin_restore_drill(request: Request,
+                              x_api_key: Optional[str] = Header(None)):
+    """Restore a posted dump into a scratch database and report what came back.
+
+    Post the dump file itself as the raw request body, so what gets verified
+    is the archived artefact rather than a fresh dump that happens to work.
+    """
+    check_key(x_api_key)
+    if not backup.acquire():
+        raise HTTPException(409, "a backup or drill is already running")
+
+    fd, path = tempfile.mkstemp(prefix="drill-", suffix=".dump")
+    try:
+        size = 0
+        with os.fdopen(fd, "wb") as fh:
+            async for chunk in request.stream():
+                size += len(chunk)
+                fh.write(chunk)
+        if size == 0:
+            raise HTTPException(400, "request body was empty; post the dump file")
+        report = backup.restore_drill(path)
+        report["dump_bytes"] = size
+        return report
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, str(e)[:800])
+    finally:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+        backup.release()
 
 
 # --------------------------------------------------------------------------
