@@ -139,6 +139,16 @@ def triage_elo(body: EloIn, x_api_key: Optional[str] = Header(None)):
 # --------------------------------------------------------------------------
 # backup
 # --------------------------------------------------------------------------
+@app.get("/admin/dbstats")
+def admin_dbstats(x_api_key: Optional[str] = Header(None)):
+    """Table count, row estimate and size - cheap enough to check every night."""
+    check_key(x_api_key)
+    try:
+        return backup.stats()
+    except Exception as e:
+        raise HTTPException(500, str(e)[:500])
+
+
 @app.get("/admin/backup")
 def admin_backup(x_api_key: Optional[str] = Header(None)):
     """Return a pg_dump of the research database as a downloadable file.

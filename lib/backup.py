@@ -89,6 +89,29 @@ def row_total():
         return None
 
 
+def stats():
+    """Cheap facts about the database, for deciding whether to bother dumping.
+
+    Read before the dump rather than after: if the database has gone empty
+    there is no point spending the memory, and the alert should say so.
+    """
+    url = database_url()
+    if not url:
+        raise RuntimeError("neither DATABASE_URL nor POSTGRES_CONNECTION_STRING is set")
+    env = _pg_env(url)
+    sql = ("SELECT (SELECT count(*) FROM information_schema.tables "
+           "        WHERE table_schema = 'public') || '|' || "
+           "       COALESCE((SELECT SUM(GREATEST(c.reltuples, 0))::bigint "
+           "        FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+           "        WHERE c.relkind = 'r' AND n.nspname = 'public'), 0) || '|' || "
+           "       pg_database_size(current_database()) || '|' || "
+           "       current_setting('server_version')")
+    tables, rows, size, version = _run(["psql", "-At", "-c", sql], env, 60).split("|")
+    return {"database": env["PGDATABASE"], "server_version": version,
+            "n_tables": int(tables), "row_estimate": int(rows),
+            "db_size_bytes": int(size)}
+
+
 def dump():
     """Write a custom-format dump and return (path, filename, bytes).
 
