@@ -65,6 +65,13 @@ CREATE TABLE IF NOT EXISTS paper (
 -- 同一篇論文只存一次；DOI 與 PMID 各自唯一（NULL 不受限制）
 CREATE UNIQUE INDEX IF NOT EXISTS paper_doi_idx  ON paper(doi)  WHERE doi  IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS paper_pmid_idx ON paper(pmid) WHERE pmid IS NOT NULL;
+-- Fallback identity for records that carry neither DOI nor PMID. Scoped by the
+-- partial predicate so a record that later arrives with a DOI is never merged
+-- into a title-matched row.
+ALTER TABLE paper ADD COLUMN IF NOT EXISTS title_key text;
+CREATE UNIQUE INDEX IF NOT EXISTS paper_title_key_idx ON paper(title_key)
+    WHERE doi IS NULL AND pmid IS NULL AND title_key IS NOT NULL;
+
 
 CREATE TABLE IF NOT EXISTS search_query (
     id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -79,6 +79,44 @@ class ChainIn(BaseModel):
     milestone: int = 1000
 
 
+class IngestIn(BaseModel):
+    query_text: str
+    results: List[Dict[str, Any]]
+    run_id: Optional[str] = None
+    domain: Optional[str] = None
+    sources: Optional[List[str]] = None
+    query_angle: Optional[str] = None
+    axis_source: Optional[str] = None
+
+
+@app.post("/compute/search/ingest")
+def search_ingest(body: IngestIn, x_api_key: Optional[str] = Header(None)):
+    """Store one search and its results, and report how much was already cached.
+
+    Ingest happens here rather than in n8n because a result set carries every
+    abstract, and moving that between workflow nodes is the fastest way to
+    exhaust a small instance. n8n sends it once and gets back counts.
+    """
+    check_key(x_api_key)
+    import db
+    try:
+        return db.ingest(body.query_text, body.results, body.run_id, body.domain,
+                         body.sources, body.query_angle, body.axis_source)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/search/corpus")
+def search_corpus(x_api_key: Optional[str] = Header(None)):
+    """How big the literature cache is."""
+    check_key(x_api_key)
+    import db
+    try:
+        return db.corpus_stats()
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.post("/compute/search/chain")
 def search_chain(body: ChainIn, x_api_key: Optional[str] = Header(None)):
     check_key(x_api_key)
