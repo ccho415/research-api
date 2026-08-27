@@ -75,7 +75,13 @@ def _upsert_paper(cur, r):
     elif pmid:
         conflict = "(pmid) WHERE pmid IS NOT NULL"
     elif tkey:
-        conflict = "(title_key) WHERE doi IS NULL AND pmid IS NULL"
+        # Every condition of the index predicate has to appear here.  Postgres
+        # infers the arbiter index by checking that this WHERE clause implies
+        # the index's own, and `title_key IS NOT NULL` is part of the index, so
+        # omitting it matches nothing and raises InvalidColumnReference on the
+        # first record that carries neither DOI nor PMID.
+        conflict = ("(title_key) WHERE doi IS NULL AND pmid IS NULL "
+                    "AND title_key IS NOT NULL")
     else:
         conflict = None
 
