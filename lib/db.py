@@ -138,10 +138,25 @@ def start_run(topic, domain=None, project_id=None, run_id=None):
                         "started_at": row["started_at"].isoformat(), "created": False}
 
             if not project_id:
+                # Re-running the same topic has to land in the same project,
+                # or the stored vocabulary expansion never has a previous
+                # version to be compared against and the drift check silently
+                # does nothing.  Paper reuse becomes untrackable over time for
+                # the same reason: a fresh project every run resets the history
+                # that makes the number mean anything.
                 cur.execute(
-                    "INSERT INTO project (title, topic, status) VALUES (%s, %s, %s) "
-                    "RETURNING id", (topic[:200], topic, "lit_search"))
-                project_id = cur.fetchone()["id"]
+                    "SELECT id FROM project"
+                    " WHERE lower(regexp_replace(topic, '\\s+', ' ', 'g'))"
+                    "     = lower(regexp_replace(%s, '\\s+', ' ', 'g'))"
+                    " ORDER BY created_at LIMIT 1", (topic,))
+                row = cur.fetchone()
+                if row:
+                    project_id = row["id"]
+                else:
+                    cur.execute(
+                        "INSERT INTO project (title, topic, status) VALUES (%s, %s, %s) "
+                        "RETURNING id", (topic[:200], topic, "lit_search"))
+                    project_id = cur.fetchone()["id"]
             cur.execute(
                 "INSERT INTO run (project_id, stage, status, started_at) "
                 "VALUES (%s, 'lit_search', 'running', now()) RETURNING id, started_at",
