@@ -1,0 +1,496 @@
+{
+ "anchor": "lung adenocarcinoma",
+ "cutoff": 2015,
+ "gates": {
+  "top20_over_control": 2.0,
+  "control_ceiling": 0.5,
+  "min_papers_for_hit": 3
+ },
+ "seed": 20260828,
+ "anchor_concept": {
+  "ui": "D000077192",
+  "label": "Adenocarcinoma of Lung",
+  "terms": [
+   "Adenocarcinoma of Lung",
+   "lung adenocarcinoma",
+   "adenocarcinoma lung",
+   "lung adenocarcinomas"
+  ]
+ },
+ "a_corpus": {
+  "n_papers": 1000,
+  "n_concepts": 1573
+ },
+ "b_terms": [
+  {
+   "ui": "D009362",
+   "label": "Neoplasm Metastasis",
+   "papers": 189,
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "background_df": 0.0168
+  },
+  {
+   "ui": "D066246",
+   "label": "ErbB Receptors",
+   "papers": 182,
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Enzyme",
+    "Receptor"
+   ],
+   "background_df": 0.0023
+  },
+  {
+   "ui": "D007150",
+   "label": "Immunohistochemistry",
+   "papers": 140,
+   "semantic_types": [
+    "Laboratory Procedure"
+   ],
+   "background_df": 0.0132
+  },
+  {
+   "ui": "D002289",
+   "label": "Carcinoma, Non-Small-Cell Lung",
+   "papers": 112,
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "background_df": 0.0037
+  },
+  {
+   "ui": "D012907",
+   "label": "Smoking",
+   "papers": 107,
+   "semantic_types": [
+    "Individual Behavior"
+   ],
+   "background_df": 0.0091
+  },
+  {
+   "ui": "D000092004",
+   "label": "Tyrosine Kinase Inhibitors",
+   "papers": 99,
+   "semantic_types": [
+    "Pharmacologic Substance"
+   ],
+   "background_df": 0.0015
+  },
+  {
+   "ui": "D005091",
+   "label": "Exons",
+   "papers": 83,
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Nucleic Acid, Nucleoside, or Nucleotide"
+   ],
+   "background_df": 0.0071
+  },
+  {
+   "ui": "D063646",
+   "label": "Carcinogenesis",
+   "papers": 82,
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "background_df": 0.0074
+  },
+  {
+   "ui": "D013194",
+   "label": "Staining and Labeling",
+   "papers": 75,
+   "semantic_types": [
+    "Laboratory Procedure"
+   ],
+   "background_df": 0.0145
+  },
+  {
+   "ui": "D008207",
+   "label": "Lymphatic Metastasis",
+   "papers": 70,
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "background_df": 0.0036
+  },
+  {
+   "ui": "D000072283",
+   "label": "A549 Cells",
+   "papers": 65,
+   "semantic_types": [
+    "Cell"
+   ],
+   "background_df": 0.0012
+  },
+  {
+   "ui": "D049109",
+   "label": "Cell Proliferation",
+   "papers": 65,
+   "semantic_types": [
+    "Cell Function"
+   ],
+   "background_df": 0.0125
+  },
+  {
+   "ui": "D009857",
+   "label": "Oncogenes",
+   "papers": 59,
+   "semantic_types": [
+    "Gene or Genome"
+   ],
+   "background_df": 0.0026
+  },
+  {
+   "ui": "D014054",
+   "label": "Tomography",
+   "papers": 55,
+   "semantic_types": [
+    "Diagnostic Procedure"
+   ],
+   "background_df": 0.0143
+  },
+  {
+   "ui": "D015153",
+   "label": "Blotting, Western",
+   "papers": 54,
+   "semantic_types": [
+    "Laboratory Procedure",
+    "Molecular Biology Research Technique"
+   ],
+   "background_df": 0.018
+  },
+  {
+   "ui": "D002294",
+   "label": "Carcinoma, Squamous Cell",
+   "papers": 54,
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "background_df": 0.0034
+  },
+  {
+   "ui": "D010770",
+   "label": "Phosphotransferases",
+   "papers": 49,
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Enzyme"
+   ],
+   "background_df": 0.011
+  },
+  {
+   "ui": "D006653",
+   "label": "Histology",
+   "papers": 47,
+   "semantic_types": [
+    "Biomedical Occupation or Discipline"
+   ],
+   "background_df": 0.0059
+  },
+  {
+   "ui": "D005453",
+   "label": "Fluorescence",
+   "papers": 46,
+   "semantic_types": [
+    "Natural Phenomenon or Process"
+   ],
+   "background_df": 0.0137
+  },
+  {
+   "ui": "D001706",
+   "label": "Biopsy",
+   "papers": 46,
+   "semantic_types": [
+    "Diagnostic Procedure"
+   ],
+   "background_df": 0.0168
+  },
+  {
+   "ui": "D000077548",
+   "label": "Anaplastic Lymphoma Kinase",
+   "papers": 45,
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Enzyme",
+    "Receptor"
+   ],
+   "background_df": 0.0
+  },
+  {
+   "ui": "D008198",
+   "label": "Lymph Nodes",
+   "papers": 44,
+   "semantic_types": [
+    "Body Part, Organ, or Organ Component"
+   ],
+   "background_df": 0.006
+  },
+  {
+   "ui": "D010232",
+   "label": "Paraffin",
+   "papers": 43,
+   "semantic_types": [
+    "Biomedical or Dental Material",
+    "Organic Chemical"
+   ],
+   "background_df": 0.0021
+  },
+  {
+   "ui": "D034741",
+   "label": "RNA, Small Interfering",
+   "papers": 42,
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Nucleic Acid, Nucleoside, or Nucleotide"
+   ],
+   "background_df": 0.0091
+  },
+  {
+   "ui": "D005783",
+   "label": "Gender Identity",
+   "papers": 42,
+   "semantic_types": [
+    "Individual Behavior",
+    "Mental Process"
+   ],
+   "background_df": 0.018
+  },
+  {
+   "ui": "D035683",
+   "label": "MicroRNAs",
+   "papers": 41,
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Nucleic Acid, Nucleoside, or Nucleotide"
+   ],
+   "background_df": 0.0069
+  },
+  {
+   "ui": "D017403",
+   "label": "In Situ Hybridization",
+   "papers": 40,
+   "semantic_types": [
+    "Laboratory Procedure",
+    "Molecular Biology Research Technique"
+   ],
+   "background_df": 0.0038
+  },
+  {
+   "ui": "D000077156",
+   "label": "Gefitinib",
+   "papers": 39,
+   "semantic_types": [
+    "Organic Chemical",
+    "Pharmacologic Substance"
+   ],
+   "background_df": 0.0006
+  },
+  {
+   "ui": "D015536",
+   "label": "Down-Regulation",
+   "papers": 38,
+   "semantic_types": [
+    "Cell Function",
+    "Molecular Function"
+   ],
+   "background_df": 0.0094
+  },
+  {
+   "ui": "D018773",
+   "label": "Genes, erbB-1",
+   "papers": 37,
+   "semantic_types": [
+    "Gene or Genome"
+   ],
+   "background_df": 0.0001
+  }
+ ],
+ "pool_size": 12935,
+ "n_scanned_for_top": 160,
+ "top": [
+  {
+   "ui": "D000124",
+   "label": "Achievement",
+   "semantic_types": [
+    "Individual Behavior"
+   ],
+   "ltc": 23,
+   "pool_freq": 62,
+   "papers_before_cutoff": 0,
+   "papers_after_cutoff": 20,
+   "hit": true
+  },
+  {
+   "ui": "D009062",
+   "label": "Mouth Neoplasms",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ltc": 22,
+   "pool_freq": 117,
+   "papers_before_cutoff": 0,
+   "papers_after_cutoff": 10,
+   "hit": true
+  },
+  {
+   "ui": "D000077216",
+   "label": "Carcinoma, Ovarian Epithelial",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ltc": 22,
+   "pool_freq": 56,
+   "papers_before_cutoff": 0,
+   "papers_after_cutoff": 0,
+   "hit": false
+  },
+  {
+   "ui": "D000544",
+   "label": "Alzheimer Disease",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ltc": 19,
+   "pool_freq": 101,
+   "papers_before_cutoff": 0,
+   "papers_after_cutoff": 1,
+   "hit": false
+  },
+  {
+   "ui": "D046529",
+   "label": "Microscopy, Electron, Transmission",
+   "semantic_types": [
+    "Laboratory Procedure"
+   ],
+   "ltc": 18,
+   "pool_freq": 104,
+   "papers_before_cutoff": 0,
+   "papers_after_cutoff": 0,
+   "hit": false
+  },
+  {
+   "ui": "D010300",
+   "label": "Parkinson Disease",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ltc": 18,
+   "pool_freq": 66,
+   "papers_before_cutoff": 0,
+   "papers_after_cutoff": 4,
+   "hit": true
+  },
+  {
+   "ui": "D013525",
+   "label": "Surgical Instruments",
+   "semantic_types": [
+    "Medical Device"
+   ],
+   "ltc": 17,
+   "pool_freq": 72,
+   "papers_before_cutoff": 0,
+   "papers_after_cutoff": 14,
+   "hit": true
+  },
+  {
+   "ui": "D015451",
+   "label": "Leukemia, Lymphocytic, Chronic, B-Cell",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ltc": 17,
+   "pool_freq": 45,
+   "papers_before_cutoff": 0,
+   "papers_after_cutoff": 0,
+   "hit": false
+  },
+  {
+   "ui": "D003528",
+   "label": "Carcinoma, Adenoid Cystic",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ltc": 17,
+   "pool_freq": 43,
+   "papers_before_cutoff": 0,
+   "papers_after_cutoff": 1,
+   "hit": false
+  }
+ ],
+ "control": [
+  {
+   "ui": "C498826",
+   "label": "nilotinib",
+   "semantic_types": [
+    "Organic Chemical",
+    "Pharmacologic Substance"
+   ],
+   "ltc": 5,
+   "pool_freq": 116,
+   "papers_before_cutoff": 0,
+   "papers_after_cutoff": 11,
+   "hit": true
+  },
+  {
+   "ui": "D002578",
+   "label": "Uterine Cervical Dysplasia",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ltc": 13,
+   "pool_freq": 56,
+   "papers_before_cutoff": 0,
+   "papers_after_cutoff": 0,
+   "hit": false
+  },
+  {
+   "ui": "D017360",
+   "label": "Arabidopsis",
+   "semantic_types": [
+    "Plant"
+   ],
+   "ltc": 10,
+   "pool_freq": 101,
+   "papers_before_cutoff": 0,
+   "papers_after_cutoff": 1,
+   "hit": false
+  },
+  {
+   "ui": "D000085402",
+   "label": "Gender Role",
+   "semantic_types": [
+    "Social Behavior"
+   ],
+   "ltc": 1,
+   "pool_freq": 105,
+   "papers_before_cutoff": 0,
+   "papers_after_cutoff": 0,
+   "hit": false
+  },
+  {
+   "ui": "D000081364",
+   "label": "Multiparametric Magnetic Resonance Imaging",
+   "semantic_types": [
+    "Diagnostic Procedure"
+   ],
+   "ltc": 3,
+   "pool_freq": 66,
+   "papers_before_cutoff": 0,
+   "papers_after_cutoff": 3,
+   "hit": true
+  }
+ ],
+ "result": {
+  "top_hit_rate": 0.4444444444444444,
+  "n_top": 9,
+  "control_hit_rate": 0.4,
+  "n_control": 5,
+  "mean_ltc_top": 19.22,
+  "mean_ltc_control": 6.4,
+  "ratio": 1.111111111111111
+ },
+ "verdict": "FAIL",
+ "seconds": 1064.9
+}
