@@ -20,17 +20,29 @@ import triage as tri
 # search
 # --------------------------------------------------------------------------
 def search_query(query, domain="general", sources=None, limit=25,
-                 year_from=None, year_to=None, sort="relevance"):
-    """Mirrors `search.py query`."""
+                 year_from=None, year_to=None, sort="relevance", concepts=None):
+    """Mirrors `search.py query`.
+
+    With `concepts`, each source is sent the crossing rendered in its own
+    dialect rather than one string for all of them - see `render_query`.
+    `query` then stands only for what the search is called in the record.
+    """
     names = sources or lit.ROUTING.get(domain, lit.ROUTING["general"])
-    batches, failed = [], []
+    batches, failed, answered, sent = [], [], [], {}
     for n in names:
         fn = lit.SOURCES.get(n)
         if not fn:
             failed.append({"source": n, "error": "unknown source"})
             continue
+        q = lit.render_query(concepts, n) if concepts else query
+        sent[n] = q
+        if not q:
+            failed.append({"source": n, "error": "no renderable query for this source"})
+            continue
         try:
-            batches.append(fn(query, limit, year_from, year_to))
+            hits = fn(q, limit, year_from, year_to)
+            batches.append(hits)
+            answered.append(n)
         except Exception as e:
             # One source going down must not kill the run - the skill behaves
             # the same way and reports which sources actually answered.
@@ -44,6 +56,12 @@ def search_query(query, domain="general", sources=None, limit=25,
         merged.sort(key=lambda r: (r.get("rank", 999), -len(r.get("also_in", []))))
     return {"query": query, "domain": domain, "sources_used": names,
             "failed_sources": failed, "sort": sort,
+            # What gets stored in `search_query.sources`: which sources were
+            # tried, which came back, and why the rest did not.  "used" and
+            # "answered" are different facts, and PubMed makes them differ on
+            # every clinical search from this deployment.
+            "attempt": {"attempted": names, "answered": answered,
+                        "failed": failed, "sent": sent},
             "n": len(merged), "results": merged}
 
 
@@ -58,6 +76,113 @@ def search_vocab(term, domain="general"):
     return {"term": term,
             "vocabulary": "MeSH" if use_mesh else "OpenAlex concepts",
             "entries": entries}
+
+
+def search_expand(concepts, domain="general", per_concept=10):
+    """Resolve each concept term to controlled-vocabulary descriptors.
+
+    A real research topic is two or more concepts crossed - an exposure and an
+    outcome, or a disease and an aspect - not one term with narrower siblings.
+    Each is expanded on its own, because MeSH matches a whole label and the two
+    joined together match nothing.
+
+    Never raises for a concept it cannot resolve: an unexpandable term is
+    carried through as itself with `expanded: false`, and the caller is expected
+    to show that prominently.  A run that searched one raw string has roughly a
+    tenth of the coverage of one that expanded properly, and it must not look
+    the same.
+    """
+    use_mesh = domain in lit.VOCAB_SOURCE
+    out, degraded = [], False
+    for term in concepts:
+        term = (term or "").strip()
+        if not term:
+            continue
+        entries, vocab, err = [], None, None
+        for name, fn in ([("MeSH", lambda: lit.vocab_mesh(term, limit=per_concept))]
+                         if use_mesh else []) + [("OpenAlex", lambda: lit.vocab_openalex(term))]:
+            try:
+                entries = fn() or []
+            except Exception as e:
+                err = f"{name}: {type(e).__name__}: {e}"
+                continue
+            if entries:
+                vocab = name
+                break
+        if not entries:
+            degraded = True
+            out.append({"input": term, "expanded": False, "vocabulary": None,
+                        "error": err, "descriptor": None, "terms": [term],
+                        "alternatives": []})
+            continue
+        head = entries[0]
+        alts = [{"descriptor": e.get("descriptor"), "unique_id": e.get("unique_id"),
+                 "relation": "sibling"} for e in entries[1:per_concept]]
+
+        # A precise concept has exactly one descriptor, so label matching alone
+        # gives no alternatives and the crossing collapses to a single query.
+        # The hierarchy is where the other angles are.
+        if len(alts) < per_concept - 1 and head.get("unique_id"):
+            have = {a["unique_id"] for a in alts}
+            try:
+                for r in lit.mesh_relatives(head["unique_id"]):
+                    if r["unique_id"] not in have and len(alts) < per_concept - 1:
+                        have.add(r["unique_id"])
+                        alts.append(r)
+            except Exception as e:
+                # Losing the hierarchy costs breadth, not correctness: the
+                # exact crossing still runs.  Say so rather than failing.
+                lit._warn(f"MeSH relatives for {head['unique_id']} unavailable: "
+                          f"{type(e).__name__}: {e}")
+
+        out.append({
+            "input": term, "expanded": True, "vocabulary": vocab,
+            "descriptor": head.get("descriptor"),
+            "unique_id": head.get("unique_id"),
+            "definition": (head.get("definition") or "")[:400],
+            "terms": [t for t in (head.get("entry_terms") or []) if t][:8],
+            "alternatives": alts,
+        })
+    return {"domain": domain, "concepts": out, "degraded": degraded,
+            "unexpanded": [c["input"] for c in out if not c["expanded"]]}
+
+
+def plan_queries(expansion, max_queries=10):
+    """Turn an expansion into the set of searches to run.
+
+    One concept fans out into its narrower descriptors.  Two or more are
+    crossed, best against best first, because the crossing is the question -
+    "endocrine disruptors" alone and "lung adenocarcinoma" alone are both
+    enormous and neither is what was asked.
+    """
+    cs = expansion.get("concepts") or []
+    if not cs:
+        return []
+
+    def variants(c):
+        v = [{"descriptor": c.get("descriptor"), "terms": c.get("terms") or [],
+              "unique_id": c.get("unique_id")}]
+        for alt in c.get("alternatives") or []:
+            v.append({"descriptor": alt.get("descriptor"), "terms": [],
+                      "unique_id": alt.get("unique_id")})
+        return [x for x in v if x["descriptor"] or x["terms"]]
+
+    if len(cs) == 1:
+        return [{"concepts": [v], "label": v["descriptor"] or cs[0]["input"]}
+                for v in variants(cs[0])[:max_queries]]
+
+    # Enough per side to fill the budget once crossed, and no more: the pool is
+    # ranked, so a wider side only adds worse descriptors.
+    per_side = max(2, int(round(max_queries ** (1.0 / len(cs)))) + 1)
+    sides = [variants(c)[:per_side] for c in cs]
+
+    plans = []
+    for combo in itertools.product(*[range(len(s)) for s in sides]):
+        picked = [sides[i][j] for i, j in enumerate(combo)]
+        plans.append((sum(combo), picked))
+    plans.sort(key=lambda p: p[0])
+    return [{"concepts": p, "label": " x ".join(
+        c["descriptor"] or "?" for c in p)} for _, p in plans[:max_queries]]
 
 
 def search_chain(doi, topic=None, depth=1, per_step=6, milestone=1000):

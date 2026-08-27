@@ -51,13 +51,97 @@ class QueryIn(BaseModel):
     year_from: Optional[int] = None
     year_to: Optional[int] = None
     sort: str = "relevance"
+    # When given, each source is sent this crossing in its own dialect and
+    # `query` is only what the search is called in the record.
+    concepts: Optional[List[Dict[str, Any]]] = None
 
 
 @app.post("/compute/search/query")
 def search_query(body: QueryIn, x_api_key: Optional[str] = Header(None)):
     check_key(x_api_key)
     return ops.search_query(body.query, body.domain, body.sources, body.limit,
-                            body.year_from, body.year_to, body.sort)
+                            body.year_from, body.year_to, body.sort, body.concepts)
+
+
+class ExpandIn(BaseModel):
+    concepts: List[str]
+    domain: str = "general"
+    per_concept: int = 10
+    max_queries: int = 10
+    # Recording the expansion needs the project it belongs to; without one the
+    # expansion still runs, it just has nothing to be compared against later.
+    project_id: Optional[str] = None
+
+
+@app.post("/compute/search/expand")
+def search_expand(body: ExpandIn, x_api_key: Optional[str] = Header(None)):
+    """Resolve concepts to controlled vocabulary and plan the searches.
+
+    Expansion and planning are one call because n8n has no reason to see the
+    intermediate result, and because the plan is meaningless without the
+    expansion that produced it.
+    """
+    check_key(x_api_key)
+    try:
+        expansion = ops.search_expand(body.concepts, body.domain, body.per_concept)
+        plan = ops.plan_queries(expansion, body.max_queries)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+    out = {"expansion": expansion, "plan": plan, "n_queries": len(plan),
+           "degraded": expansion["degraded"]}
+    if body.project_id:
+        import db
+        try:
+            out["expansion_record"] = db.record_expansion(body.project_id, expansion)
+        except Exception as e:
+            out["expansion_record"] = {"error": f"{type(e).__name__}: {str(e)[:200]}"}
+    return out
+
+
+class RunStartIn(BaseModel):
+    topic: str
+    domain: Optional[str] = None
+    project_id: Optional[str] = None
+    run_id: Optional[str] = None
+
+
+@app.post("/compute/run/start")
+def run_start(body: RunStartIn, x_api_key: Optional[str] = Header(None)):
+    """Create (or adopt) the project and run this search belongs to."""
+    check_key(x_api_key)
+    import db
+    try:
+        return db.start_run(body.topic, body.domain, body.project_id, body.run_id)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/run/{run_id}/done-queries")
+def run_done_queries(run_id: str, x_api_key: Optional[str] = Header(None)):
+    """What this run already stored, so a resumed run does not repeat it."""
+    check_key(x_api_key)
+    import db
+    try:
+        return {"run_id": run_id, "done": db.done_queries(run_id)}
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class RunFinishIn(BaseModel):
+    run_id: str
+    status: str = "done"
+
+
+@app.post("/compute/run/finish")
+def run_finish(body: RunFinishIn, x_api_key: Optional[str] = Header(None)):
+    """Close the run and write its metrics to health_metric."""
+    check_key(x_api_key)
+    import db
+    try:
+        return db.finish_run(body.run_id, body.status)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
 class VocabIn(BaseModel):
@@ -84,7 +168,10 @@ class IngestIn(BaseModel):
     results: List[Dict[str, Any]]
     run_id: Optional[str] = None
     domain: Optional[str] = None
-    sources: Optional[List[str]] = None
+    # Either the plain list of source names, or the attempt-outcome object from
+    # a search result: which sources were tried, which answered, which failed
+    # and why.  PubMed makes those differ on every clinical search from here.
+    sources: Optional[Any] = None
     query_angle: Optional[str] = None
     axis_source: Optional[str] = None
 

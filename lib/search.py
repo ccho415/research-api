@@ -26,6 +26,7 @@ import os
 import re
 import sys
 import time
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -348,19 +349,32 @@ def merge(batches):
 # --------------------------------------------------------------------------
 # Controlled vocabulary
 # --------------------------------------------------------------------------
-def vocab_mesh(term):
-    """MeSH lookup, preferring E-utilities and falling back to id.nlm.nih.gov.
+def vocab_mesh(term, limit=10):
+    """MeSH lookup via id.nlm.nih.gov, falling back to E-utilities.
 
-    NCBI blocks whole hosting IP ranges from eutils - shared cloud egress gets
-    caught by other tenants' abuse - and answers 200 with an Access Denied page
-    rather than an error status.  id.nlm.nih.gov serves the same vocabulary and
-    is not covered by that block, so losing eutils need not lose MeSH.
+    id.nlm.nih.gov is preferred even where eutils is reachable.  It is the only
+    one of the two that yields D-numbers, that resolves entry terms - so
+    "lung adenocarcinoma" and "heart attack" find their descriptors at all - and
+    that can be re-ranked, since eutils returns whatever its own relevance
+    ordering decides and mixes Supplementary Concept and Pharmacological Action
+    records in with topical descriptors.
+
+    Preferring eutils would also make the system quietly get worse the day NCBI
+    unblocks this deployment's egress IP, which is the opposite of how a
+    fallback should behave.
     """
     try:
-        return _vocab_mesh_eutils(term)
+        entries = vocab_mesh_rdf(term, limit=limit)
+        if entries:
+            return entries
+        _warn(f"no MeSH descriptor for {term!r} at id.nlm.nih.gov; trying E-utilities")
     except Exception as e:
-        _warn(f"E-utilities MeSH unavailable ({e}); using id.nlm.nih.gov")
-        return vocab_mesh_rdf(term)
+        _warn(f"id.nlm.nih.gov MeSH unavailable ({e}); trying E-utilities")
+    try:
+        return _vocab_mesh_eutils(term)[:limit]
+    except Exception as e:
+        _warn(f"E-utilities MeSH unavailable ({e})")
+        return []
 
 
 def _vocab_mesh_eutils(term):
@@ -416,21 +430,157 @@ def _mesh_rdf_meta(ids):
     return meta
 
 
-def vocab_mesh_rdf(term, limit=6):
+# Entry terms are where the natural phrasing lives.  `lookup/descriptor` only
+# matches the descriptor's own label, and MeSH labels are inverted, so the way a
+# researcher actually writes a concept misses: "lung adenocarcinoma" finds
+# nothing while "adenocarcinoma of lung" finds it, and "heart attack" finds
+# nothing at all.  Terms carry those phrasings, but under SKOS predicates
+# (prefLabel/altLabel) rather than rdfs:label, and a descriptor reaches them by
+# two disjoint paths - meshv:concept excludes the preferred concept, and
+# meshv:term excludes the preferred term - so all four combinations are needed.
+_MESH_ENTRY_SPARQL = """
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX meshv: <http://id.nlm.nih.gov/mesh/vocab#>
+SELECT DISTINCT ?d ?dlabel
+FROM <http://id.nlm.nih.gov/mesh>
+WHERE {
+  ?d a meshv:TopicalDescriptor .
+  ?d rdfs:label ?dlabel .
+  { ?d meshv:concept ?c } UNION { ?d meshv:preferredConcept ?c }
+  { ?c rdfs:label ?x }
+  UNION
+  { { ?c meshv:term ?t } UNION { ?c meshv:preferredTerm ?t }
+    { ?t meshv:prefLabel ?x } UNION { ?t meshv:altLabel ?x } }
+  FILTER (LCASE(STR(?x)) = %s)
+}
+"""
+
+
+def mesh_entry_match(term):
+    """Descriptors whose label, concept label or any entry term equals `term`."""
+    q = _MESH_ENTRY_SPARQL % json.dumps(_norm_space(term).lower())
+    rows = _get_json(f"{MESH_RDF}/sparql?format=JSON&limit=30"
+                     f"&query={urllib.parse.quote(q)}")["results"]["bindings"]
+    return [{"label": b["dlabel"]["value"], "resource": b["d"]["value"], "via": "entry"}
+            for b in rows if not b["dlabel"]["value"].startswith("[")]
+
+
+def _norm_space(s):
+    return re.sub(r"\s+", " ", (s or "")).strip()
+
+
+_STOP = {"of", "the", "and", "a", "an", "in", "for", "with", "to", "on", "by"}
+
+
+def _label_tokens(s):
+    s = unicodedata.normalize("NFKD", s or "")
+    s = "".join(c for c in s if not unicodedata.combining(c)).lower()
+    return [t for t in re.split(r"[^a-z0-9]+", s) if t and t not in _STOP]
+
+
+def label_score(term, label):
+    """How well a MeSH descriptor label answers what was asked for.
+
+    NLM returns `match=contains` hits in alphabetical order, not by relevance,
+    which puts `Bird Fancier's Lung` and `Heart-Lung Machine` ahead of `Lung`
+    and `Lung Neoplasms` for the term "lung".  Taking the first N of that list
+    is close to taking N at random, so the ordering has to be rebuilt here.
+    """
+    tt, lt = _label_tokens(term), _label_tokens(label)
+    if not tt or not lt:
+        return 0
+    if tt == lt:
+        return 100
+    if sorted(tt) == sorted(lt):
+        return 90          # inverted label: "lung adenocarcinoma" / "Adenocarcinoma of Lung"
+    if lt[:len(tt)] == tt:
+        return 80          # "lung" -> "Lung Neoplasms"
+    if set(tt) <= set(lt):
+        return 70          # every word present, scattered: "lung" -> "Acute Lung Injury"
+    if set(tt) & set(lt):
+        return 40
+    return 0
+
+
+def _tree_bonus(trees, ref_trees):
+    """How close a descriptor sits to the best hit in the MeSH hierarchy.
+
+    Tree numbers are dotted paths, so a shared prefix is shared ancestry: the
+    true narrower terms of the primary hit share it, while same-named things
+    from unrelated branches do not.  Used only to break ties within a score
+    band, never to overturn a label match.
+    """
+    best = 0
+    for t in trees:
+        for r in ref_trees:
+            n = 0
+            for a, b in zip(t.split("."), r.split(".")):
+                if a != b:
+                    break
+                n += 1
+            best = max(best, n)
+    return best
+
+
+def vocab_mesh_rdf(term, limit=10, pool=30):
     """MeSH lookup against id.nlm.nih.gov, shaped exactly like _parse_mesh.
+
+    Over-fetches `pool` candidates from two routes - exact entry-term matches
+    and substring matches on the descriptor label - then ranks and keeps
+    `limit`.  Details are fetched only for the survivors, so the call count is
+    three plus the number returned regardless of how wide the pool is.
 
     `previous_indexing` has no equivalent here and stays empty; `unique_id` is
     new and worth having, since the D-number is what a precise MeSH query needs.
     """
-    hits = _get_json(f"{MESH_RDF}/lookup/descriptor?match=contains&limit={limit}"
-                     f"&label={urllib.parse.quote(term)}")
-    ids = [h["resource"].rsplit("/", 1)[-1] for h in hits]
-    if not ids:
+    hits = []
+    seen = set()
+    try:
+        for h in mesh_entry_match(term):
+            if h["resource"] not in seen:
+                seen.add(h["resource"])
+                hits.append(h)
+    except Exception as e:
+        _warn(f"MeSH entry-term lookup failed ({e}); using label match only")
+
+    # The inverted form is worth one extra try: MeSH writes "Adenocarcinoma of
+    # Lung", researchers write "lung adenocarcinoma", and only some of those
+    # pairs are also registered as entry terms.
+    variants = [term]
+    parts = _norm_space(term).split()
+    if 1 < len(parts) <= 4:
+        variants.append(" ".join(reversed(parts)))
+    for v in variants:
+        try:
+            for h in _get_json(f"{MESH_RDF}/lookup/descriptor?match=contains&limit={pool}"
+                               f"&label={urllib.parse.quote(v)}"):
+                if h["resource"] not in seen:
+                    seen.add(h["resource"])
+                    hits.append(h)
+        except Exception as e:
+            _warn(f"MeSH label lookup failed for {v!r} ({e})")
+
+    if not hits:
         return []
+
+    ids = [h["resource"].rsplit("/", 1)[-1] for h in hits]
     meta = _mesh_rdf_meta(ids)
 
+    # An exact entry-term hit is the vocabulary itself saying "this is what you
+    # meant", which outranks any amount of label overlap: "breast cancer" is the
+    # registered entry term for `Breast Neoplasms`, while `Breast Cancer
+    # Lymphedema` merely starts with the same two words.
+    scored = [(100 if h.get("via") == "entry" else label_score(term, h["label"]), h, i)
+              for h, i in zip(hits, ids)]
+    scored.sort(key=lambda s: -s[0])
+    ref_trees = meta.get(scored[0][2], {}).get("tree_numbers", set())
+    scored.sort(key=lambda s: (-s[0],
+                               -_tree_bonus(meta.get(s[2], {}).get("tree_numbers", set()),
+                                            ref_trees),
+                               len(s[1]["label"])))
+
     out = []
-    for hit, did in zip(hits, ids):
+    for _, hit, did in scored[:limit]:
         m = meta.get(did, {})
         d = _get_json(f"{MESH_RDF}/lookup/details?descriptor={did}")
         e = {"descriptor": hit["label"],
@@ -505,6 +655,130 @@ def _mesh_query(e):
     terms = [f'"{e["descriptor"]}"[MeSH Terms]'] if e["descriptor"] else []
     terms += [f'"{t}"[tiab]' for t in ([e["descriptor"]] + e["entry_terms"])[:20] if t]
     return " OR ".join(terms)
+
+
+_MESH_REL_SPARQL = """
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX meshv: <http://id.nlm.nih.gov/mesh/vocab#>
+PREFIX mesh: <http://id.nlm.nih.gov/mesh/>
+SELECT DISTINCT ?n ?nlabel ?dir ?tn
+FROM <http://id.nlm.nih.gov/mesh>
+WHERE {
+  { ?n meshv:broaderDescriptor mesh:%(d)s . BIND("narrower" AS ?dir) }
+  UNION
+  { mesh:%(d)s meshv:broaderDescriptor ?n . BIND("broader" AS ?dir) }
+  ?n a meshv:TopicalDescriptor .
+  ?n rdfs:label ?nlabel .
+  OPTIONAL { ?n meshv:treeNumber ?tnr . ?tnr rdfs:label ?tn }
+}
+"""
+
+
+def mesh_relatives(descriptor_id, want_broader=True):
+    """Descriptors one step down and one step up the MeSH hierarchy.
+
+    Label matching alone cannot produce breadth for a precise concept: MeSH has
+    exactly one descriptor for "lung adenocarcinoma", so crossing two precise
+    concepts yields a single query.  The extra angles have to come from the
+    hierarchy instead.
+
+    Narrower descriptors are always useful.  Broader ones are only sometimes:
+    `Adenocarcinoma of Lung` sits under `Lung Neoplasms`, which is a real and
+    valuable widening, but `Endocrine Disruptors` sits under `Toxic Actions`,
+    which crossed with anything is noise.  Depth in the tree separates the two,
+    so shallow parents are dropped.
+    """
+    rows = _get_json(f"{MESH_RDF}/sparql?format=JSON&limit=200&query="
+                     + urllib.parse.quote(_MESH_REL_SPARQL % {"d": descriptor_id})
+                     )["results"]["bindings"]
+    seen = {}
+    for b in rows:
+        did = b["n"]["value"].rsplit("/", 1)[-1]
+        e = seen.setdefault(did, {"descriptor": b["nlabel"]["value"], "unique_id": did,
+                                  "relation": b["dir"]["value"], "depth": 0})
+        if "tn" in b:
+            e["depth"] = max(e["depth"], b["tn"]["value"].count(".") + 1)
+
+    out = [e for e in seen.values() if e["relation"] == "narrower"]
+    if want_broader:
+        # Four levels is where MeSH stops naming categories and starts naming
+        # things: C04.588.894.797 is `Lung Neoplasms`, D27.505 is `Toxic Actions`.
+        out += sorted((e for e in seen.values()
+                       if e["relation"] == "broader" and e["depth"] >= 4),
+                      key=lambda e: -e["depth"])
+    return out
+
+
+# --------------------------------------------------------------------------
+# Query dialects
+# --------------------------------------------------------------------------
+# One query string does not travel.  `_mesh_query` writes PubMed syntax, and
+# PubMed is the one source this deployment cannot reach; sent to Europe PMC the
+# same string returns 7 hits where the concept really has 704, because the
+# bracketed field tags are read as literal text.  Every source therefore gets
+# its own rendering of the same concepts.  Measured hit counts, one exposure
+# crossed with one outcome:
+#
+#     "X"[MeSH Terms] OR ...      -> Europe PMC      7
+#     MESH:"X"                    -> Europe PMC    704   (single concept)
+#     ("X" OR "x2") AND ("Y")     -> Europe PMC    145   <- what we send
+#     X AND Y  (unquoted words)   -> Europe PMC    421   looser, noisier
+#     MESH:"X" AND MESH:"Y"       -> Europe PMC      1   too strict to use
+#
+# Crossing is done on text, never on MeSH indexing: `MESH:"Adenocarcinoma of
+# Lung"` is sparsely applied, so a strict crossing collapses to a single hit and
+# the run would report "almost nobody has studied this" - which is the exact
+# false negative this whole system exists to prevent.
+
+def _terms_of(c, cap=4):
+    """The descriptor plus its most useful synonyms, longest-first.
+
+    Entry terms run to dozens on common descriptors, most of them inversions of
+    each other, so a cap keeps the URL and the query sane.  Longer synonyms are
+    the specific ones and make better phrase matches.
+    """
+    terms = [t for t in ([c.get("descriptor")] + list(c.get("terms") or [])) if t]
+    seen, out = set(), []
+    for t in sorted(terms, key=lambda s: -len(s)):
+        k = " ".join(_label_tokens(t))
+        if k and k not in seen:
+            seen.add(k)
+            out.append(_norm_space(t))
+    return out[:cap]
+
+
+def render_query(concepts, source):
+    """Render crossed concepts into what `source` actually understands."""
+    pairs = [(c, _terms_of(c)) for c in concepts]
+    pairs = [(c, g) for c, g in pairs if g]
+    if not pairs:
+        return ""
+
+    if source == "pubmed":
+        parts = []
+        for c, g in pairs:
+            alts = ([f'"{c["descriptor"]}"[MeSH Terms]'] if c.get("descriptor") else [])
+            alts += [f'"{t}"[tiab]' for t in g]
+            parts.append("(" + " OR ".join(alts) + ")")
+        return " AND ".join(parts)
+
+    if source == "europepmc":
+        # Quoted phrases OR'd within a concept, concepts AND'd together.
+        parts = ["(" + " OR ".join(f'"{t}"' for t in g) + ")" for _, g in pairs]
+        return " AND ".join(parts)
+
+    # openalex, crossref, semanticscholar, arxiv: bag of words.  OpenAlex's
+    # `title_and_abstract.search` already ANDs its terms and reads an explicit
+    # AND as just another word; quoted OR groups measurably narrow it too far
+    # (13 hits against 39).  Crossref ignores AND entirely - the same crossing
+    # returns 1,075,599 either way - so precision comes from the ranking and the
+    # limit, not the syntax.  arXiv wraps the whole string in `all:`, which
+    # parenthesised booleans do not survive.
+    #
+    # The canonical descriptor goes in rather than the longest synonym: these
+    # sources rank on term frequency, and the descriptor is the phrasing the
+    # literature actually uses most.
+    return " ".join((c.get("descriptor") or g[0]).replace(",", " ") for c, g in pairs)
 
 
 def vocab_openalex(term):
