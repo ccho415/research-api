@@ -1,0 +1,2436 @@
+{
+ "anchor": "Adenocarcinoma of Lung",
+ "cutoff": 2015,
+ "candidates": [
+  {
+   "ui": "D006258",
+   "label": "Head and Neck Neoplasms",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 26,
+   "pool_freq": 156,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis"
+   ]
+  },
+  {
+   "ui": "D005909",
+   "label": "Glioblastoma",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 25,
+   "pool_freq": 245,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells"
+   ]
+  },
+  {
+   "ui": "D002583",
+   "label": "Uterine Cervical Neoplasms",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 24,
+   "pool_freq": 353,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis"
+   ]
+  },
+  {
+   "ui": "D010100",
+   "label": "Oxygen",
+   "semantic_types": [
+    "Element, Ion, or Isotope"
+   ],
+   "ambiguous": false,
+   "ltc": 24,
+   "pool_freq": 129,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation"
+   ]
+  },
+  {
+   "ui": "D000077195",
+   "label": "Squamous Cell Carcinoma of Head and Neck",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 23,
+   "pool_freq": 315,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis"
+   ]
+  },
+  {
+   "ui": "D014612",
+   "label": "Vaccines",
+   "semantic_types": [
+    "Immunologic Factor",
+    "Pharmacologic Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 23,
+   "pool_freq": 125,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Oncogenes",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D007858",
+   "label": "Learning",
+   "semantic_types": [
+    "Mental Process"
+   ],
+   "ambiguous": true,
+   "ltc": 23,
+   "pool_freq": 87,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Cell Proliferation",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D013404",
+   "label": "Suggestion",
+   "semantic_types": [
+    "Therapeutic or Preventive Procedure"
+   ],
+   "ambiguous": true,
+   "ltc": 23,
+   "pool_freq": 45,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation"
+   ]
+  },
+  {
+   "ui": "D009092",
+   "label": "Mucous Membrane",
+   "semantic_types": [
+    "Tissue"
+   ],
+   "ambiguous": false,
+   "ltc": 22,
+   "pool_freq": 211,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation"
+   ]
+  },
+  {
+   "ui": "D004938",
+   "label": "Esophageal Neoplasms",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 22,
+   "pool_freq": 140,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis"
+   ]
+  },
+  {
+   "ui": "D009055",
+   "label": "Mouth",
+   "semantic_types": [
+    "Body Location or Region"
+   ],
+   "ambiguous": false,
+   "ltc": 22,
+   "pool_freq": 105,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation"
+   ]
+  },
+  {
+   "ui": "D002784",
+   "label": "Cholesterol",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Organic Chemical"
+   ],
+   "ambiguous": false,
+   "ltc": 22,
+   "pool_freq": 104,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation"
+   ]
+  },
+  {
+   "ui": "D009068",
+   "label": "Movement",
+   "semantic_types": [
+    "Organism Function"
+   ],
+   "ambiguous": false,
+   "ltc": 22,
+   "pool_freq": 69,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation"
+   ]
+  },
+  {
+   "ui": "D000163",
+   "label": "Acquired Immunodeficiency Syndrome",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 22,
+   "pool_freq": 63,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Oncogenes",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D000124",
+   "label": "Achievement",
+   "semantic_types": [
+    "Individual Behavior"
+   ],
+   "ambiguous": true,
+   "ltc": 22,
+   "pool_freq": 60,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Lymphatic Metastasis",
+    "Cell Proliferation"
+   ]
+  },
+  {
+   "ui": "D000042",
+   "label": "Absorption",
+   "semantic_types": [
+    "Natural Phenomenon or Process"
+   ],
+   "ambiguous": true,
+   "ltc": 21,
+   "pool_freq": 204,
+   "linked_via": [
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D009682",
+   "label": "Magnetic Resonance Spectroscopy",
+   "semantic_types": [
+    "Diagnostic Procedure"
+   ],
+   "ambiguous": true,
+   "ltc": 21,
+   "pool_freq": 120,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D000728",
+   "label": "Androgens",
+   "semantic_types": [
+    "Hormone",
+    "Pharmacologic Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 21,
+   "pool_freq": 115,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation"
+   ]
+  },
+  {
+   "ui": "D003920",
+   "label": "Diabetes Mellitus",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 21,
+   "pool_freq": 93,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D011839",
+   "label": "Radiation, Ionizing",
+   "semantic_types": [
+    "Natural Phenomenon or Process"
+   ],
+   "ambiguous": true,
+   "ltc": 21,
+   "pool_freq": 79,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D014142",
+   "label": "Track and Field",
+   "semantic_types": [
+    "Daily or Recreational Activity"
+   ],
+   "ambiguous": false,
+   "ltc": 21,
+   "pool_freq": 41,
+   "linked_via": [
+    "Carcinoma, Non-Small-Cell Lung",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Oncogenes",
+    "Tomography",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D009765",
+   "label": "Obesity",
+   "semantic_types": [
+    "Sign or Symptom"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 130,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Exons",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D009062",
+   "label": "Mouth Neoplasms",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 114,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D012516",
+   "label": "Osteosarcoma",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 111,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D000077274",
+   "label": "Nasopharyngeal Carcinoma",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 87,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D010084",
+   "label": "Oxidation-Reduction",
+   "semantic_types": [
+    "Natural Phenomenon or Process"
+   ],
+   "ambiguous": true,
+   "ltc": 20,
+   "pool_freq": 86,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells"
+   ]
+  },
+  {
+   "ui": "D010634",
+   "label": "Phenobarbital",
+   "semantic_types": [
+    "Organic Chemical",
+    "Pharmacologic Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 83,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D010447",
+   "label": "Peptide Hydrolases",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Enzyme"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 81,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D003560",
+   "label": "Cysts",
+   "semantic_types": [
+    "Anatomical Abnormality"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 73,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D003713",
+   "label": "Dendritic Cells",
+   "semantic_types": [
+    "Cell"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 73,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells"
+   ]
+  },
+  {
+   "ui": "D000078622",
+   "label": "Nutrients",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Chemical Viewed Functionally"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 73,
+   "linked_via": [
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D006493",
+   "label": "Heparin",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Organic Chemical",
+    "Pharmacologic Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 62,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D007113",
+   "label": "Immunity, Innate",
+   "semantic_types": [
+    "Organism Attribute"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 60,
+   "linked_via": [
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D011674",
+   "label": "Pulse",
+   "semantic_types": [
+    "Organ or Tissue Function"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 56,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Tomography",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D018281",
+   "label": "Cholangiocarcinoma",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 55,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D000284",
+   "label": "Administration, Oral",
+   "semantic_types": [
+    "Therapeutic or Preventive Procedure"
+   ],
+   "ambiguous": true,
+   "ltc": 20,
+   "pool_freq": 54,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation"
+   ]
+  },
+  {
+   "ui": "D000077216",
+   "label": "Carcinoma, Ovarian Epithelial",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 47,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D015603",
+   "label": "Keratinocytes",
+   "semantic_types": [
+    "Cell"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 151,
+   "linked_via": [
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D000077277",
+   "label": "Esophageal Squamous Cell Carcinoma",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 105,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D009949",
+   "label": "Orientation",
+   "semantic_types": [
+    "Mental Process"
+   ],
+   "ambiguous": true,
+   "ltc": 19,
+   "pool_freq": 101,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Exons",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D008247",
+   "label": "Lysosomes",
+   "semantic_types": [
+    "Cell Component"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 92,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation"
+   ]
+  },
+  {
+   "ui": "D001483",
+   "label": "Base Sequence",
+   "semantic_types": [
+    "Nucleic Acid, Nucleoside, or Nucleotide",
+    "Nucleotide Sequence"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 89,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D014556",
+   "label": "Urine",
+   "semantic_types": [
+    "Body Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 87,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D004958",
+   "label": "Estradiol",
+   "semantic_types": [
+    "Hormone",
+    "Organic Chemical",
+    "Pharmacologic Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 74,
+   "linked_via": [
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D008870",
+   "label": "Microtubules",
+   "semantic_types": [
+    "Cell Component"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 72,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D003600",
+   "label": "Cytosol",
+   "semantic_types": [
+    "Cell Component"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 72,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation"
+   ]
+  },
+  {
+   "ui": "D007680",
+   "label": "Kidney Neoplasms",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 64,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D012469",
+   "label": "Salivary Glands",
+   "semantic_types": [
+    "Body Part, Organ, or Organ Component"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 60,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D007501",
+   "label": "Iron",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Element, Ion, or Isotope"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 53,
+   "linked_via": [
+    "ErbB Receptors",
+    "Smoking",
+    "Exons",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D005854",
+   "label": "Germ Cells",
+   "semantic_types": [
+    "Cell"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 50,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D010950",
+   "label": "Plasma Cells",
+   "semantic_types": [
+    "Cell"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 45,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Carcinogenesis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Phosphotransferases",
+    "Fluorescence",
+    "Biopsy"
+   ]
+  },
+  {
+   "ui": "D006031",
+   "label": "Glycosylation",
+   "semantic_types": [
+    "Natural Phenomenon or Process"
+   ],
+   "ambiguous": true,
+   "ltc": 19,
+   "pool_freq": 35,
+   "linked_via": [
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D045483",
+   "label": "Rivers",
+   "semantic_types": [
+    "Natural Phenomenon or Process"
+   ],
+   "ambiguous": true,
+   "ltc": 19,
+   "pool_freq": 33,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D005456",
+   "label": "Fluorescent Dyes",
+   "semantic_types": [
+    "Indicator, Reagent, or Diagnostic Aid"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 118,
+   "linked_via": [
+    "ErbB Receptors",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D022781",
+   "label": "Hepatocytes",
+   "semantic_types": [
+    "Cell"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 117,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Exons",
+    "Carcinogenesis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D014059",
+   "label": "Tongue",
+   "semantic_types": [
+    "Body Part, Organ, or Organ Component"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 105,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Smoking",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D003545",
+   "label": "Cysteine",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Biologically Active Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 81,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation"
+   ]
+  },
+  {
+   "ui": "D002244",
+   "label": "Carbon",
+   "semantic_types": [
+    "Element, Ion, or Isotope"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 80,
+   "linked_via": [
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D042361",
+   "label": "Mammary Glands, Human",
+   "semantic_types": [
+    "Body Part, Organ, or Organ Component"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 75,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation"
+   ]
+  },
+  {
+   "ui": "D008568",
+   "label": "Memory",
+   "semantic_types": [
+    "Mental Process"
+   ],
+   "ambiguous": true,
+   "ltc": 18,
+   "pool_freq": 67,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Cell Proliferation",
+    "Tomography",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D011944",
+   "label": "Receptors, Androgen",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Receptor"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 64,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D001775",
+   "label": "Blood Circulation",
+   "semantic_types": [
+    "Physiologic Function"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 49,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Tomography",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D003847",
+   "label": "Deoxyglucose",
+   "semantic_types": [
+    "Organic Chemical",
+    "Pharmacologic Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 48,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D001792",
+   "label": "Blood Platelets",
+   "semantic_types": [
+    "Body Part, Organ, or Organ Component",
+    "Cell"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 44,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D005770",
+   "label": "Gastrointestinal Neoplasms",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 38,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Oncogenes",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D003141",
+   "label": "Communicable Diseases",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 38,
+   "linked_via": [
+    "Smoking",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography",
+    "Phosphotransferases",
+    "Fluorescence"
+   ]
+  },
+  {
+   "ui": "D001201",
+   "label": "Ascites",
+   "semantic_types": [
+    "Finding",
+    "Pathologic Function"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 28,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Tomography",
+    "Carcinoma, Squamous Cell",
+    "Fluorescence"
+   ]
+  },
+  {
+   "ui": "D014463",
+   "label": "Ultrasonography",
+   "semantic_types": [
+    "Diagnostic Procedure"
+   ],
+   "ambiguous": true,
+   "ltc": 17,
+   "pool_freq": 142,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Lymphatic Metastasis",
+    "Oncogenes",
+    "Tomography",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D011108",
+   "label": "Polymers",
+   "semantic_types": [
+    "Biomedical or Dental Material",
+    "Chemical Viewed Structurally"
+   ],
+   "ambiguous": true,
+   "ltc": 17,
+   "pool_freq": 112,
+   "linked_via": [
+    "ErbB Receptors",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases",
+    "Fluorescence"
+   ]
+  },
+  {
+   "ui": "D050197",
+   "label": "Atherosclerosis",
+   "semantic_types": [
+    "Pathologic Function"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 97,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D012172",
+   "label": "Retinaldehyde",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Organic Chemical"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 84,
+   "linked_via": [
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Tomography",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D054198",
+   "label": "Precursor Cell Lymphoblastic Leukemia-Lymphoma",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 76,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D003924",
+   "label": "Diabetes Mellitus, Type 2",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 75,
+   "linked_via": [
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D046988",
+   "label": "Proteasome Endopeptidase Complex",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Enzyme"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 74,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D004817",
+   "label": "Epidermis",
+   "semantic_types": [
+    "Tissue"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 62,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinogenesis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases",
+    "Biopsy",
+    "Anaplastic Lymphoma Kinase"
+   ]
+  },
+  {
+   "ui": "D014779",
+   "label": "Virus Replication",
+   "semantic_types": [
+    "Organism Function"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 61,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D009101",
+   "label": "Multiple Myeloma",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 55,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D009061",
+   "label": "Mouth Mucosa",
+   "semantic_types": [
+    "Tissue"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 55,
+   "linked_via": [
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D018358",
+   "label": "Neuroendocrine Tumors",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 54,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Oncogenes",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D004487",
+   "label": "Edema",
+   "semantic_types": [
+    "Sign or Symptom"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 53,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D008841",
+   "label": "Actin Cytoskeleton",
+   "semantic_types": [
+    "Cell Component"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 49,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Exons",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Tomography",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D014197",
+   "label": "Trees",
+   "semantic_types": [
+    "Plant"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 47,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Exons",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Oncogenes",
+    "Tomography",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D007676",
+   "label": "Kidney Failure, Chronic",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 47,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Cell Proliferation",
+    "Tomography",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D007421",
+   "label": "Intestine, Small",
+   "semantic_types": [
+    "Body Part, Organ, or Organ Component"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 42,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D015658",
+   "label": "HIV Infections",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 42,
+   "linked_via": [
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Cell Proliferation",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases",
+    "Fluorescence",
+    "Anaplastic Lymphoma Kinase"
+   ]
+  },
+  {
+   "ui": "D004727",
+   "label": "Endothelium",
+   "semantic_types": [
+    "Tissue"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 41,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D000300",
+   "label": "Adoption",
+   "semantic_types": [
+    "Social Behavior"
+   ],
+   "ambiguous": true,
+   "ltc": 17,
+   "pool_freq": 41,
+   "linked_via": [
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Tomography",
+    "Fluorescence",
+    "Biopsy"
+   ]
+  },
+  {
+   "ui": "D000071182",
+   "label": "Autophagosomes",
+   "semantic_types": [
+    "Cell Component"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 40,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D004715",
+   "label": "Endometriosis",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 40,
+   "linked_via": [
+    "ErbB Receptors",
+    "Smoking",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D018307",
+   "label": "Neoplasms, Squamous Cell",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 39,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells"
+   ]
+  },
+  {
+   "ui": "D011522",
+   "label": "Protons",
+   "semantic_types": [
+    "Element, Ion, or Isotope"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 39,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Exons",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D019344",
+   "label": "Lactic Acid",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Organic Chemical"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 28,
+   "linked_via": [
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D000068878",
+   "label": "Trastuzumab",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Immunologic Factor",
+    "Pharmacologic Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 194,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Oncogenes",
+    "Biopsy"
+   ]
+  },
+  {
+   "ui": "D003695",
+   "label": "Delivery of Health Care",
+   "semantic_types": [
+    "Health Care Activity"
+   ],
+   "ambiguous": true,
+   "ltc": 16,
+   "pool_freq": 178,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Cell Proliferation",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases",
+    "Biopsy"
+   ]
+  },
+  {
+   "ui": "D012878",
+   "label": "Skin Neoplasms",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 156,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D015992",
+   "label": "Body Mass Index",
+   "semantic_types": [
+    "Finding"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 150,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Tomography",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D015444",
+   "label": "Exercise",
+   "semantic_types": [
+    "Daily or Recreational Activity",
+    "Organism Function"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 142,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Exons",
+    "Carcinogenesis",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D010599",
+   "label": "Pharmacokinetics",
+   "semantic_types": [
+    "Physiologic Function"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 121,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Tyrosine Kinase Inhibitors",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D003863",
+   "label": "Depression",
+   "semantic_types": [
+    "Mental or Behavioral Dysfunction"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 111,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Exons",
+    "Cell Proliferation",
+    "Phosphotransferases",
+    "Paraffin"
+   ]
+  },
+  {
+   "ui": "D012997",
+   "label": "Solvents",
+   "semantic_types": [
+    "Indicator, Reagent, or Diagnostic Aid"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 103,
+   "linked_via": [
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D001794",
+   "label": "Blood Pressure",
+   "semantic_types": [
+    "Finding",
+    "Organism Function"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 93,
+   "linked_via": [
+    "ErbB Receptors",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Tomography",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D010271",
+   "label": "Parasites",
+   "semantic_types": [
+    "Eukaryote"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 93,
+   "linked_via": [
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases",
+    "Fluorescence"
+   ]
+  },
+  {
+   "ui": "D004330",
+   "label": "Drosophila",
+   "semantic_types": [
+    "Eukaryote"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 88,
+   "linked_via": [
+    "ErbB Receptors",
+    "Exons",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Phosphotransferases",
+    "Fluorescence",
+    "Anaplastic Lymphoma Kinase"
+   ]
+  },
+  {
+   "ui": "D000544",
+   "label": "Alzheimer Disease",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 88,
+   "linked_via": [
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Tomography",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases",
+    "Fluorescence"
+   ]
+  },
+  {
+   "ui": "D000998",
+   "label": "Antiviral Agents",
+   "semantic_types": [
+    "Pharmacologic Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 86,
+   "linked_via": [
+    "Carcinoma, Non-Small-Cell Lung",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D008025",
+   "label": "Ligases",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Enzyme"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 67,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Exons",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D004724",
+   "label": "Endoscopy",
+   "semantic_types": [
+    "Diagnostic Procedure",
+    "Therapeutic or Preventive Procedure"
+   ],
+   "ambiguous": true,
+   "ltc": 16,
+   "pool_freq": 66,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D012559",
+   "label": "Schizophrenia",
+   "semantic_types": [
+    "Mental or Behavioral Dysfunction"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 66,
+   "linked_via": [
+    "ErbB Receptors",
+    "Smoking",
+    "Exons",
+    "Carcinogenesis",
+    "Cell Proliferation",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases",
+    "Anaplastic Lymphoma Kinase"
+   ]
+  },
+  {
+   "ui": "D011127",
+   "label": "Polyps",
+   "semantic_types": [
+    "Anatomical Abnormality"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 61,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "Oncogenes",
+    "Tomography"
+   ]
+  },
+  {
+   "ui": "D005334",
+   "label": "Fever",
+   "semantic_types": [
+    "Sign or Symptom"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 57,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Tomography",
+    "Phosphotransferases",
+    "Biopsy",
+    "Anaplastic Lymphoma Kinase"
+   ]
+  },
+  {
+   "ui": "D000092302",
+   "label": "MDA-MB-231 Cells",
+   "semantic_types": [
+    "Cell"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 57,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Carcinogenesis",
+    "Lymphatic Metastasis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes"
+   ]
+  },
+  {
+   "ui": "D008103",
+   "label": "Liver Cirrhosis",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 56,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Biopsy",
+    "Lymph Nodes"
+   ]
+  },
+  {
+   "ui": "D017930",
+   "label": "Genes, Reporter",
+   "semantic_types": [
+    "Gene or Genome"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 54,
+   "linked_via": [
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D051193",
+   "label": "Toll-Like Receptors",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Immunologic Factor",
+    "Receptor"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 51,
+   "linked_via": [
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Oncogenes",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D007238",
+   "label": "Infarction",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 50,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Exons",
+    "Cell Proliferation",
+    "Phosphotransferases",
+    "Biopsy",
+    "Lymph Nodes"
+   ]
+  },
+  {
+   "ui": "D000077150",
+   "label": "Oxaliplatin",
+   "semantic_types": [
+    "Organic Chemical",
+    "Pharmacologic Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 49,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Smoking",
+    "Tyrosine Kinase Inhibitors",
+    "Exons",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D017667",
+   "label": "Adipocytes",
+   "semantic_types": [
+    "Cell"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 44,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Smoking",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Carcinoma, Squamous Cell",
+    "Phosphotransferases"
+   ]
+  },
+  {
+   "ui": "D011868",
+   "label": "Radioisotopes",
+   "semantic_types": [
+    "Element, Ion, or Isotope"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 41,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "ErbB Receptors",
+    "Tyrosine Kinase Inhibitors",
+    "Lymphatic Metastasis",
+    "Cell Proliferation",
+    "Tomography",
+    "Phosphotransferases",
+    "Fluorescence"
+   ]
+  },
+  {
+   "ui": "D010743",
+   "label": "Phospholipids",
+   "semantic_types": [
+    "Organic Chemical"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 40,
+   "linked_via": [
+    "ErbB Receptors",
+    "Carcinoma, Non-Small-Cell Lung",
+    "Exons",
+    "Carcinogenesis",
+    "A549 Cells",
+    "Cell Proliferation",
+    "Tomography",
+    "Carcinoma, Squamous Cell"
+   ]
+  },
+  {
+   "ui": "D014785",
+   "label": "Vision, Ocular",
+   "semantic_types": [
+    "Organ or Tissue Function"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 39,
+   "linked_via": [
+    "Neoplasm Metastasis",
+    "Exons",
+    "Oncogenes",
+    "Tomography",
+    "Carcinoma, Squamous Cell",
+    "Fluorescence",
+    "Biopsy",
+    "Lymph Nodes"
+   ]
+  }
+ ]
+}

@@ -50,6 +50,28 @@ UNINFORMATIVE_TYPES = frozenset([
     # links every epidemiological literature to every other one.
     "Research Activity", "Governmental or Regulatory Activity",
     "Educational Activity", "Machine Activity",
+    # Bench technique and equipment.  Nine of the thirty bridge terms in the
+    # 2026-08-28 lung adenocarcinoma run were these - `Immunohistochemistry`,
+    # `Blotting, Western`, `In Situ Hybridization` - because every cancer paper
+    # has a methods section.  Frequency cannot separate them: `Blotting,
+    # Western` sits at 1.80% of a random sample and `Exercise` at 1.85%, so any
+    # threshold that removes the technique removes the hypothesis too.  The
+    # semantic type does separate them, cleanly.
+    "Laboratory Procedure", "Molecular Biology Research Technique",
+    "Medical Device", "Research Device", "Manufactured Object",
+    "Biomedical Occupation or Discipline",
+])
+
+# Types that hold both bridges and rubbish, so no rule settles them.
+# `Individual Behavior` covers `Smoking` and `Sedentary Behavior` alongside
+# `Achievement` and `Gender Identity` - the first two are exactly what a
+# hypothesis is made of and the last two are words that happen to be
+# descriptors.  These are the ones worth spending a model call on.
+AMBIGUOUS_TYPES = frozenset([
+    "Individual Behavior", "Social Behavior", "Mental Process",
+    "Diagnostic Procedure", "Therapeutic or Preventive Procedure",
+    "Health Care Activity", "Natural Phenomenon or Process",
+    "Biomedical or Dental Material", "Qualitative Concept",
 ])
 
 _PUNCT = re.compile(r"[^a-z0-9]+")

@@ -113,30 +113,20 @@ def concepts_in(papers):
     return seen
 
 
-def run(anchor, cutoff, n_b, a_papers, b_papers, top_n, seed, min_depth=3):
-    rng = random.Random(seed)
-    report = {"anchor": anchor, "cutoff": cutoff, "gates": GATES, "seed": seed}
+def build_pool(a_ui, a_terms, pre, n_b, a_papers, b_papers, min_depth, report):
+    """Everything up to the ranked candidate list, so it can be cached.
 
-    a_ui = concepts.load()["terms"].get(concepts.norm(anchor))
-    if not a_ui:
-        raise SystemExit(f"no MeSH concept matches {anchor!r}")
-    a_terms = concepts.query_terms(a_ui)
-    report["anchor_concept"] = {"ui": a_ui, "label": concepts.label(a_ui),
-                                "terms": a_terms}
-    print(f"A = {concepts.label(a_ui)} ({a_ui})", file=sys.stderr)
-
-    pre = date_clause(hi=cutoff)
-    a_query = f"{or_group(a_terms)} AND {pre} AND SRC:MED"
-    print(f"  fetching A corpus (<= {cutoff}) ...", file=sys.stderr)
-    a_corpus = corpus(a_query, a_papers)
+    Fetching thirty corpora takes a quarter of an hour and asks Europe PMC for
+    thirty thousand papers.  Doing that again to try a different filter is both
+    slow and rude, and it also means the two runs are not comparing the same
+    pool.
+    """
+    print(f"  fetching A corpus (<= {pre}) ...", file=sys.stderr)
+    a_corpus = corpus(f"{or_group(a_terms)} AND {pre} AND SRC:MED", a_papers)
     a_concepts = concepts_in(a_corpus)
     report["a_corpus"] = {"n_papers": len(a_corpus), "n_concepts": len(a_concepts)}
     print(f"  {len(a_corpus)} papers, {len(a_concepts)} concepts", file=sys.stderr)
 
-    # B: what the anchor's own literature talks about, most-shared first, but
-    # only concepts narrow enough to mean something.  Sorting by frequency alone
-    # returns `Neoplasms`, `Mutation`, `Therapeutics` - all true of the corpus
-    # and all useless as bridges, since they connect everything to everything.
     b_list = [(ui, n) for ui, n in a_concepts.items()
               if ui != a_ui and concepts.is_specific(ui, min_depth)
               and not concepts.is_generic(ui)
@@ -148,13 +138,9 @@ def run(anchor, cutoff, n_b, a_papers, b_papers, top_n, seed, min_depth=3):
                           "background_df": round(concepts.background_df(ui), 4)}
                          for ui, n in b_list]
 
-    # C: what B's literature talks about that the anchor's does not.  The
-    # exclusion is the whole point - a C already sitting in the A corpus is a
-    # known connection, not a gap.
     linking, pool_freq = {}, {}
     for idx, (b_ui, _) in enumerate(b_list, 1):
-        b_terms = concepts.query_terms(b_ui)
-        q = f"{or_group(b_terms)} AND {pre} AND SRC:MED"
+        q = f"{or_group(concepts.query_terms(b_ui))} AND {pre} AND SRC:MED"
         print(f"  [{idx}/{len(b_list)}] B = {concepts.label(b_ui)}", file=sys.stderr)
         try:
             b_corpus = corpus(q, b_papers)
@@ -168,12 +154,74 @@ def run(anchor, cutoff, n_b, a_papers, b_papers, top_n, seed, min_depth=3):
                 continue
             if concepts.shares_branch(a_ui, c_ui) or concepts.shares_branch(b_ui, c_ui):
                 continue
-            linking.setdefault(c_ui, set()).add(b_ui)
+            linking.setdefault(c_ui, []).append(b_ui)
             pool_freq[c_ui] = pool_freq.get(c_ui, 0) + n
         time.sleep(0.35)
+    return linking, pool_freq
+
+
+def run(anchor, cutoff, n_b, a_papers, b_papers, top_n, seed, min_depth=3,
+        cache=None, exclude=None, dump_candidates=None):
+    rng = random.Random(seed)
+    report = {"anchor": anchor, "cutoff": cutoff, "gates": GATES, "seed": seed}
+
+    a_ui = concepts.load()["terms"].get(concepts.norm(anchor))
+    if not a_ui:
+        raise SystemExit(f"no MeSH concept matches {anchor!r}")
+    a_terms = concepts.query_terms(a_ui)
+    report["anchor_concept"] = {"ui": a_ui, "label": concepts.label(a_ui),
+                                "terms": a_terms}
+    print(f"A = {concepts.label(a_ui)} ({a_ui})", file=sys.stderr)
+
+    pre = date_clause(hi=cutoff)
+    if cache and os.path.exists(cache):
+        with open(cache, encoding="utf-8") as fh:
+            saved = json.load(fh)
+        linking = {k: v for k, v in saved["linking"].items()}
+        pool_freq = saved["pool_freq"]
+        report["a_corpus"] = saved["a_corpus"]
+        report["b_terms"] = saved["b_terms"]
+        print(f"  pool loaded from {cache}", file=sys.stderr)
+    else:
+        linking, pool_freq = build_pool(a_ui, a_terms, pre, n_b, a_papers,
+                                        b_papers, min_depth, report)
+        if cache:
+            with open(cache, "w", encoding="utf-8") as fh:
+                json.dump({"linking": linking, "pool_freq": pool_freq,
+                           "a_corpus": report["a_corpus"],
+                           "b_terms": report["b_terms"]}, fh)
+
+    # An excluded concept is one a reviewer has judged not to be a hypothesis.
+    # It is dropped before ranking, not after: filtering the top twenty leaves
+    # a top twenty of six, which is not the same list as the top twenty of what
+    # was worth ranking in the first place.
+    dropped = set(exclude or [])
+    if dropped:
+        before = len(linking)
+        linking = {k: v for k, v in linking.items() if k not in dropped}
+        print(f"  excluded {before - len(linking)} reviewed concepts",
+              file=sys.stderr)
+    report["n_excluded"] = len(dropped)
 
     ranked = sorted(linking.items(), key=lambda kv: (-len(kv[1]), -pool_freq[kv[0]]))
     report["pool_size"] = len(ranked)
+
+    if dump_candidates:
+        rows = [{"ui": ui, "label": concepts.label(ui),
+                 "semantic_types": concepts.semantic_types(ui),
+                 "ambiguous": any(t in concepts.AMBIGUOUS_TYPES
+                                  for t in concepts.semantic_types(ui)),
+                 "ltc": len(bs), "pool_freq": pool_freq[ui],
+                 "linked_via": [concepts.label(b) for b in list(bs)[:8]]}
+                for ui, bs in ranked[:dump_candidates]]
+        with open(f"candidates_{anchor.replace(' ', '_')}.json", "w",
+                  encoding="utf-8") as fh:
+            json.dump({"anchor": concepts.label(a_ui), "cutoff": cutoff,
+                       "candidates": rows}, fh, ensure_ascii=False, indent=1)
+        print(f"  wrote candidates_{anchor.replace(' ', '_')}.json "
+              f"({len(rows)} rows) - review, then re-run with --exclude",
+              file=sys.stderr)
+        return report
     print(f"  candidate pool: {len(ranked)}", file=sys.stderr)
     if len(ranked) < top_n * 3:
         raise SystemExit("candidate pool too small to compare against a control")
@@ -267,13 +315,23 @@ def main():
     ap.add_argument("--b-papers", type=int, default=1000)
     ap.add_argument("--top", type=int, default=20)
     ap.add_argument("--min-depth", type=int, default=3)
+    ap.add_argument("--cache", help="reuse (or write) the corpus pool here")
+    ap.add_argument("--dump-candidates", type=int,
+                    help="write the top N candidates for review, then stop")
+    ap.add_argument("--exclude", help="JSON list of concept UIs to drop before ranking")
     ap.add_argument("--seed", type=int, default=20260828)
     ap.add_argument("--out", default="timeslice.json")
     a = ap.parse_args()
 
     started = time.time()
+    exclude = None
+    if a.exclude:
+        with open(a.exclude, encoding="utf-8") as fh:
+            exclude = json.load(fh)
     report = run(a.anchor, a.cutoff, a.n_b, a.a_papers, a.b_papers, a.top,
-                 a.seed, a.min_depth)
+                 a.seed, a.min_depth, a.cache, exclude, a.dump_candidates)
+    if a.dump_candidates:
+        return
     report["seconds"] = round(time.time() - started, 1)
     with open(a.out, "w", encoding="utf-8") as fh:
         json.dump(report, fh, ensure_ascii=False, indent=1)

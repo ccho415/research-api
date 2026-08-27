@@ -1,0 +1,2455 @@
+{
+ "anchor": "Endocrine Disruptors",
+ "cutoff": 2015,
+ "candidates": [
+  {
+   "ui": "D017770",
+   "label": "Lifting",
+   "semantic_types": [
+    "Activity"
+   ],
+   "ambiguous": false,
+   "ltc": 30,
+   "pool_freq": 149,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids"
+   ]
+  },
+  {
+   "ui": "D003116",
+   "label": "Color",
+   "semantic_types": [
+    "Natural Phenomenon or Process"
+   ],
+   "ambiguous": true,
+   "ltc": 28,
+   "pool_freq": 183,
+   "linked_via": [
+    "bisphenol A",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids",
+    "Testosterone",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D007596",
+   "label": "Joints",
+   "semantic_types": [
+    "Body Space or Junction"
+   ],
+   "ambiguous": false,
+   "ltc": 28,
+   "pool_freq": 154,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids"
+   ]
+  },
+  {
+   "ui": "D002214",
+   "label": "Capsules",
+   "semantic_types": [
+    "Biomedical or Dental Material"
+   ],
+   "ambiguous": true,
+   "ltc": 26,
+   "pool_freq": 93,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids"
+   ]
+  },
+  {
+   "ui": "D000906",
+   "label": "Antibodies",
+   "semantic_types": [
+    "Immunologic Factor"
+   ],
+   "ambiguous": false,
+   "ltc": 25,
+   "pool_freq": 211,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids"
+   ]
+  },
+  {
+   "ui": "D010770",
+   "label": "Phosphotransferases",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Enzyme"
+   ],
+   "ambiguous": false,
+   "ltc": 25,
+   "pool_freq": 189,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D027826",
+   "label": "Rosa",
+   "semantic_types": [
+    "Plant"
+   ],
+   "ambiguous": false,
+   "ltc": 25,
+   "pool_freq": 65,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids"
+   ]
+  },
+  {
+   "ui": "D013535",
+   "label": "Suspensions",
+   "semantic_types": [
+    "Biomedical or Dental Material"
+   ],
+   "ambiguous": true,
+   "ltc": 24,
+   "pool_freq": 117,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D012420",
+   "label": "Running",
+   "semantic_types": [
+    "Daily or Recreational Activity",
+    "Social Behavior"
+   ],
+   "ambiguous": true,
+   "ltc": 24,
+   "pool_freq": 64,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D001706",
+   "label": "Biopsy",
+   "semantic_types": [
+    "Diagnostic Procedure"
+   ],
+   "ambiguous": true,
+   "ltc": 23,
+   "pool_freq": 320,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D008279",
+   "label": "Magnetic Resonance Imaging",
+   "semantic_types": [
+    "Diagnostic Procedure"
+   ],
+   "ambiguous": true,
+   "ltc": 23,
+   "pool_freq": 213,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D015431",
+   "label": "Weight Loss",
+   "semantic_types": [
+    "Organism Function",
+    "Sign or Symptom"
+   ],
+   "ambiguous": false,
+   "ltc": 23,
+   "pool_freq": 170,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Steroids",
+    "Testosterone",
+    "Reproduction"
+   ]
+  },
+  {
+   "ui": "D015388",
+   "label": "Organelles",
+   "semantic_types": [
+    "Cell Component"
+   ],
+   "ambiguous": false,
+   "ltc": 22,
+   "pool_freq": 84,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D010447",
+   "label": "Peptide Hydrolases",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Enzyme"
+   ],
+   "ambiguous": false,
+   "ltc": 22,
+   "pool_freq": 59,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D014443",
+   "label": "Tyrosine",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Biologically Active Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 21,
+   "pool_freq": 101,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids"
+   ]
+  },
+  {
+   "ui": "D010808",
+   "label": "Physical Examination",
+   "semantic_types": [
+    "Diagnostic Procedure"
+   ],
+   "ambiguous": true,
+   "ltc": 21,
+   "pool_freq": 89,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Pesticides",
+    "Steroids",
+    "Testosterone",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D000469",
+   "label": "Alkaline Phosphatase",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Enzyme"
+   ],
+   "ambiguous": false,
+   "ltc": 21,
+   "pool_freq": 73,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D011110",
+   "label": "Polymorphism, Genetic",
+   "semantic_types": [
+    "Genetic Function"
+   ],
+   "ambiguous": false,
+   "ltc": 21,
+   "pool_freq": 70,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D004260",
+   "label": "DNA Repair",
+   "semantic_types": [
+    "Genetic Function"
+   ],
+   "ambiguous": false,
+   "ltc": 21,
+   "pool_freq": 61,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D000911",
+   "label": "Antibodies, Monoclonal",
+   "semantic_types": [
+    "Immunologic Factor"
+   ],
+   "ambiguous": false,
+   "ltc": 21,
+   "pool_freq": 61,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Androgens",
+    "Phthalic Acids"
+   ]
+  },
+  {
+   "ui": "D006454",
+   "label": "Hemoglobins",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Biologically Active Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 21,
+   "pool_freq": 60,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D006003",
+   "label": "Glycogen",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Organic Chemical"
+   ],
+   "ambiguous": false,
+   "ltc": 21,
+   "pool_freq": 60,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D016753",
+   "label": "Interleukin-10",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Immunologic Factor"
+   ],
+   "ambiguous": false,
+   "ltc": 21,
+   "pool_freq": 57,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D002999",
+   "label": "Clone Cells",
+   "semantic_types": [
+    "Cell"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 72,
+   "linked_via": [
+    "bisphenol A",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids",
+    "Androgens",
+    "Reproduction",
+    "Phthalic Acids",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D000096",
+   "label": "Acetone",
+   "semantic_types": [
+    "Organic Chemical"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 54,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids",
+    "Phthalic Acids"
+   ]
+  },
+  {
+   "ui": "D000090262",
+   "label": "Hunting",
+   "semantic_types": [
+    "Daily or Recreational Activity"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 50,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Steroids",
+    "Testosterone",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D059748",
+   "label": "Proteolysis",
+   "semantic_types": [
+    "Molecular Function"
+   ],
+   "ambiguous": false,
+   "ltc": 20,
+   "pool_freq": 43,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Androgens",
+    "Phthalic Acids"
+   ]
+  },
+  {
+   "ui": "D006803",
+   "label": "Human Development",
+   "semantic_types": [
+    "Mental Process",
+    "Physiologic Function"
+   ],
+   "ambiguous": true,
+   "ltc": 20,
+   "pool_freq": 32,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Testosterone",
+    "Androgens",
+    "Phthalic Acids"
+   ]
+  },
+  {
+   "ui": "D000096482",
+   "label": "Angiogenesis",
+   "semantic_types": [
+    "Physiologic Function"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 134,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D014197",
+   "label": "Trees",
+   "semantic_types": [
+    "Plant"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 112,
+   "linked_via": [
+    "Estrogens",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Testosterone",
+    "Reproduction",
+    "Fertility",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D005091",
+   "label": "Exons",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Nucleic Acid, Nucleoside, or Nucleotide"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 76,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D062407",
+   "label": "Meals",
+   "semantic_types": [
+    "Food"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 75,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Steroids",
+    "Testosterone",
+    "Reproduction"
+   ]
+  },
+  {
+   "ui": "D018925",
+   "label": "Chemokines",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Immunologic Factor"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 53,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D013909",
+   "label": "Thorax",
+   "semantic_types": [
+    "Body Location or Region"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 43,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Steroids",
+    "Testosterone",
+    "Reproduction"
+   ]
+  },
+  {
+   "ui": "D005231",
+   "label": "Fatty Acids, Unsaturated",
+   "semantic_types": [
+    "Organic Chemical"
+   ],
+   "ambiguous": false,
+   "ltc": 19,
+   "pool_freq": 41,
+   "linked_via": [
+    "Hormones",
+    "Estradiol",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids",
+    "Androgens",
+    "Reproduction",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D012275",
+   "label": "Oryza",
+   "semantic_types": [
+    "Plant"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 136,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Reproduction",
+    "Phthalic Acids",
+    "Fertility",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D034622",
+   "label": "RNA Interference",
+   "semantic_types": [
+    "Genetic Function"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 113,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D020521",
+   "label": "Stroke",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 112,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D033182",
+   "label": "Intention",
+   "semantic_types": [
+    "Mental Process"
+   ],
+   "ambiguous": true,
+   "ltc": 18,
+   "pool_freq": 86,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Pesticides",
+    "Steroids",
+    "Testosterone",
+    "Fertility",
+    "Testis",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D003376",
+   "label": "Counseling",
+   "semantic_types": [
+    "Therapeutic or Preventive Procedure"
+   ],
+   "ambiguous": true,
+   "ltc": 18,
+   "pool_freq": 82,
+   "linked_via": [
+    "Hormones",
+    "Steroids",
+    "Testosterone",
+    "Androgens",
+    "Reproduction",
+    "Phthalic Acids",
+    "Fertility",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D004175",
+   "label": "Diptera",
+   "semantic_types": [
+    "Eukaryote"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 80,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Reproduction",
+    "Fertility",
+    "Testis",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D000080463",
+   "label": "Sand",
+   "semantic_types": [
+    "Inorganic Chemical",
+    "Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 70,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Reproduction",
+    "Phthalic Acids",
+    "Fertility"
+   ]
+  },
+  {
+   "ui": "D014960",
+   "label": "X Chromosome",
+   "semantic_types": [
+    "Cell Component"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 58,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Androgens",
+    "Reproduction",
+    "Phthalic Acids",
+    "Fertility"
+   ]
+  },
+  {
+   "ui": "D059447",
+   "label": "Cell Cycle Checkpoints",
+   "semantic_types": [
+    "Cell Function"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 51,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D048049",
+   "label": "Extracellular Signal-Regulated MAP Kinases",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Enzyme"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 48,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Receptors, Estrogen",
+    "Testosterone",
+    "Androgens",
+    "Phthalic Acids"
+   ]
+  },
+  {
+   "ui": "D007473",
+   "label": "Ion Channels",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Biologically Active Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 40,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids"
+   ]
+  },
+  {
+   "ui": "D004579",
+   "label": "Electron Transport",
+   "semantic_types": [
+    "Molecular Function"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 34,
+   "linked_via": [
+    "bisphenol A",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Testosterone",
+    "Reproduction",
+    "Phthalic Acids"
+   ]
+  },
+  {
+   "ui": "D003470",
+   "label": "Culture Media",
+   "semantic_types": [
+    "Indicator, Reagent, or Diagnostic Aid"
+   ],
+   "ambiguous": false,
+   "ltc": 18,
+   "pool_freq": 30,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Reproduction"
+   ]
+  },
+  {
+   "ui": "D010758",
+   "label": "Phosphorus",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Element, Ion, or Isotope"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 178,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Testosterone",
+    "Androgens",
+    "Reproduction",
+    "Fertility"
+   ]
+  },
+  {
+   "ui": "D004396",
+   "label": "Coloring Agents",
+   "semantic_types": [
+    "Indicator, Reagent, or Diagnostic Aid"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 93,
+   "linked_via": [
+    "bisphenol A",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Testosterone",
+    "Reproduction",
+    "Phthalic Acids",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D005557",
+   "label": "Formaldehyde",
+   "semantic_types": [
+    "Hazardous or Poisonous Substance",
+    "Organic Chemical"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 75,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Reproduction",
+    "Phthalic Acids"
+   ]
+  },
+  {
+   "ui": "D009130",
+   "label": "Muscle, Smooth",
+   "semantic_types": [
+    "Tissue"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 72,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D009622",
+   "label": "Noise",
+   "semantic_types": [
+    "Phenomenon or Process"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 68,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Steroids",
+    "Reproduction",
+    "Phthalic Acids",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D014807",
+   "label": "Vitamin D",
+   "semantic_types": [
+    "Hormone",
+    "Organic Chemical"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 68,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Testosterone",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D019076",
+   "label": "Transgenes",
+   "semantic_types": [
+    "Gene or Genome"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 61,
+   "linked_via": [
+    "Estrogens",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Androgens",
+    "Reproduction",
+    "Fertility"
+   ]
+  },
+  {
+   "ui": "D008938",
+   "label": "Mitosis",
+   "semantic_types": [
+    "Cell Function"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 57,
+   "linked_via": [
+    "Estrogens",
+    "Estradiol",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids",
+    "Testosterone",
+    "Androgens",
+    "Reproduction"
+   ]
+  },
+  {
+   "ui": "D008076",
+   "label": "Cholesterol, HDL",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Organic Chemical"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 56,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Testosterone",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D011962",
+   "label": "Receptors, FSH",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Receptor"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 52,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Receptors, Estrogen",
+    "Testosterone",
+    "Androgens",
+    "Reproduction"
+   ]
+  },
+  {
+   "ui": "C098401",
+   "label": "cyclo(Arg-Pro)",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Pharmacologic Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 46,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Steroids",
+    "Testosterone",
+    "Reproduction"
+   ]
+  },
+  {
+   "ui": "D013395",
+   "label": "Sucrose",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Organic Chemical"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 45,
+   "linked_via": [
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Testosterone",
+    "Androgens",
+    "Fertility",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D013927",
+   "label": "Thrombosis",
+   "semantic_types": [
+    "Pathologic Function"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 42,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D001120",
+   "label": "Arginine",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Biologically Active Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 40,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Testosterone",
+    "Androgens",
+    "Reproduction"
+   ]
+  },
+  {
+   "ui": "D013217",
+   "label": "Starvation",
+   "semantic_types": [
+    "Pathologic Function",
+    "Sign or Symptom"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 37,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Estradiol",
+    "Testosterone",
+    "Androgens",
+    "Reproduction",
+    "Fertility",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D012694",
+   "label": "Serine",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Biologically Active Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 35,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Androgens",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D002531",
+   "label": "Cerebellum",
+   "semantic_types": [
+    "Body Part, Organ, or Organ Component"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 34,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D008274",
+   "label": "Magnesium",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Element, Ion, or Isotope"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 32,
+   "linked_via": [
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Testosterone",
+    "Reproduction",
+    "Fertility",
+    "Obesity",
+    "Pregnancy"
+   ]
+  },
+  {
+   "ui": "D017097",
+   "label": "Electric Impedance",
+   "semantic_types": [
+    "Physiologic Function"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 30,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Steroids",
+    "Testosterone",
+    "Phthalic Acids",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D006579",
+   "label": "Heterozygote",
+   "semantic_types": [
+    "Organism"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 30,
+   "linked_via": [
+    "Hormones",
+    "Estradiol",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Testosterone",
+    "Androgens",
+    "Reproduction",
+    "Fertility"
+   ]
+  },
+  {
+   "ui": "D000200",
+   "label": "Action Potentials",
+   "semantic_types": [
+    "Cell Function"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 28,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids"
+   ]
+  },
+  {
+   "ui": "D011522",
+   "label": "Protons",
+   "semantic_types": [
+    "Element, Ion, or Isotope"
+   ],
+   "ambiguous": false,
+   "ltc": 17,
+   "pool_freq": 27,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Steroids",
+    "Phthalic Acids",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D000464",
+   "label": "Alginates",
+   "semantic_types": [
+    "Biomedical or Dental Material",
+    "Organic Chemical",
+    "Pharmacologic Substance"
+   ],
+   "ambiguous": true,
+   "ltc": 17,
+   "pool_freq": 25,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Testosterone",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D014463",
+   "label": "Ultrasonography",
+   "semantic_types": [
+    "Diagnostic Procedure"
+   ],
+   "ambiguous": true,
+   "ltc": 16,
+   "pool_freq": 177,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D000544",
+   "label": "Alzheimer Disease",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 99,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D007511",
+   "label": "Ischemia",
+   "semantic_types": [
+    "Pathologic Function"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 91,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D014054",
+   "label": "Tomography",
+   "semantic_types": [
+    "Diagnostic Procedure"
+   ],
+   "ambiguous": true,
+   "ltc": 16,
+   "pool_freq": 88,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Pesticides",
+    "Steroids",
+    "Testosterone",
+    "Androgens",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D004331",
+   "label": "Drosophila melanogaster",
+   "semantic_types": [
+    "Eukaryote"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 86,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Environmental Pollutants",
+    "Steroids",
+    "Reproduction",
+    "Fertility",
+    "Testis",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D066246",
+   "label": "ErbB Receptors",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Enzyme",
+    "Receptor"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 80,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D004727",
+   "label": "Endothelium",
+   "semantic_types": [
+    "Tissue"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 66,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D000005",
+   "label": "Abdomen",
+   "semantic_types": [
+    "Body Location or Region"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 61,
+   "linked_via": [
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Steroids",
+    "Testosterone",
+    "Androgens",
+    "Reproduction",
+    "Fertility"
+   ]
+  },
+  {
+   "ui": "D006760",
+   "label": "Hospitalization",
+   "semantic_types": [
+    "Health Care Activity"
+   ],
+   "ambiguous": true,
+   "ltc": 16,
+   "pool_freq": 54,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Steroids",
+    "Testosterone",
+    "Phthalic Acids",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D005285",
+   "label": "Fermentation",
+   "semantic_types": [
+    "Molecular Function"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 54,
+   "linked_via": [
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Steroids",
+    "Reproduction",
+    "Phthalic Acids",
+    "Fertility",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D011974",
+   "label": "Receptors, LH",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Receptor"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 49,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Estradiol",
+    "Receptors, Estrogen",
+    "Testosterone",
+    "Androgens",
+    "Reproduction",
+    "Phthalic Acids"
+   ]
+  },
+  {
+   "ui": "D002857",
+   "label": "Chromium",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Element, Ion, or Isotope",
+    "Hazardous or Poisonous Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 46,
+   "linked_via": [
+    "bisphenol A",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Reproduction",
+    "Phthalic Acids",
+    "Fertility",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D001792",
+   "label": "Blood Platelets",
+   "semantic_types": [
+    "Body Part, Organ, or Organ Component",
+    "Cell"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 46,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D008545",
+   "label": "Melanoma",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 45,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Androgens",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D007438",
+   "label": "Introns",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Nucleic Acid, Nucleoside, or Nucleotide"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 44,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D000595",
+   "label": "Amino Acid Sequence",
+   "semantic_types": [
+    "Amino Acid Sequence"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 39,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Androgens",
+    "Phthalic Acids",
+    "Fertility"
+   ]
+  },
+  {
+   "ui": "D010744",
+   "label": "Phosphoric Monoester Hydrolases",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Enzyme"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 38,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Testosterone",
+    "Androgens",
+    "Reproduction"
+   ]
+  },
+  {
+   "ui": "D008598",
+   "label": "Menstruation",
+   "semantic_types": [
+    "Organism Function"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 35,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Steroids",
+    "Testosterone",
+    "Androgens",
+    "Reproduction"
+   ]
+  },
+  {
+   "ui": "D018031",
+   "label": "Connexin 43",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Biologically Active Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 33,
+   "linked_via": [
+    "bisphenol A",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Testosterone",
+    "Androgens",
+    "Phthalic Acids",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D051546",
+   "label": "Cyclooxygenase 2",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Enzyme"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 32,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Estradiol",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Testis",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D011014",
+   "label": "Pneumonia",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 32,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Steroids",
+    "Testosterone",
+    "Reproduction"
+   ]
+  },
+  {
+   "ui": "D008845",
+   "label": "Microinjections",
+   "semantic_types": [
+    "Therapeutic or Preventive Procedure"
+   ],
+   "ambiguous": true,
+   "ltc": 16,
+   "pool_freq": 31,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Steroids",
+    "Testosterone",
+    "Androgens",
+    "Reproduction",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D012084",
+   "label": "Renin-Angiotensin System",
+   "semantic_types": [
+    "Body System"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 30,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Androgens",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D013950",
+   "label": "Thymus Gland",
+   "semantic_types": [
+    "Body Part, Organ, or Organ Component"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 27,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D014810",
+   "label": "Vitamin E",
+   "semantic_types": [
+    "Organic Chemical",
+    "Pharmacologic Substance",
+    "Vitamin"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 26,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Reproduction",
+    "Fertility",
+    "Testis",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D010946",
+   "label": "Plants, Medicinal",
+   "semantic_types": [
+    "Plant"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 21,
+   "linked_via": [
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Reproduction",
+    "Phthalic Acids",
+    "Fertility"
+   ]
+  },
+  {
+   "ui": "D003681",
+   "label": "Dehydration",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 16,
+   "pool_freq": 20,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Pesticides",
+    "Steroids",
+    "Testosterone",
+    "Androgens",
+    "Reproduction",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D005247",
+   "label": "Feeding Behavior",
+   "semantic_types": [
+    "Individual Behavior",
+    "Physiologic Function"
+   ],
+   "ambiguous": true,
+   "ltc": 15,
+   "pool_freq": 123,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Testosterone",
+    "Reproduction"
+   ]
+  },
+  {
+   "ui": "D008198",
+   "label": "Lymph Nodes",
+   "semantic_types": [
+    "Body Part, Organ, or Organ Component"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 97,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Estradiol",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Androgens",
+    "Phthalic Acids",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D064751",
+   "label": "Ammonium Compounds",
+   "semantic_types": [
+    "Inorganic Chemical"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 96,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Steroids",
+    "Phthalic Acids",
+    "Fertility",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D000641",
+   "label": "Ammonia",
+   "semantic_types": [
+    "Biologically Active Substance",
+    "Inorganic Chemical"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 93,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Reproduction",
+    "Phthalic Acids",
+    "Fertility"
+   ]
+  },
+  {
+   "ui": "D016640",
+   "label": "Diabetes, Gestational",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 87,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Reproduction"
+   ]
+  },
+  {
+   "ui": "D000069463",
+   "label": "Olive Oil",
+   "semantic_types": [
+    "Food",
+    "Organic Chemical"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 56,
+   "linked_via": [
+    "bisphenol A",
+    "Estradiol",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Testosterone",
+    "Phthalic Acids",
+    "Testis",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D009203",
+   "label": "Myocardial Infarction",
+   "semantic_types": [
+    "Disease or Syndrome"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 53,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone"
+   ]
+  },
+  {
+   "ui": "D008175",
+   "label": "Lung Neoplasms",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 52,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Steroids",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D059630",
+   "label": "Mesenchymal Stem Cells",
+   "semantic_types": [
+    "Cell"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 51,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Estradiol",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Androgens",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D014680",
+   "label": "Veins",
+   "semantic_types": [
+    "Body Part, Organ, or Organ Component"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 49,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Estradiol",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Androgens",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D019001",
+   "label": "Nitric Oxide Synthase",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Enzyme"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 49,
+   "linked_via": [
+    "bisphenol A",
+    "Estrogens",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Testosterone",
+    "Androgens"
+   ]
+  },
+  {
+   "ui": "D014887",
+   "label": "Weather",
+   "semantic_types": [
+    "Natural Phenomenon or Process"
+   ],
+   "ambiguous": true,
+   "ltc": 15,
+   "pool_freq": 43,
+   "linked_via": [
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Testosterone",
+    "Reproduction",
+    "Phthalic Acids",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D000236",
+   "label": "Adenoma",
+   "semantic_types": [
+    "Neoplastic Process"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 42,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Androgens",
+    "Phthalic Acids",
+    "Testis",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D025801",
+   "label": "Ubiquitin",
+   "semantic_types": [
+    "Amino Acid, Peptide, or Protein",
+    "Biologically Active Substance"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 41,
+   "linked_via": [
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Pesticides",
+    "Androgens",
+    "Testis",
+    "Obesity",
+    "Diethylhexyl Phthalate",
+    "phthalic acid"
+   ]
+  },
+  {
+   "ui": "D005819",
+   "label": "Genetic Markers",
+   "semantic_types": [
+    "Laboratory or Test Result",
+    "Sign or Symptom"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 37,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Androgens",
+    "Reproduction",
+    "Fertility",
+    "nonylphenol",
+    "Obesity",
+    "Food"
+   ]
+  },
+  {
+   "ui": "D005269",
+   "label": "Femur",
+   "semantic_types": [
+    "Body Part, Organ, or Organ Component"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 37,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Estradiol",
+    "Steroids",
+    "Testosterone",
+    "Phthalic Acids",
+    "Fertility",
+    "Pregnancy"
+   ]
+  },
+  {
+   "ui": "D001205",
+   "label": "Ascorbic Acid",
+   "semantic_types": [
+    "Organic Chemical",
+    "Pharmacologic Substance",
+    "Vitamin"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 36,
+   "linked_via": [
+    "bisphenol A",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Phthalic Acids",
+    "Testis",
+    "nonylphenol",
+    "Obesity"
+   ]
+  },
+  {
+   "ui": "D012769",
+   "label": "Shock",
+   "semantic_types": [
+    "Finding",
+    "Pathologic Function"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 36,
+   "linked_via": [
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Testosterone",
+    "Reproduction",
+    "Phthalic Acids"
+   ]
+  },
+  {
+   "ui": "D004548",
+   "label": "Elasticity",
+   "semantic_types": [
+    "Natural Phenomenon or Process"
+   ],
+   "ambiguous": true,
+   "ltc": 15,
+   "pool_freq": 35,
+   "linked_via": [
+    "Estrogens",
+    "Estradiol",
+    "Receptors, Estrogen",
+    "Testosterone",
+    "Androgens",
+    "Phthalic Acids",
+    "Fertility",
+    "Testis"
+   ]
+  },
+  {
+   "ui": "D016615",
+   "label": "Telomere",
+   "semantic_types": [
+    "Cell Component"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 35,
+   "linked_via": [
+    "Estrogens",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Testosterone",
+    "Androgens",
+    "Reproduction",
+    "Fertility",
+    "Obesity"
+   ]
+  },
+  {
+   "ui": "D005456",
+   "label": "Fluorescent Dyes",
+   "semantic_types": [
+    "Indicator, Reagent, or Diagnostic Aid"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 33,
+   "linked_via": [
+    "bisphenol A",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Pesticides",
+    "Steroids",
+    "Testosterone",
+    "Androgens",
+    "nonylphenol"
+   ]
+  },
+  {
+   "ui": "D009092",
+   "label": "Mucous Membrane",
+   "semantic_types": [
+    "Tissue"
+   ],
+   "ambiguous": false,
+   "ltc": 15,
+   "pool_freq": 31,
+   "linked_via": [
+    "Estrogens",
+    "Hormones",
+    "Estradiol",
+    "Environmental Pollutants",
+    "Receptors, Estrogen",
+    "Steroids",
+    "Androgens",
+    "Reproduction"
+   ]
+  }
+ ]
+}
