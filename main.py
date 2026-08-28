@@ -278,6 +278,33 @@ class SaveDirectionsIn(BaseModel):
     cutoff: Optional[int] = None
 
 
+@app.get("/compute/projects")
+def projects_list(limit: int = 50, x_api_key: Optional[str] = Header(None)):
+    """Projects with the counts that tell them apart.
+
+    Nothing could be pointed at a project before this: the ids are uuids, and
+    choosing between uuids from memory is not a thing to ask of a person or a
+    workflow. The counts are what make a row identifiable.
+    """
+    check_key(x_api_key)
+    import db
+    try:
+        return db.list_projects(limit)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/projects/{project_id}/runs")
+def project_runs(project_id: str, limit: int = 50,
+                 x_api_key: Optional[str] = Header(None)):
+    check_key(x_api_key)
+    import db
+    try:
+        return db.list_runs(project_id, limit)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.get("/compute/ideas")
 def ideas_list(project_id: Optional[str] = None, run_id: Optional[str] = None,
                status: Optional[str] = None, limit: int = 200,

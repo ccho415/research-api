@@ -827,3 +827,52 @@ def get_harvest(harvest_id=None, project_id=None, include_result=True):
         if d.get(k) is not None:
             d[k] = d[k].isoformat()
     return d
+
+
+def list_projects(limit=50):
+    """Projects with enough counts to tell them apart.
+
+    Needed before anything can be pointed at a project: ids are uuids, and
+    picking the right one from a list of uuids is not something a person or a
+    workflow should be asked to do from memory. The counts are what make the
+    row identifiable - which project has the literature, which has the ideas.
+    """
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT p.id, p.title, p.topic, p.status, p.created_at,"
+            "  (SELECT count(*) FROM run r WHERE r.project_id = p.id) AS n_runs,"
+            "  (SELECT count(DISTINCT h.paper_id) FROM search_query q"
+            "     JOIN search_hit h ON h.search_query_id = q.id"
+            "     JOIN run r2 ON r2.id = q.run_id"
+            "    WHERE r2.project_id = p.id) AS n_papers,"
+            "  (SELECT count(*) FROM idea i WHERE i.project_id = p.id) AS n_ideas "
+            "FROM project p ORDER BY p.created_at DESC LIMIT %s", (int(limit),))
+        rows = []
+        for r in cur.fetchall():
+            d = dict(r)
+            d["id"] = str(d["id"])
+            if d.get("created_at") is not None:
+                d["created_at"] = d["created_at"].isoformat()
+            rows.append(d)
+    return {"n": len(rows), "projects": rows}
+
+
+def list_runs(project_id, limit=50):
+    """Runs of a project, newest first, with what each produced."""
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT r.id, r.stage, r.status, r.started_at, r.finished_at,"
+            "  (SELECT count(*) FROM search_query q WHERE q.run_id = r.id) AS n_queries,"
+            "  (SELECT count(*) FROM novelty_check n WHERE n.run_id = r.id) AS n_checked "
+            "FROM run r WHERE r.project_id = %s "
+            "ORDER BY r.started_at DESC NULLS LAST LIMIT %s",
+            (project_id, int(limit)))
+        rows = []
+        for r in cur.fetchall():
+            d = dict(r)
+            d["id"] = str(d["id"])
+            for k in ("started_at", "finished_at"):
+                if d.get(k) is not None:
+                    d[k] = d[k].isoformat()
+            rows.append(d)
+    return {"project_id": project_id, "n": len(rows), "runs": rows}
