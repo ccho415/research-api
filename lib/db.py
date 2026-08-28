@@ -458,6 +458,16 @@ def save_directions(directions, topic=None, project_id=None, run_id=None, cutoff
                 statement = (d.get("direction") or "").strip()
                 if not statement:
                     continue
+
+                # The title is the terms, not the opening of the statement.
+                # triage.idea_text concatenates title and statement before
+                # comparing ideas, so a title that is a prefix counts its own
+                # words twice - and the words at the front of these are the
+                # question stem, so two directions would score as near
+                # duplicates for sharing "What is the relationship between".
+                slots = d.get("term_groups") or d.get("groups") or []
+                label = " x ".join(" / ".join(str(t) for t in g) for g in slots if g)
+                title = label[:200] or statement[:200]
                 cur.execute(
                     "INSERT INTO idea (project_id, code, title, statement, axis,"
                     "                  origin, grounding, why_matters, status) "
@@ -465,7 +475,7 @@ def save_directions(directions, topic=None, project_id=None, run_id=None, cutoff
                     "RETURNING id",
                     (project_id,
                      None if d.get("rank") is None else str(d.get("rank")),
-                     statement[:200], statement,
+                     title, statement,
                      psycopg.types.json.Jsonb({
                          "built_from": d.get("built_from"),
                          "search_terms": d.get("search_terms"),
