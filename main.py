@@ -212,6 +212,32 @@ def search_chain(body: ChainIn, x_api_key: Optional[str] = Header(None)):
 
 
 # --------------------------------------------------------------------------
+# verification
+# --------------------------------------------------------------------------
+class VerifyIn(BaseModel):
+    directions: List[Dict[str, Any]]
+    cutoff: int = 2015
+
+
+@app.post("/compute/verify/directions")
+def verify_directions(body: VerifyIn, x_api_key: Optional[str] = Header(None)):
+    """Count the papers behind each proposed direction rather than asking.
+
+    Whether something has been done is a matter of record, so it is settled
+    against the record.  The model that proposed these directions is forbidden
+    from claiming novelty precisely because this endpoint exists.
+    """
+    check_key(x_api_key)
+    if not body.directions:
+        raise HTTPException(400, "need at least 1 direction")
+    import verify
+    try:
+        return verify.verify(body.directions, body.cutoff)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+# --------------------------------------------------------------------------
 # triage
 # --------------------------------------------------------------------------
 class DedupIn(BaseModel):
