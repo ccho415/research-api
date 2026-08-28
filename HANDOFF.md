@@ -422,6 +422,16 @@ elo     順序翻轉不一致率 0.0（確定性裁判下的預期值），排�
 - 人工同義詞表用拼寫當鍵 → 已改用 MeSH UI。
 - LLM 回覆截斷整批丟棄 → 已改成逐物件搶救（堆疊追蹤任何深度）。
 - `addNode` 丟掉 `executeOnce` → 已用 `setNodeSettings` 補齊並確認。
+- `/compute/triage/pairs` 把錨點等級回給呼叫端 → **已移除**。回應現在只有一個
+  `competitors`（id → 文字），錨點與方向長得一模一樣。不要為了「方便組提示詞」加回去。
+- 賽程預設判準是五條無序的 `contribution / novelty / expected effectiveness /
+  clarity / feasibility` → 已改成字典序四條 `contribution / novelty /
+  conclusiveness / feasibility`。**`clarity` 不准加回來**：寫得漂亮的弱方向會贏過
+  寫得粗的強方向，而句子怎麼寫不是研究的性質。
+- `order_flip_rate` 的分母算了只判過一次的配對（那種配對結構上不可能翻） →
+  已改成只算兩個順序都判過的配對。分母灌水會讓有位置偏誤的裁判看起來正常。
+- 只有單邊等級的錨點也會被標「between the anchor bands」 → 已改成回 `null`
+  加一句說明。沒有下界卻宣稱落在區間內，跟 verdict 斷言查詢沒確立的事是同一種錯。
 
 ## 🔒 不可妥協的規則
 
