@@ -270,6 +270,39 @@ def verify_directions(body: VerifyIn, x_api_key: Optional[str] = Header(None)):
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+class SaveDirectionsIn(BaseModel):
+    directions: List[Dict[str, Any]]
+    topic: Optional[str] = None
+    project_id: Optional[str] = None
+    run_id: Optional[str] = None
+    cutoff: Optional[int] = None
+
+
+@app.post("/compute/ideas/save")
+def ideas_save(body: SaveDirectionsIn, x_api_key: Optional[str] = Header(None)):
+    """Store the directions and the record's answer about each one.
+
+    An n8n execution is a transcript rather than a record: it expires, it
+    cannot be queried, and the whole purpose of the check is to be read by a
+    person afterwards. The caveats travel on the row itself because whoever
+    reads it later will not have the experiment write-up open, and the verdict
+    on its own reads far more confidently than its evidence deserves.
+    """
+    check_key(x_api_key)
+    if not body.directions:
+        raise HTTPException(400, "need at least 1 direction")
+    if not (body.topic or body.project_id):
+        raise HTTPException(400, "need either topic or project_id")
+    import db
+    try:
+        return db.save_directions(body.directions, body.topic, body.project_id,
+                                  body.run_id, body.cutoff)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 # --------------------------------------------------------------------------
 # triage
 # --------------------------------------------------------------------------

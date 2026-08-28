@@ -356,3 +356,150 @@ def corpus_stats():
             "       (SELECT count(*) FROM paper WHERE doi IS NULL AND pmid IS NULL)"
             "         AS papers_without_identifier")
         return dict(cur.fetchone())
+
+
+# The schema's vocabulary for a novelty verdict is coarser than the one the
+# check produces, because the check reports how it reached an answer as well as
+# what the answer was.  The mapping is therefore lossy, and the original travels
+# intact in `rounds` so nothing is lost by storing it.
+_NOVELTY = {"ALREADY DONE": "scooped", "PURSUED SINCE": "scooped"}
+
+# Verdicts that are not verdicts: the check declined to rule.  A null is the
+# honest record of that, where any of the four schema words would assert
+# something about the question that was never established.
+_NO_RULING = ("TERM TOO RARE", "NO TERMS", "SINGLE GROUP", "CHECK FAILED")
+
+
+def _novelty_verdict(row):
+    v = row.get("verdict")
+    if v in _NOVELTY:
+        return _NOVELTY[v]
+    if v == "STILL OPEN":
+        return "adjacent" if row.get("zone") == "ADJACENT" else "no_prior_art"
+    return None
+
+
+def _coverage_limits(row):
+    """What the reader of this row has to know before trusting its verdict.
+
+    Every number here was measured on 2026-08-28 and is written up in
+    docs/experiments/2026-08-28-verify-directions-control.md.  It is repeated on
+    the row because whoever reads a stored idea a year from now will not have
+    that document open, and the verdict alone reads far more confidently than
+    the evidence behind it deserves.
+    """
+    notes = []
+    if row.get("verdict") in _NO_RULING:
+        notes.append("no ruling: " + str(row.get("why") or row.get("verdict")))
+    if len(row.get("groups") or row.get("term_groups") or []) >= 3:
+        notes.append("three or more slots ANDed as exact phrases; directions of this "
+                     "shape were pursued at 6% against 28% for two-slot ones, so a "
+                     "not-done answer here is weaker than the same answer on two")
+    if row.get("zone") == "NEVER MEET":
+        notes.append("concepts never co-mentioned before the cutoff; none of the 28 "
+                     "directions in this zone were pursued afterwards, which reads as "
+                     "unrelated terms rather than an untouched question")
+    # Only where `adjacent` is the verdict being relied on. Once the record has
+    # already answered - scooped - what the zone would have hinted is moot, and
+    # repeating it there buries the caveat that matters under one that does not.
+    if row.get("zone") == "ADJACENT" and row.get("verdict") == "STILL OPEN":
+        notes.append("adjacent means these concepts are being written about together, "
+                     "not that this is a good question; random recombinations of the "
+                     "same words land here more often than reasoned ones")
+    if row.get("co_mentions_before") is not None:
+        notes.append("co-mention counted in the open-access subset only")
+    return " | ".join(notes) or None
+
+
+def save_directions(directions, topic=None, project_id=None, run_id=None, cutoff=None):
+    """Store the directions and what the record said about each of them.
+
+    Written here rather than left in the workflow log because an n8n execution
+    is a transcript, not a record: it expires, it is not queryable, and the
+    whole point of the check is to be read by a person later.
+
+    Re-running the same material deliberately produces new rows rather than
+    updating old ones.  The model returns different directions every time, so
+    two runs of one topic are two observations, and collapsing them would throw
+    away the variation that says how stable the output is.
+    """
+    if not directions:
+        raise ValueError("no directions to save")
+
+    with connect() as conn:
+        with conn.cursor() as cur:
+            if not project_id:
+                if not topic:
+                    raise ValueError("need either project_id or topic")
+                cur.execute(
+                    "SELECT id FROM project"
+                    " WHERE lower(regexp_replace(topic, '\\s+', ' ', 'g'))"
+                    "     = lower(regexp_replace(%s, '\\s+', ' ', 'g'))"
+                    " ORDER BY created_at LIMIT 1", (topic,))
+                row = cur.fetchone()
+                if row:
+                    project_id = row["id"]
+                else:
+                    cur.execute(
+                        "INSERT INTO project (title, topic, status) "
+                        "VALUES (%s, %s, %s) RETURNING id",
+                        (topic[:200], topic, "ideation"))
+                    project_id = cur.fetchone()["id"]
+
+            if not run_id:
+                cur.execute(
+                    "INSERT INTO run (project_id, stage, status, started_at, params) "
+                    "VALUES (%s, 'ideation', 'running', now(), %s) RETURNING id",
+                    (project_id, psycopg.types.json.Jsonb({"cutoff": cutoff})))
+                run_id = cur.fetchone()["id"]
+
+            saved = []
+            for d in directions:
+                statement = (d.get("direction") or "").strip()
+                if not statement:
+                    continue
+                cur.execute(
+                    "INSERT INTO idea (project_id, code, title, statement, axis,"
+                    "                  origin, grounding, why_matters, status) "
+                    "VALUES (%s, %s, %s, %s, 'topic', 'generated', %s, %s, 'candidate') "
+                    "RETURNING id",
+                    (project_id,
+                     None if d.get("rank") is None else str(d.get("rank")),
+                     statement[:200], statement,
+                     psycopg.types.json.Jsonb({
+                         "built_from": d.get("built_from"),
+                         "search_terms": d.get("search_terms"),
+                         "term_groups": d.get("term_groups") or d.get("groups"),
+                         "weak_terms": d.get("weak_terms") or None,
+                         "grouping_applied": d.get("grouping_applied"),
+                     }),
+                     d.get("why_now")))
+                idea_id = cur.fetchone()["id"]
+
+                cur.execute(
+                    "INSERT INTO novelty_check (idea_id, run_id, verdict, rounds,"
+                    "                           coverage_limits) "
+                    "VALUES (%s, %s, %s, %s, %s)",
+                    (idea_id, run_id, _novelty_verdict(d),
+                     psycopg.types.json.Jsonb({
+                         "check_verdict": d.get("verdict"),
+                         "zone": d.get("zone"),
+                         "cutoff": cutoff,
+                         "query": d.get("query"),
+                         "papers_before": d.get("papers_before"),
+                         "papers_after": d.get("papers_after"),
+                         "co_mentions_before": d.get("co_mentions_before"),
+                         "term_papers": d.get("term_papers"),
+                         "rare_terms": d.get("rare_terms"),
+                     }),
+                     _coverage_limits(d)))
+                saved.append({"idea_id": str(idea_id), "code": d.get("rank"),
+                              "verdict": _novelty_verdict(d),
+                              "check_verdict": d.get("verdict")})
+
+            cur.execute("UPDATE run SET status = 'done', finished_at = now() "
+                        "WHERE id = %s", (run_id,))
+        conn.commit()
+
+    return {"project_id": str(project_id), "run_id": str(run_id),
+            "n_saved": len(saved), "ideas": saved}
