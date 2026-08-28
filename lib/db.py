@@ -687,3 +687,143 @@ def list_dedup_pairs(run_id, undecided_only=False, limit=200):
     return {"run_id": run_id, "n": len(out),
             "n_undecided": sum(1 for x in out if x["verdict"] is None),
             "pairs": out}
+
+
+def papers_for(project_id=None, source_run_id=None, limit=300):
+    """The papers W2 already found, newest search first.
+
+    Reached through the searches that returned them rather than by re-searching:
+    that is the whole point of the cache, and the harvest was previously paying
+    Europe PMC a second time for records already sitting in this table.
+    """
+    where, args = [], []
+    if source_run_id:
+        where.append("q.run_id = %s")
+        args.append(source_run_id)
+    if project_id:
+        where.append("r.project_id = %s")
+        args.append(project_id)
+    if not where:
+        raise ValueError("need project_id or source_run_id")
+    args.append(int(limit))
+
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT DISTINCT p.id, p.pmid, p.pmcid, p.doi, p.title, p.year "
+            "FROM paper p "
+            "JOIN search_hit h ON h.paper_id = p.id "
+            "JOIN search_query q ON q.id = h.search_query_id "
+            "LEFT JOIN run r ON r.id = q.run_id "
+            f"WHERE {' AND '.join(where)} "
+            "ORDER BY p.year DESC NULLS LAST "
+            "LIMIT %s", args)
+        return [dict(r, id=str(r["id"])) for r in cur.fetchall()]
+
+
+def cached_sections(paper_ids, kind="discussion"):
+    """Which of these papers have already been fetched, and what came back.
+
+    A NULL content is a cached answer, not a missing one: it records that the
+    paper was looked up and has no retrievable full text. Without that
+    distinction every harvest re-fetches the same papers that will never have
+    full text, which is most of them.
+    """
+    if not paper_ids:
+        return {}
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute("SELECT paper_id, content FROM paper_section "
+                    "WHERE kind = %s AND paper_id = ANY(%s)",
+                    (kind, list(paper_ids)))
+        return {str(r["paper_id"]): r["content"] for r in cur.fetchall()}
+
+
+def save_section(paper_id, kind, content):
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO paper_section (paper_id, kind, content) "
+                "VALUES (%s, %s, %s) "
+                "ON CONFLICT (paper_id, kind) DO UPDATE "
+                "SET content = EXCLUDED.content, fetched_at = now()",
+                (paper_id, kind, content))
+        conn.commit()
+
+
+def save_pmcid(paper_id, pmcid):
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE paper SET pmcid = %s WHERE id = %s AND pmcid IS NULL",
+                        (pmcid, paper_id))
+        conn.commit()
+
+
+def start_harvest(project_id=None, source_run_id=None):
+    with connect() as conn:
+        with conn.cursor() as cur:
+            if not project_id and source_run_id:
+                cur.execute("SELECT project_id FROM run WHERE id = %s", (source_run_id,))
+                row = cur.fetchone()
+                project_id = row["project_id"] if row else None
+            cur.execute(
+                "INSERT INTO run (project_id, stage, status, started_at) "
+                "VALUES (%s, 'harvest', 'running', now()) RETURNING id", (project_id,))
+            run_id = cur.fetchone()["id"]
+            cur.execute(
+                "INSERT INTO harvest (project_id, run_id, source_run_id, status) "
+                "VALUES (%s, %s, %s, 'running') RETURNING id",
+                (project_id, run_id, source_run_id))
+            harvest_id = cur.fetchone()["id"]
+        conn.commit()
+    return {"harvest_id": str(harvest_id), "run_id": str(run_id),
+            "project_id": None if project_id is None else str(project_id)}
+
+
+def finish_harvest(harvest_id, result=None, counts=None, error=None):
+    counts = counts or {}
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE harvest SET status = %s, result = %s, error = %s,"
+                "  n_papers = %s, n_with_fulltext = %s, n_gap_sentences = %s,"
+                "  n_concepts = %s, finished_at = now() "
+                "WHERE id = %s RETURNING run_id",
+                ("failed" if error else "done",
+                 psycopg.types.json.Jsonb(result) if result else None,
+                 error, counts.get("n_papers"), counts.get("n_with_fulltext"),
+                 counts.get("n_gap_sentences"), counts.get("n_concepts"),
+                 harvest_id))
+            row = cur.fetchone()
+            if row:
+                cur.execute("UPDATE run SET status = %s, error = %s, finished_at = now() "
+                            "WHERE id = %s",
+                            ("failed" if error else "done", error, row["run_id"]))
+        conn.commit()
+
+
+def get_harvest(harvest_id=None, project_id=None, include_result=True):
+    """One harvest, or the most recent one for a project."""
+    cols = ("id, project_id, run_id, source_run_id, status, n_papers,"
+            " n_with_fulltext, n_gap_sentences, n_concepts, error,"
+            " started_at, finished_at")
+    if include_result:
+        cols += ", result"
+    with connect() as conn, conn.cursor() as cur:
+        if harvest_id:
+            cur.execute(f"SELECT {cols} FROM harvest WHERE id = %s", (harvest_id,))
+        elif project_id:
+            cur.execute(f"SELECT {cols} FROM harvest WHERE project_id = %s "
+                        "ORDER BY started_at DESC LIMIT 1", (project_id,))
+        else:
+            raise ValueError("need harvest_id or project_id")
+        row = cur.fetchone()
+
+    if not row:
+        return None
+    d = dict(row)
+    for k in ("id", "project_id", "run_id", "source_run_id"):
+        if d.get(k) is not None:
+            d[k] = str(d[k])
+    for k in ("started_at", "finished_at"):
+        if d.get(k) is not None:
+            d[k] = d[k].isoformat()
+    return d

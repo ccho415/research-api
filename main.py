@@ -10,7 +10,7 @@ import sys
 import tempfile
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
@@ -327,6 +327,73 @@ def ideas_save(body: SaveDirectionsIn, x_api_key: Optional[str] = Header(None)):
 # --------------------------------------------------------------------------
 # triage
 # --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# gap harvest
+# --------------------------------------------------------------------------
+class HarvestStartIn(BaseModel):
+    project_id: Optional[str] = None
+    source_run_id: Optional[str] = None
+    max_papers: int = 200
+
+
+@app.post("/compute/harvest/start")
+def harvest_start(body: HarvestStartIn, background: BackgroundTasks,
+                  x_api_key: Optional[str] = Header(None)):
+    """Begin harvesting concepts and gap statements. Returns before it finishes.
+
+    A job rather than an answer because the expensive half cannot be hurried:
+    gap statements live in Discussion sections, the cache holds title and
+    abstract only, and each paper's full text is a separate polite request. Two
+    hundred papers is minutes. Nothing should hold an HTTP connection open that
+    long, and n8n should not be blocked waiting either.
+
+    Poll GET /compute/harvest/{id} for the result.
+    """
+    check_key(x_api_key)
+    if not (body.project_id or body.source_run_id):
+        raise HTTPException(400, "need project_id or source_run_id")
+    import db
+    import harvest
+    try:
+        started = db.start_harvest(body.project_id, body.source_run_id)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+    background.add_task(harvest.run_harvest, started["harvest_id"],
+                        body.project_id, body.source_run_id, body.max_papers)
+    return {**started, "status": "running",
+            "poll": f"/compute/harvest/{started['harvest_id']}"}
+
+
+@app.get("/compute/harvest/{harvest_id}")
+def harvest_get(harvest_id: str, include_result: bool = True,
+                x_api_key: Optional[str] = Header(None)):
+    check_key(x_api_key)
+    import db
+    try:
+        row = db.get_harvest(harvest_id=harvest_id, include_result=include_result)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+    if not row:
+        raise HTTPException(404, "no such harvest")
+    return row
+
+
+@app.get("/compute/harvest")
+def harvest_latest(project_id: str, include_result: bool = True,
+                   x_api_key: Optional[str] = Header(None)):
+    """The most recent harvest for a project, so a caller need not track ids."""
+    check_key(x_api_key)
+    import db
+    try:
+        row = db.get_harvest(project_id=project_id, include_result=include_result)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+    if not row:
+        raise HTTPException(404, "no harvest for that project")
+    return row
+
+
 class SaveDedupIn(BaseModel):
     run_id: str
     pairs: List[Dict[str, Any]]
