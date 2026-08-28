@@ -217,6 +217,9 @@ def search_chain(body: ChainIn, x_api_key: Optional[str] = Header(None)):
 class VerifyIn(BaseModel):
     directions: List[Dict[str, Any]]
     cutoff: int = 2015
+    # How thin a term may be before the direction is reported as unjudgeable
+    # rather than open. Travels in the request because it is a judgement.
+    min_term_papers: int = 25
 
 
 @app.post("/compute/verify/directions")
@@ -232,7 +235,7 @@ def verify_directions(body: VerifyIn, x_api_key: Optional[str] = Header(None)):
         raise HTTPException(400, "need at least 1 direction")
     import verify
     try:
-        return verify.verify(body.directions, body.cutoff)
+        return verify.verify(body.directions, body.cutoff, body.min_term_papers)
     except Exception as e:
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
