@@ -30,7 +30,7 @@ n8n 用內網 `api.zeabur.internal` 呼叫 api，不經過公開網際網路。
 | **W2 文獻層** | ✅ 已發布，驗收通過。跑完會推 LINE 摘要 |
 | **W-ALERT 失敗告警** | ✅ 已發布並實測（見下） |
 | **W3 想點子** | ✅ 產出會寫進 `idea` + `novelty_check`，含 `method_sketch` 與 `required_variables`。**素材仍是寫死的 base64**，見下方採集層 |
-| **W4 去重** | ✅ 端到端通過（執行 67，20 組寫入 `dedup_pair`） |
+| **W4 去重** | ⚠️ 端到端通過（執行 67，20 組寫入 `dedup_pair`），但**只記配對、沒記誰活下來**。見下方「去重缺一半」 |
 | **採集層** | ✅ 實跑通過，快取驗收見下 |
 | S5–S11 | ❌ 未建。W4（S5 去重）的計算端點已備妥且實測過 |
 | 四個審閱介面 👁①–④ | ❌ 完全未建，沒有任何前端 |
@@ -208,6 +208,8 @@ GET  /compute/frame?project_id=     讀領域框架
 GET  /compute/anchors[?origin=]     校準錨點
 POST /compute/anchors/save
 POST /admin/load-anchors            灌 repo 內附的 54 筆 ScholarIdeas 錨點
+POST /compute/dedup/resolve         決定重複裡誰活下來（dry_run 給審閱介面看）
+GET  /compute/ideas/live            場上的方向，不含被合併掉的
 POST /compute/tournament/start
 POST /compute/tournament/matches    對局結果（錨點對局也存這裡）
 POST /compute/tournament/rankings
@@ -227,7 +229,34 @@ coverage_limits）。刻意如此：一個方向如果只有敘述沒有判決�
 
 ---
 
-### 錨點：已灌 57 筆（2026-08-28）
+### 去重缺一半：只記重複，沒記誰活下來（2026-08-28 發現並補上）
+
+`dedup_pair` 記了「這兩個是重複」就結束了。`idea.status` **從建表到現在沒有被寫過一次**，
+資料庫裡每個方向都還是 `candidate`。所以沒有任何地方記錄一對重複裡哪一個留在場上。
+
+**W4 看不出這個問題**——它的產出是配對清單，而配對清單是對的。
+它會在 W5 爆掉，而且完全沒有症狀：一對重複的方向同時進場，互相分掉勝場，
+兩邊落在中段，排名讀起來完全合理。**錨點也抓不到**，因為被拉低的 Elo 是真的分數。
+
+補法（migration 006 + `POST /compute/dedup/resolve`）：
+
+- `idea.merged_into` 為 NULL＝還在場上；指向另一個 idea＝被它取代。
+  用欄位而不是把 `status` 改成 `duplicate`，因為「這個方向去哪了」跟「它是重複的」
+  是兩個不同的問題，半年後看報告會問前者。
+- **遞移合併**：A~B 且 B~C 就三個裡留一個，即使 A 與 C 從未直接比過。
+  否則只因為某一次配對沒觸發，兩個幾乎一樣的方向就都留下來了。
+- **只有 `verdict = 'duplicate'` 會合併。** NULL 是模型說它判不出來，PRD 要那些進人工審閱；
+  把「不確定」當成「重複」，丟掉的正好是最需要人看的那些。
+- **存活者取記錄較完整的，同分取先寫的。** 兩個雙胞胎沒有誰比較正確，所以規則不能假裝
+  在比高下——它比的是丟掉哪個損失比較小，因為裁判讀的是敘述，記錄完整的給裁判的東西比較多。
+- **人的決定不會被後續自動跑動蓋掉，而且不刪任何東西**（PRD 給了去重審閱介面 👁①，
+  要有東西可以推翻）。
+
+**`/compute/ideas/live` 與 `/compute/ideas` 是兩個端點，不要合併成一個參數。**
+審閱介面必須看得到被合併的列；錦標賽必須看不到。後者失敗時沒有症狀，
+預設參數擋不住這種錯。
+
+### 錨點：已灌 66 筆（2026-08-28）
 
 | 來源 | 筆數 | `origin` | 等級怎麼來的 |
 |---|---|---|---|
