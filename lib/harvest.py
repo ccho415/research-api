@@ -79,17 +79,24 @@ def _get(url, text=False, tries=3):
             time.sleep(2 * (attempt + 1))
 
 
-def resolve_pmcid(pmid):
-    """The PMCID for a PMID, or None if the paper has no open full text.
+def resolve_pmcid(pmid=None, doi=None):
+    """The PMCID for a paper, or None if it has no open full text.
 
-    Europe PMC keys full text on PMCID and W2 stored PMIDs, so this gap has to
-    be crossed once per paper.  The answer is written back to `paper` so it is
-    crossed only once ever.
+    Takes either identifier because the cache mostly does not hold PMIDs.
+    PubMed is permanently blocked from this egress IP, so W2's results arrive
+    from Europe PMC, OpenAlex and Crossref, and those carry DOIs. Resolving by
+    PMID only meant the harvest skipped nearly every paper it was given without
+    making a single request - forty papers in two seconds, no full text found.
+
+    The answer is written back to `paper` so this is crossed once ever.
     """
-    if not pmid:
+    if pmid:
+        q = f"EXT_ID:{pmid} AND SRC:MED"
+    elif doi:
+        q = f'DOI:"{doi}"'
+    else:
         return None
-    u = (f"{EPMC}/search?format=json&pageSize=1"
-         f"&query={urllib.parse.quote(f'EXT_ID:{pmid} AND SRC:MED')}")
+    u = f"{EPMC}/search?format=json&pageSize=1&query={urllib.parse.quote(q)}"
     d = _get(u)
     rows = ((d or {}).get("resultList") or {}).get("result") or []
     return (rows[0].get("pmcid") if rows else None) or None
@@ -175,6 +182,8 @@ def run_harvest(harvest_id, project_id=None, source_run_id=None, max_papers=200)
         cached = db.cached_sections([p["id"] for p in papers])
         gaps = []
         n_fulltext = 0
+        n_resolved = 0
+        n_unidentified = 0
 
         for p in papers:
             pid = p["id"]
@@ -182,9 +191,12 @@ def run_harvest(harvest_id, project_id=None, source_run_id=None, max_papers=200)
                 text = cached[pid]          # may be None: known to have no full text
             else:
                 pmcid = p.get("pmcid")
-                if not pmcid and p.get("pmid"):
+                looked = bool(pmcid)
+                if not pmcid and (p.get("pmid") or p.get("doi")):
+                    looked = True
+                    n_resolved += 1
                     try:
-                        pmcid = resolve_pmcid(p["pmid"])
+                        pmcid = resolve_pmcid(p.get("pmid"), p.get("doi"))
                         time.sleep(PAUSE)
                     except Exception:
                         pmcid = None
@@ -197,10 +209,16 @@ def run_harvest(harvest_id, project_id=None, source_run_id=None, max_papers=200)
                         time.sleep(PAUSE)
                     except Exception:
                         text = None
-                # Cached either way. A null means this paper was looked up and
-                # has no retrievable Discussion, which stops the next harvest
-                # paying for the same disappointment.
-                db.save_section(pid, "discussion", text)
+                # Only cache the answer when a lookup actually happened. A null
+                # means "looked, and this paper has no retrievable Discussion",
+                # which stops the next harvest paying again. Writing it for a
+                # paper with no identifier would say that about a paper nobody
+                # ever asked about, and would then hide it from any later fix
+                # that gave it an identifier to be found by.
+                if looked:
+                    db.save_section(pid, "discussion", text)
+                else:
+                    n_unidentified += 1
 
             if not text:
                 continue
@@ -216,6 +234,11 @@ def run_harvest(harvest_id, project_id=None, source_run_id=None, max_papers=200)
             "source": {"project_id": project_id, "source_run_id": source_run_id,
                        "n_papers": len(papers)},
         }
+        # Counted so a harvest that found nothing says which nothing it was:
+        # no identifiers to look up, or identifiers that led to no open access.
+        result["lookup"] = {"n_resolved": n_resolved,
+                            "n_without_identifier": n_unidentified,
+                            "n_with_fulltext": n_fulltext}
         db.finish_harvest(harvest_id, result=result, counts={
             "n_papers": len(papers), "n_with_fulltext": n_fulltext,
             "n_gap_sentences": len(gaps), "n_concepts": len(concepts_ranked)})
