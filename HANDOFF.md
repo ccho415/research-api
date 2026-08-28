@@ -261,6 +261,20 @@ Gemini 的配對         11 / 15
    每篇論文要抓一次全文 XML，300 篇好幾分鐘，**不適合做成同步端點**）。
 6. 用使用者自己的題目跑完整流程：環境賀爾蒙 × 肺腺癌第 0 期，2016–2026。
 7. 選配：寫信請 NCBI 解封 `43.133.34.49`（草稿寫好了，沒寄）。
+   **2026-08-28 實測仍在封鎖中**，NCBI 直接回封鎖診斷頁：
+
+   ```
+   eutils.ncbi.nlm.nih.gov returned non-JSON (3872 bytes):
+   <title>NCBI - WWW Error Blocked Diagnostic</title>
+   ```
+
+   **測試方法很重要：必須從容器裡打，不能從本機。** 封鎖是針對 Zeabur 的出口 IP，
+   本機測一定會成功而且什麼都證明不了。用 W-ADMIN 打
+   `POST /compute/search/query`，body 指定 `{"sources": ["pubmed"]}`，
+   看回傳的 `attempt.failed`。
+
+   這條封鎖是**採集層必須用 DOI 解析 PMCID 的原因**：少了 PubMed，W2 的結果
+   來自 Europe PMC／OpenAlex／Crossref，那些帶 DOI 不一定帶 PMID。
 
 ### triage 端點已實測（2026-08-28，15 個真方向）
 
