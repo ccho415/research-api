@@ -29,7 +29,7 @@ n8n 用內網 `api.zeabur.internal` 呼叫 api，不經過公開網際網路。
 | 第 2 階段 骨架 | ✅ Zeabur + Postgres + api + 備份 + 還原演練（真實資料 22 表 409 列） |
 | **W2 文獻層** | ✅ 已發布，驗收通過。跑完會推 LINE 摘要 |
 | **W-ALERT 失敗告警** | ✅ 已發布並實測（見下） |
-| **W3 想點子** | ⚠️ 管線可跑，但**按 PRD 標準沒做完**：缺 `method_sketch`、`required_variables`、雙軌與方法軸交叉 |
+| **W3 想點子** | ✅ 產出會寫進 `idea` + `novelty_check`，含 `method_sketch` 與 `required_variables`。**仍缺**雙軌與方法軸交叉（卡在 W1） |
 | W1 領域框架 | ❌ 未建。**這是方法軸的前置**，沒有它 S3 的方法軸跑不了 |
 | S5–S11 | ❌ 未建。W4（S5 去重）的計算端點已備妥且實測過 |
 | 四個審閱介面 👁①–④ | ❌ 完全未建，沒有任何前端 |
@@ -55,6 +55,7 @@ n8n 用內網 `api.zeabur.internal` 呼叫 api，不經過公開網際網路。
 | `Nc6AjZZPSQZdoI6N` | W3-TEST 缺口組合推理 | 11 節點。**素材仍寫死**，但題目與切點已改成表單欄位。表單 `/form/w3-directions`，`n8nUserAuth` |
 | `UobSYUAU2C4j38tY` | **W-ALERT 失敗推 LINE** | 已發布。W-BACKUP 與 W2 的 `errorWorkflow` 都指向它 |
 | `5hjjy6sjMPBJaHGg` | W-LINE 通知測試 | ✅ 已驗證通過（執行 47） |
+| `3kLQ9JvEdLBYnsWe` | **W-ADMIN research-api 診斷** | 表單觸發，下拉選任一 GET 端點。**這是從 Claude Code 呼叫 API 的唯一管道**（內網打不到），確認部署與讀回資料都靠它 |
 | `LnIml88jxxjU5gSV` | W0 連線測試 | — |
 
 **W3 目前的節點鏈**（`Direction Run Request` 是 form trigger，MCP 可直接執行）：
@@ -116,7 +117,10 @@ GET  /admin/config /admin/dbstats /admin/backup
 POST /admin/restore-drill
 ```
 
-**還沒有的**：`GET /compute/ideas`（讀回方向）——W4 的前置。
+`GET /compute/ideas` 會把**最新一次的 `novelty_check` 併進來回傳**（verdict、rounds、
+coverage_limits）。刻意如此：一個方向如果只有敘述沒有判決與警語，那正好是最會誤導人
+的那一半——敘述永遠讀起來合理，警語才是決定該信多少的東西。
+參數 `project_id` / `run_id` / `status` / `limit`，至少要給前兩者之一。
 
 ---
 
@@ -192,17 +196,17 @@ Gemini 的配對         11 / 15
 ## 待辦（依阻塞程度排序）
 
 1. **取得 Anthropic 憑證。** PRD 第十一節整套配置是 Sonnet 5 / Opus 5，
-   但 n8n 目前只有 Gemini 與 OpenAI 兩組。**使用者已知悉，待提供。**
-   影響：錦標賽對局判斷、新穎性最終判定（Opus 5）、以及**設計二要求唱反調必須換
-   不同模型家族**——目前生成全走 Gemini，若判斷也走 Gemini 就違反獨立性。
-2. **補 `method_sketch` 與 `required_variables`。** 設計七的硬需求：三個具名組件，
-   每個要回答「為什麼不用預設做法」，且技術宣稱要嘛有引用要嘛標 `unverified`。
-   目前 `save_directions` 兩欄都寫 NULL。**不依賴 W1，可以直接做。**
-3. **建 W4（S5 去重）+ 👁①**。計算端點 `/compute/triage/dedup` 已實測（見下）。
-   缺 `GET /compute/ideas`——現在 `idea` 只能寫不能讀。
+   但 n8n 目前只有 Gemini 與 OpenAI 兩組。**使用者已同意提供，待加入 n8n Credentials。**
+   MCP 只能列出憑證不能寫入密鑰，所以這一步一定要人做。
+2. **建 W4（S5 去重）+ 👁①**。計算端點 `/compute/triage/dedup` 已實測（見下），
+   `GET /compute/ideas` 已備妥。
    PRD 要求三步：腳本提候選 → AI 逐組判 → **AI 自己再掃一遍全清單**
    （腳本抓不到跨語言重複，分數是 0.0）。中文門檻要另外校準。
-4. **建 W1 領域框架**（S1）——沒有它，S3 的方法軸和 S4 的交叉都做不了。
+   **注意**：專案 `cab10537-8a27-4993-b850-db4a825184bd` 裡有 15 列來自跑動
+   `1cfe06e8-76c5-4983-9160-72d1e542bbe0` 的**降級資料**（verdict/code 為 NULL，
+   原因見下方已修項）。W4 讀取時用 `run_id` 過濾到較新的跑動，不要用 `project_id`。
+3. **建 W1 領域框架**（S1）——沒有它，S3 的方法軸和 S4 的交叉都做不了。
+   也是 `method_sketch.paradigm_source` 目前只能標 `inferred` 的原因。
 5. 把缺口採集器產品化（現在是本機工具 `tools/harvest_gaps.py`，
    每篇論文要抓一次全文 XML，300 篇好幾分鐘，**不適合做成同步端點**）。
 6. 用使用者自己的題目跑完整流程：環境賀爾蒙 × 肺腺癌第 0 期，2016–2026。
@@ -226,6 +230,33 @@ elo     順序翻轉不一致率 0.0（確定性裁判下的預期值），排�
 （**過了 0.15 門檻，原本會被漏掉**），無關配對從 0.090 降到 0.073。
 
 ---
+
+## ✅ 已定案 — 不要再改、不要再蓋
+
+**這一節存在的原因**：2026-08-28 使用者指出「你一直在重複修改已經改過的地方，
+這樣會錯亂」。當天真的發生了三次，所以每項決定連同**為什麼**寫在這裡，
+只寫「已完成」擋不住下一次重做。
+
+| 項目 | 定案 |
+|---|---|
+| **Zeabur 部署** | **接了 GitHub，推 main 就自動部署**（GitHub deployments API 26 筆全是 `Deployed by Zeabur`）。**不要再叫使用者手動部署** |
+| **`ACADEMIC_MAILTO` / `NCBI_API_KEY`** | **兩個都已設定**。不要再加「回報選配設定有無」的端點——加過又撤掉了（`0b84350` → `dac5d6a`） |
+| **部署版本回報** | **不要加 build/commit 標記到 `/admin/config`**。同上，加過又撤掉 |
+| **模型分工** | 生成走 Gemini；**錦標賽對局判斷、可行性分級走 Anthropic Sonnet 5**；新穎性最終判定 Opus 5；唱反調 critic 必須與生成端不同家。理由是設計二的獨立性，不是避免干擾 |
+| **`idea.title`** | 用**詞組**（`MLH1 V384D x Gefitinib`），不是 statement 的前綴。`triage.idea_text` 會串接 title 與 statement，前綴會讓句首問句樣板被算兩次權重 |
+| **判不了時的 `novelty_check.verdict`** | 存 **NULL**。schema 那四個詞（scooped/incremental/adjacent/no_prior_art）任一個都是在斷言未經確立的事 |
+| **`STILL OPEN`** | **不是新穎性證據，不准拿來排序**。見上方對照組實驗 |
+| **審閱介面 👁①–④** | 要做，用更新後的資訊（使用者 2026-08-28 確認） |
+| **公開 repo** | 這個 repo 是 **public**。不要把個資寫進原始碼——聯絡信箱走 `ACADEMIC_MAILTO` 環境變數，已從 `lib/verify.py` 與 `tools/verify_directions.py` 清除 |
+
+### 同日已修，不要重修
+
+- `save_directions` 讀 `verdict` / `rank` 讀不到 → `Report Verdicts` 刻意改名成
+  `verdict_tag` / `rank_from_model`（把判決降級成標籤）。**兩種名字現在都接受。**
+- 同義詞排序取最短 → 已改成按 token 集合去重、按與描述詞重疊度排序。
+- 人工同義詞表用拼寫當鍵 → 已改用 MeSH UI。
+- LLM 回覆截斷整批丟棄 → 已改成逐物件搶救（堆疊追蹤任何深度）。
+- `addNode` 丟掉 `executeOnce` → 已用 `setNodeSettings` 補齊並確認。
 
 ## 🔒 不可妥協的規則
 
@@ -270,8 +301,11 @@ elo     順序翻轉不一致率 0.0（確定性裁判下的預期值），排�
 - **`update_workflow` 偶爾會把 `operations` 判成字串而拒絕**（大段 jsCode 或某些
   全形標點會觸發）。拆成多次小的 update 就會過。
 - Zeabur 重新建置要 **3–6 分鐘**，不要等 150 秒就重測（會拿到舊程式碼的假失敗）。
-  n8n 部署在 Zeabur 上；**推 GitHub main 之後是否自動部署，尚未確認**——
-  若是自動的，`git push` 就等於部署，不需要另外動作。
+- **推 main 就自動部署，而建置期間 API 是真的斷的。** 不要一邊推程式碼一邊跑工作流：
+  執行 59 就是這樣死的（`Look Up The Terms` 收到 ECONNRESET / socket hang up）。
+  W3 呼叫 API 的節點現在都有重試（3 次、間隔 5 秒）來吸收這種短暫斷線。
+- **GitHub deployments API 的 `success` 不代表服務已就緒**——它在登記的同一秒就出現，
+  只代表「推送被接走了」。要確認服務活著就打 `/healthz`（用 W-ADMIN）。
 - 在 n8n 的 SDK 程式碼裡嵌 JSON 會引號打架，**用 base64 + `Buffer.from(b64,"base64")`**
 - **git commit 訊息含雙引號會打壞 PowerShell here-string**，改用 `git commit -F 檔案`
 - **Claude Code 沒有 Zeabur 工具**，部署一定要人做
