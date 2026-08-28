@@ -876,3 +876,88 @@ def list_runs(project_id, limit=50):
                     d[k] = d[k].isoformat()
             rows.append(d)
     return {"project_id": project_id, "n": len(rows), "runs": rows}
+
+
+def sync_prompts(entries):
+    """Store each pack as a new version when its content has changed.
+
+    Unchanged content does not get a new version. Otherwise every deploy would
+    bump every pack, and `domain_frame` would point at versions that differ from
+    their predecessor by nothing - which makes the version number useless for
+    the one question it exists to answer.
+    """
+    out = []
+    with connect() as conn:
+        with conn.cursor() as cur:
+            for e in entries:
+                cur.execute("SELECT version, content FROM skill_prompt "
+                            "WHERE key = %s ORDER BY version DESC LIMIT 1", (e["key"],))
+                row = cur.fetchone()
+                if row and row["content"] == e["content"]:
+                    out.append({"key": e["key"], "version": row["version"],
+                                "changed": False})
+                    continue
+                version = (row["version"] + 1) if row else 1
+                cur.execute("INSERT INTO skill_prompt (key, version, content) "
+                            "VALUES (%s, %s, %s)", (e["key"], version, e["content"]))
+                out.append({"key": e["key"], "version": version, "changed": True})
+        conn.commit()
+    return {"n": len(out), "n_changed": sum(1 for x in out if x["changed"]),
+            "prompts": out}
+
+
+def get_prompt(key, version=None):
+    with connect() as conn, conn.cursor() as cur:
+        if version:
+            cur.execute("SELECT key, version, content, updated_at FROM skill_prompt "
+                        "WHERE key = %s AND version = %s", (key, version))
+        else:
+            cur.execute("SELECT key, version, content, updated_at FROM skill_prompt "
+                        "WHERE key = %s ORDER BY version DESC LIMIT 1", (key,))
+        row = cur.fetchone()
+    if not row:
+        return None
+    d = dict(row)
+    d["updated_at"] = d["updated_at"].isoformat()
+    return d
+
+
+def prompt_versions():
+    """Which packs are loaded and at what version, without their contents."""
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute("SELECT key, max(version) AS version, max(updated_at) AS updated_at "
+                    "FROM skill_prompt GROUP BY key ORDER BY key")
+        return {"prompts": [{"key": r["key"], "version": r["version"],
+                             "updated_at": r["updated_at"].isoformat()}
+                            for r in cur.fetchall()]}
+
+
+def save_domain_frame(project_id, frame):
+    """Record which frame a project reasons under, and which version of it.
+
+    The versions are stored alongside the choice because the packs change. A
+    report has to be readable six months later without re-running anything, and
+    "observational" alone does not say which observational.
+    """
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE project SET domain_frame = %s WHERE id = %s "
+                        "RETURNING id, title, topic",
+                        (psycopg.types.json.Jsonb(frame), project_id))
+            row = cur.fetchone()
+            if not row:
+                raise ValueError(f"no such project: {project_id}")
+        conn.commit()
+    return {"project_id": str(row["id"]), "title": row["title"],
+            "topic": row["topic"], "domain_frame": frame}
+
+
+def get_domain_frame(project_id):
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute("SELECT id, title, topic, domain_frame FROM project WHERE id = %s",
+                    (project_id,))
+        row = cur.fetchone()
+    if not row:
+        return None
+    return {"project_id": str(row["id"]), "title": row["title"],
+            "topic": row["topic"], "domain_frame": row["domain_frame"]}

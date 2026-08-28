@@ -278,6 +278,102 @@ class SaveDirectionsIn(BaseModel):
     cutoff: Optional[int] = None
 
 
+# --------------------------------------------------------------------------
+# domain frame
+# --------------------------------------------------------------------------
+@app.get("/compute/packs")
+def packs_menu(x_api_key: Optional[str] = Header(None)):
+    """What the router chooses between, plus the rules it chooses by.
+
+    Summaries rather than the packs themselves. Routing needs to know what a
+    pack is for; it does not need the pack. All thirteen in full is a hundred
+    and thirty kilobytes of prompt to answer three questions, and on this model
+    the thinking budget comes out of the same allowance as the reply.
+    """
+    check_key(x_api_key)
+    import packs
+    try:
+        menu = packs.routing_menu()
+        return {**menu, "rules": packs.routing_rules()}
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/packs/{key}")
+def packs_one(key: str, version: Optional[int] = None,
+              x_api_key: Optional[str] = Header(None)):
+    """One pack in full, at a given version. Downstream stages read this."""
+    check_key(x_api_key)
+    import db
+    try:
+        row = db.get_prompt(key, version)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+    if not row:
+        raise HTTPException(404, f"no such pack: {key}"
+                                 " - run POST /admin/sync-packs first")
+    return row
+
+
+@app.post("/admin/sync-packs")
+def packs_sync(x_api_key: Optional[str] = Header(None)):
+    """Load the packs on disk into skill_prompt, versioning what changed.
+
+    Disk is the source and this is the record of what was in force. Unchanged
+    content does not get a new version, or every deploy would bump every pack
+    and the version number would stop answering the only question it is for.
+    """
+    check_key(x_api_key)
+    import db
+    import packs
+    try:
+        return db.sync_prompts(packs.all_packs())
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/prompts")
+def prompts_list(x_api_key: Optional[str] = Header(None)):
+    """Which packs are loaded and at what version, without their contents."""
+    check_key(x_api_key)
+    import db
+    try:
+        return db.prompt_versions()
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class FrameIn(BaseModel):
+    project_id: str
+    frame: Dict[str, Any]
+
+
+@app.post("/compute/frame/save")
+def frame_save(body: FrameIn, x_api_key: Optional[str] = Header(None)):
+    """Record which frame a project reasons under, with pack versions."""
+    check_key(x_api_key)
+    import db
+    try:
+        return db.save_domain_frame(body.project_id, body.frame)
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/frame")
+def frame_get(project_id: str, x_api_key: Optional[str] = Header(None)):
+    check_key(x_api_key)
+    import db
+    try:
+        row = db.get_domain_frame(project_id)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+    if not row:
+        raise HTTPException(404, "no such project")
+    return row
+
+
 @app.get("/compute/projects")
 def projects_list(limit: int = 50, x_api_key: Optional[str] = Header(None)):
     """Projects with the counts that tell them apart.
