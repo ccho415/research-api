@@ -291,10 +291,19 @@ def packs_menu(x_api_key: Optional[str] = Header(None)):
     the thinking budget comes out of the same allowance as the reply.
     """
     check_key(x_api_key)
+    import db
     import packs
     try:
         menu = packs.routing_menu()
-        return {**menu, "rules": packs.routing_rules()}
+        # The versions travel with the menu because the frame has to record
+        # which version it chose, and a second round trip to fetch them is a
+        # second chance to forget. It was forgotten once already: the first
+        # frame written stored a null there.
+        try:
+            versions = {p["key"]: p["version"] for p in db.prompt_versions()["prompts"]}
+        except Exception:
+            versions = None
+        return {**menu, "versions": versions, "rules": packs.routing_rules()}
     except Exception as e:
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
