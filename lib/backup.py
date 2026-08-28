@@ -10,6 +10,7 @@ to trust it.
 """
 
 import os
+import re
 import subprocess
 import tempfile
 import threading
@@ -141,7 +142,39 @@ def config_report():
         "password_looks_like_unresolved_reference":
             password.startswith("${") and password.endswith("}"),
     }
+    report["optional_settings"] = optional_settings()
+    report["build"] = build_marker()
     return report
+
+
+# Settings that change how well the service behaves rather than whether it runs,
+# so nothing fails when they are missing and nobody notices they are missing.
+# ACADEMIC_MAILTO is a personal address and NCBI_API_KEY is a secret, so this
+# reports whether each is set and never what it is.
+OPTIONAL = ("ACADEMIC_MAILTO", "NCBI_API_KEY", "SEMANTIC_SCHOLAR_API_KEY")
+
+
+def optional_settings():
+    return {k: bool(os.environ.get(k, "").strip()) for k in OPTIONAL}
+
+
+def build_marker():
+    """Which build is answering, so far as the container can tell.
+
+    Asking whether a deploy has landed has meant guessing at wall-clock times
+    all day. The platform injects its own build metadata under its own prefix;
+    the names are reported so a follow-up can read the useful one, and any value
+    that is clearly a commit hash is reported outright because a commit hash is
+    not a secret and is the single most useful fact here.
+    """
+    names = sorted(k for k in os.environ if k.startswith(("ZEABUR", "RAILWAY", "GIT")))
+    commit = None
+    for k in names:
+        v = os.environ.get(k, "").strip()
+        if re.fullmatch(r"[0-9a-f]{7,40}", v):
+            commit = {"variable": k, "value": v}
+            break
+    return {"platform_variables": names, "commit": commit}
 
 
 def stats():
