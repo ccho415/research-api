@@ -6,6 +6,8 @@ breaks a tie. Several things here exist to stop that order being quietly
 inverted, and they are easier to see together.
 """
 
+from collections import defaultdict
+
 import psycopg
 
 from db import connect
@@ -247,3 +249,152 @@ def get_tournament(tournament_id):
             "n_matches": m["n"], "n_judged": m["judged"],
             "removed_before_start": removed,
             "standings": standings}
+
+
+def resolve_duplicates(run_id, decided_by="rule", dry_run=False):
+    """Decide which of each duplicated pair stays on the field.
+
+    `dedup_pair` records that two directions are the same and stops there. Left
+    like that both twins enter the tournament, split the wins between them and
+    land mid-table, and nothing about the standings looks wrong - which is why
+    this has to happen before pairing rather than being noticed after.
+
+    Pairs are collapsed transitively. If A duplicates B and B duplicates C, one
+    of the three survives, even though A and C were never compared directly; the
+    alternative keeps two near-identical directions because a single pairwise
+    call happened not to fire.
+
+    Only `verdict = 'duplicate'` collapses. A null verdict is the model saying
+    it could not tell, and the PRD routes those to a person - treating uncertain
+    as duplicate would silently discard exactly the pairs that needed review.
+
+    The survivor is the more complete record, ties broken by which was written
+    first. Neither twin is more correct than the other, so the rule cannot be
+    about merit; it is about losing the least, since the judge reads the
+    statement and the fuller record gives it more to read. A person can overrule
+    it, which is why nothing is deleted.
+    """
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT idea_a, idea_b FROM dedup_pair "
+                "WHERE run_id = %s AND verdict = 'duplicate'", (run_id,))
+            pairs = [(str(r["idea_a"]), str(r["idea_b"])) for r in cur.fetchall()]
+            if not pairs:
+                return {"run_id": run_id, "n_clusters": 0, "n_merged": 0,
+                        "clusters": [], "dry_run": dry_run}
+
+            parent = {}
+
+            def find(x):
+                parent.setdefault(x, x)
+                while parent[x] != x:
+                    parent[x] = parent[parent[x]]
+                    x = parent[x]
+                return x
+
+            for a, b in pairs:
+                ra, rb = find(a), find(b)
+                if ra != rb:
+                    parent[ra] = rb
+
+            members = defaultdict(list)
+            for node in list(parent):
+                members[find(node)].append(node)
+
+            ids = sorted(parent)
+            cur.execute(
+                "SELECT id, code, title, statement, method_sketch,"
+                "       required_variables, grounding, why_matters,"
+                "       how_could_fail, created_at, merged_into,"
+                "       merge_decided_by "
+                "FROM idea WHERE id = ANY(%s)", (ids,))
+            row = {str(r["id"]): dict(r) for r in cur.fetchall()}
+
+            def completeness(i):
+                r = row.get(i) or {}
+                return sum(1 for f in ("method_sketch", "required_variables",
+                                       "grounding", "why_matters",
+                                       "how_could_fail") if r.get(f))
+
+            clusters, merged = [], []
+            for group in members.values():
+                group = [g for g in group if g in row]
+                if len(group) < 2:
+                    continue
+                # A person's earlier call on any member settles the whole
+                # cluster: a rule must not quietly reverse a human decision on
+                # the next run.
+                human = [g for g in group
+                         if (row[g].get("merge_decided_by") == "human"
+                             and row[g].get("merged_into") is None)]
+                if human:
+                    keep = sorted(human, key=lambda i: row[i]["created_at"])[0]
+                    basis = "kept by a person"
+                else:
+                    keep = sorted(group, key=lambda i: (-completeness(i),
+                                                        row[i]["created_at"]))[0]
+                    basis = "fullest record, then written first"
+                losers = [g for g in group if g != keep]
+                clusters.append({
+                    "keep": keep, "keep_code": row[keep].get("code"),
+                    "keep_title": row[keep].get("title"),
+                    "basis": basis,
+                    "merged": [{"id": g, "code": row[g].get("code"),
+                                "title": row[g].get("title"),
+                                "completeness": completeness(g)} for g in losers],
+                })
+                merged += [(g, keep) for g in losers]
+
+            if not dry_run:
+                for loser, keep in merged:
+                    if row[loser].get("merge_decided_by") == "human":
+                        continue
+                    cur.execute(
+                        "UPDATE idea SET merged_into = %s, merge_decided_by = %s,"
+                        "  merge_decided_at = now() WHERE id = %s",
+                        (keep, decided_by, loser))
+        if not dry_run:
+            conn.commit()
+
+    return {"run_id": run_id, "n_clusters": len(clusters),
+            "n_merged": len(merged), "clusters": clusters, "dry_run": dry_run}
+
+
+def live_ideas(project_id=None, run_id=None, limit=200):
+    """The directions still standing: nothing merged away, newest check attached.
+
+    Separate from `db.list_ideas` on purpose. That one is what the review
+    screens read and it must keep showing everything, merged rows included -
+    "where did that direction go" is a question a person will ask. This one is
+    what the tournament reads, and it must never return a merged row, because
+    the way that fails is invisible in the standings.
+    """
+    where, args = ["i.merged_into IS NULL"], []
+    if project_id:
+        where.append("i.project_id = %s")
+        args.append(project_id)
+    if run_id:
+        where.append("n.run_id = %s")
+        args.append(run_id)
+    args.append(int(limit))
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT i.id, i.code, i.title, i.statement, i.axis, i.track,"
+            "       i.method_sketch, i.required_variables, i.grounding,"
+            "       i.why_matters, i.how_could_fail, i.created_at,"
+            "       n.verdict, n.rounds, n.coverage_limits "
+            "FROM idea i "
+            "LEFT JOIN LATERAL ("
+            "    SELECT * FROM novelty_check c WHERE c.idea_id = i.id"
+            "    ORDER BY c.checked_at DESC LIMIT 1"
+            ") n ON true "
+            "WHERE " + " AND ".join(where) + " "
+            "ORDER BY i.created_at, i.code LIMIT %s", args)
+        out = []
+        for r in cur.fetchall():
+            d = dict(r)
+            d["id"] = str(d["id"])
+            d["created_at"] = d["created_at"].isoformat()
+            out.append(d)
+    return {"n": len(out), "ideas": out}

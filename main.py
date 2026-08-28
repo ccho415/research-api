@@ -658,6 +658,52 @@ class TournamentStartIn(BaseModel):
     removed: Optional[List[Dict[str, Any]]] = None
 
 
+class ResolveIn(BaseModel):
+    run_id: str
+    decided_by: Optional[str] = "rule"
+    dry_run: Optional[bool] = False
+
+
+@app.post("/compute/dedup/resolve")
+def dedup_resolve(body: ResolveIn, x_api_key: Optional[str] = Header(None)):
+    """Collapse each duplicated cluster to one surviving direction.
+
+    Between deduplication and the tournament there was nothing recording which
+    twin stays. Both entered, split their wins, and settled mid-table with
+    standings that look entirely reasonable - so this runs before pairing
+    rather than being caught afterwards.
+
+    `dry_run` returns the choices without writing them, which is what the
+    review screen shows.
+    """
+    check_key(x_api_key)
+    import tourney
+    try:
+        return tourney.resolve_duplicates(body.run_id, body.decided_by or "rule",
+                                          bool(body.dry_run))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/ideas/live")
+def ideas_live(project_id: Optional[str] = None, run_id: Optional[str] = None,
+               limit: int = 200, x_api_key: Optional[str] = Header(None)):
+    """The field the tournament competes over: merged-away directions excluded.
+
+    `/compute/ideas` keeps returning everything, because a review screen has to
+    be able to answer "where did that direction go". This one cannot, because a
+    merged row entering the tournament produces no visible symptom.
+    """
+    check_key(x_api_key)
+    if not project_id and not run_id:
+        raise HTTPException(400, "need project_id or run_id")
+    import tourney
+    try:
+        return tourney.live_ideas(project_id, run_id, limit)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.post("/compute/tournament/start")
 def tournament_start(body: TournamentStartIn,
                      x_api_key: Optional[str] = Header(None)):
