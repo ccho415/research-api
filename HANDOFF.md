@@ -29,7 +29,9 @@ n8n 用內網 `api.zeabur.internal` 呼叫 api，不經過公開網際網路。
 | 第 2 階段 骨架 | ✅ Zeabur + Postgres + api + 備份 + 還原演練（真實資料 22 表 409 列） |
 | **W2 文獻層** | ✅ 已發布，驗收通過。跑完會推 LINE 摘要 |
 | **W-ALERT 失敗告警** | ✅ 已發布並實測（見下） |
-| **W3 想點子** | ✅ 產出會寫進 `idea` + `novelty_check`，含 `method_sketch` 與 `required_variables`。**仍缺**雙軌與方法軸交叉（卡在 W1） |
+| **W3 想點子** | ✅ 產出會寫進 `idea` + `novelty_check`，含 `method_sketch` 與 `required_variables`。**素材仍是寫死的 base64**，見下方採集層 |
+| **W4 去重** | ✅ 端到端通過（執行 67，20 組寫入 `dedup_pair`） |
+| **採集層** | ⚠️ 程式與 migration 003 都已上線，**但還沒實際跑過一次** |
 | W1 領域框架 | ❌ 未建。**這是方法軸的前置**，沒有它 S3 的方法軸跑不了 |
 | S5–S11 | ❌ 未建。W4（S5 去重）的計算端點已備妥且實測過 |
 | 四個審閱介面 👁①–④ | ❌ 完全未建，沒有任何前端 |
@@ -101,8 +103,26 @@ tools/build_mesh_dict.py    31,110 descriptor + 295,049 SCR = 807,239 詞，13.4
 tools/build_background.py   11,000 篇 2005–2015 摘要算背景詞頻
 tools/harvest_gaps.py       標題概念 + Discussion 缺口句
 tools/verify_directions.py  lib/verify.py 的 CLI 前身，邏輯已搬進 lib
+lib/harvest.py     缺口採集：從 paper 快取讀論文、抓 Discussion、存 paper_section
 migrations/002_w2_literature_layer.sql   已執行
+migrations/003_harvest_layer.sql         已執行（2026-08-28，22→24 表）
 ```
+
+### migration 怎麼跑
+
+**`POST /admin/migrate`**，不是把 SQL 抄進 n8n 節點。
+
+```json
+{"file": "003_harvest_layer.sql", "expect_database": "research"}
+```
+
+端點讀 repo 裡 `migrations/` 的檔案執行，所以**檔案就是唯一的事實來源**——抄進工作流會變成兩份，而手抄的差異不會報錯。
+
+`expect_database` 是必填且無預設：n8n 與本專案共用同一台 Postgres、各自一個資料庫，
+**migration 下錯地方是靜默的而且很難回復**，所以這道檢查做成結構性的，不靠人記得。
+回傳帶執行前後的表數，冪等地什麼都沒做和真的建了東西分得出來。
+
+用 **W-ADMIN** 呼叫（它現在能發 POST）。「DB工具」工作流沒開放 MCP 存取，用不了。
 
 ### API 端點
 
@@ -127,10 +147,28 @@ GET  /admin/config /admin/dbstats /admin/backup
 POST /admin/restore-drill
 ```
 
+**2026-08-28 新增**：
+
+```
+GET  /compute/projects              專案清單，含論文數與方向數
+GET  /compute/projects/{id}/runs    某專案的跑動
+GET  /compute/ideas                 方向 + 最新一次 novelty_check
+POST /compute/ideas/save
+GET  /compute/dedup                 候選配對，兩個完整題目都併進來
+POST /compute/dedup/save
+POST /compute/harvest/start         非同步採集，立刻回 id
+GET  /compute/harvest/{id}          輪詢採集結果
+GET  /compute/harvest?project_id=   最近一次採集
+POST /admin/migrate                 見上
+```
+
 `GET /compute/ideas` 會把**最新一次的 `novelty_check` 併進來回傳**（verdict、rounds、
 coverage_limits）。刻意如此：一個方向如果只有敘述沒有判決與警語，那正好是最會誤導人
 的那一半——敘述永遠讀起來合理，警語才是決定該信多少的東西。
 參數 `project_id` / `run_id` / `status` / `limit`，至少要給前兩者之一。
+
+`GET /compute/dedup` 同理併進兩個**完整題目**，不是 id。PRD 的顯示規則不是裝飾：
+判斷兩個方向是不是同一個，一定要兩個都讀得到，他們實跑時發現代號與截斷標題根本判不了。
 
 ---
 
