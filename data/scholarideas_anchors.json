@@ -1,0 +1,1146 @@
+{
+ "source": "hananour/ScholarIdeas",
+ "licence": "MIT",
+ "grading": {
+  "basis": "quartiles of this sample",
+  "strong_if_net_ge": 0,
+  "weak_if_net_le": -6
+ },
+ "n": 54,
+ "anchors": [
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_biochem_17",
+   "title": "[biochemistry] Mitochondria utilize a dedicated translation system that closely resembles bacterial translation machinery, making mitochondrial ribosomes...",
+   "statement": "Research Plan Problem Mitochondria utilize a dedicated translation system that closely resembles bacterial translation machinery, making mitochondrial ribosomes (mitoribosomes) susceptible to off-target effects from bacterial protein synthesis inhibitors used as antibiotics. This mitochondrial toxicity manifests as serious side effects including lactic acidosis, ototoxicity, nephrotoxicity, and peripheral neuropathy, depending on the specific antibiotic and patient genetics. While approximately 14.3 doses of antibiotics are administered per 1,000 people daily worldwide, the mechanisms by which these antibiotics inhibit mitochondrial translation remain unclear. We hypothesize that bacterial translation inhibitors may act through identical mechanisms in mitochondria as they do in bacteria, given the evolutionary conservation between bacterial ribosomes and mitoribosomes. However, this has not been systematically investigated. Understanding these mechanisms is critical for developing safer antibiotics with reduced mitochondrial toxicity and for comprehending how these drugs disrupt mitochondrial function. Additionally, the nucleotide-level precision offered by mitoribosome profiling m",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 0,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "biochemistry"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_13",
+   "title": "[neuroscience] The brain's ability to consolidate diverse memories while maintaining their distinctiveness across experiences remains poorly understood.",
+   "statement": "Research Plan Problem The brain's ability to consolidate diverse memories while maintaining their distinctiveness across experiences remains poorly understood. Sharp-wave ripples (SWRs), neural oscillations occurring predominantly within CA1 of the hippocampus during immobility and sleep, play a critical role in memory consolidation. Recent evidence has revealed functional heterogeneity of pyramidal neurons within distinct sublayers of CA1 (superficial CA1sup and deep CA1deep) that display unique properties during ripples, potentially contributing to memory specificity. Despite this understanding, it remains unclear exactly how ripples shift the activity of CA1 neuronal populations to accommodate the consolidation of specific memories and how sublayer differences manifest. While much attention has focused on uncovering principles that guide memory reactivation and consolidation, less is known about the mechanisms that regulate these processes and govern memory specificity. We hypothesize that cortical inputs, specifically from the anterior cingulate cortex (ACC), may play a role in modifying hippocampal activity during memory consolidation. The ACC displays increased activity immed",
+   "evidence": {
+    "major_strengths": 2,
+    "major_weaknesses": 2,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_26",
+   "title": "[neuroscience] : Dynamic Estimation of the Attentional Field from Visual Cortical Activity Problem We aim to investigate how the size of the attentional field is...",
+   "statement": "Research Plan: Dynamic Estimation of the Attentional Field from Visual Cortical Activity Problem We aim to investigate how the size of the attentional field is represented within human visual cortex and develop methods to dynamically recover both the location and spatial extent of covert spatial attention from visuocortical activity. While spatial attention has been conceptualized as a \"spotlight\" that can be flexibly adjusted based on behavioral demands, the neural underpinnings of attentional field size remain poorly understood compared to the well-studied locus of attention. The motivation for this research stems from a significant gap in our understanding of spatial attention. Although influential theoretical models propose that the attentional field can be broadened and narrowed according to task demands, and that the interaction between attentional field size and stimulus properties can predict observed attentional effects, empirical evidence demonstrating how attention changes its spread across the visual field through brain response modulation is surprisingly limited. Previous studies have focused primarily on neural modulation at attended locations, but methods for dynamic",
+   "evidence": {
+    "major_strengths": 3,
+    "major_weaknesses": 2,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_eco_19",
+   "title": "[ecology] Seasonal polyphenism enables organisms to adapt to environmental challenges by increasing phenotypic diversity.",
+   "statement": "Research Plan Problem Seasonal polyphenism enables organisms to adapt to environmental challenges by increasing phenotypic diversity. Cacopsylla chinensis exhibits remarkable seasonal polyphenism, specifically in the form of summer-form and winter-form, which have distinct morphological phenotypes. Previous research has shown that low temperature and the temperature receptor CcTRPM regulate the transition from summer-form to winter-form in C. chinensis by impacting cuticle content and thickness. However, the underlying neuroendocrine regulatory mechanism remains largely unknown. We hypothesize that Bursicon, also known as the tanning hormone responsible for the hardening and darkening of the insect cuticle, plays a novel role in the transition from summer-form to winter-form in C. chinensis. Given that insects exposed to cold conditions exhibit larger body size and darker cuticular melanization than those reared in warmer environments, we expect Bursicon and its receptor to play a significant role in the seasonal polyphenism of C. chinensis. Additionally, we propose that microRNAs (miRNAs) may regulate Bursicon signaling at the post-transcriptional level, as miRNAs have been shown",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 7,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "ecology"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_eco_1",
+   "title": "[ecology] Plant-insect communication has been extensively studied across multiple sensory modalities including vision, olfaction, and mechanoreception, but...",
+   "statement": "Research Plan Problem Plant-insect communication has been extensively studied across multiple sensory modalities including vision, olfaction, and mechanoreception, but plant-insect acoustic communication has never been demonstrated. Recent findings show that plants emit ultrasonic sounds, particularly under dehydration stress, which are airborne and potentially detectable by ultrasound-hearing moths from several meters away. These sounds can serve as reliable cues for plant condition, specifically indicating drought stress. Many moth species have evolved ultrasonic hearing abilities with sensitivity typically falling within the 20-60 kHz range. Two main hypotheses exist for the evolution of these hearing organs: detection of ultrasonic signals from male moths for sexual communication, and anti-predator mechanisms to detect bat echolocation calls. Regardless of their evolutionary origin, these hearing abilities allow moths to detect various additional sounds, including plant dehydration clicks which have spectra overlapping with moths' hearing range and peak around 50kHz. We hypothesize that herbivorous female moths with ultrasonic hearing might exploit ultrasonic plant emissions as",
+   "evidence": {
+    "major_strengths": 3,
+    "major_weaknesses": 3,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "ecology"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_27",
+   "title": "[neuroscience] Animals face a critical survival challenge: balancing the urgent need to find food during starvation with the necessity to avoid toxic substances.",
+   "statement": "Research Plan Problem Animals face a critical survival challenge: balancing the urgent need to find food during starvation with the necessity to avoid toxic substances. In Drosophila, this decision-making process involves distinguishing between nutritious and potentially toxic food through specialized Gustatory Receptor Neurons (GRNs) that express different Gustatory Receptors (GRs). While GRNs expressing Gr64f detect sweet compounds and promote feeding behavior, those expressing Gr66a detect bitter compounds and induce feeding rejection. These GRNs project to the Subesophageal Zone (SEZ) in the central brain where gustatory information is processed. Despite extensive knowledge about GRs and GRNs, the processing of gustatory information in the SEZ remains unclear. Unlike the olfactory system with its organized glomerular structure, the gustatory system lacks clear anatomical subdivisions, though sweet and bitter processing neurons do converge in distinct, non-overlapping SEZ regions. We hypothesize that the first layer of gustatory interneurons, termed Gustatory Second Order Neurons (G2Ns), which receive direct input from GRNs, play a crucial role in integrating gustatory informati",
+   "evidence": {
+    "major_strengths": 3,
+    "major_weaknesses": 2,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_ai_2",
+   "title": "[artificial intelligence] : Exploring the Recall of Language Models - Case Study on Molecules Problem Current benchmarks for evaluating generative language models primarily...",
+   "statement": "Research Plan: Exploring the Recall of Language Models - Case Study on Molecules Problem Current benchmarks for evaluating generative language models primarily focus on the accuracy of generated outputs, but we identify a critical gap in evaluating recall - the ability of models to generate all correct outputs for a given input. This capability is crucial for security-focused applications such as finding all software vulnerabilities, discovering all possible jailbreaks for language model security, suggesting comprehensive medical diagnoses, and generating diverse molecular candidates for drug discovery. We face two significant obstacles in developing recall-based evaluation: (1) the difficulty of creating benchmarks that include complete sets of correct outputs, and (2) the non-unique nature of object representations, where the same correct output can be expressed in multiple equivalent ways (forming equivalence classes). We hypothesize that we can overcome these challenges by using molecular generation as a testbed, where complete datasets exist and equivalence classes can be computed algorithmically. Our research questions focus on: How can we systematically evaluate and predict",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 7,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "artificial intelligence"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_biochem_6",
+   "title": "[biochemistry] G protein-coupled receptors (GPCRs) are critical regulators of cellular processes and represent prime drug targets.",
+   "statement": "Research Plan Problem G protein-coupled receptors (GPCRs) are critical regulators of cellular processes and represent prime drug targets. While traditional GPCR-targeted therapies focus on orthosteric sites, recent advances have revealed allosteric sites offering novel therapeutic avenues. Although exogenous synthetic allosteric modulators are known, endogenous counterparts remain poorly characterized. We hypothesize that endogenous intracellular metabolites can function as allosteric modulators of GPCRs by directly interacting with the GPCR-Gα protein binding interface. Specifically, we propose that a subset of pheromone-resistant yeast cells might regulate Ste2p-mediated programmed cell death (PCD) signaling via endogenous intracellular metabolites operating at the Ste2-Gα binding interface. The challenge lies in identifying these endogenous GPCR allosteric modulators, which is complicated by factors like incomplete GPCR topology data, vast chemical space, and the lack of robust computational methods for unbiased cavity identification and cavity-specific ligand design. Traditional approaches like structure-activity relationship (SAR) analysis are hampered by limited GPCR alloster",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 8,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "biochemistry"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_biochem_24",
+   "title": "[biochemistry] : The Fate of Pyruvate Dictates Cell Growth by Modulating Cellular Redox Potential Problem Mitochondrial pyruvate metabolism is central to cell...",
+   "statement": "Research Plan: The Fate of Pyruvate Dictates Cell Growth by Modulating Cellular Redox Potential Problem Mitochondrial pyruvate metabolism is central to cell proliferation as well as the size and specialized functions of post-mitotic cells. We aim to investigate whether pyruvate metabolism influences biosynthetic capacity and cell size, using the Drosophila fat body as a model of the mammalian liver. Our research is motivated by observations that cells must appropriately allocate available nutrients to optimize their metabolic programs for energy extraction and biomass production. The balance between these processes plays an important role in determining cell fate and function. For example, in cancer and heart failure, cellular metabolism is rewired to favor biosynthesis over efficient energy production, which facilitates rapid cell proliferation. In previous work, during the third instar stage of Drosophila larval development (from 72 to 120 hours After Egg Laying), fat body cells halt cell division and dramatically increase in size. This rapid cell growth occurs alongside time-dependent changes in mRNAs encoding proteins involved in cell growth pathways and metabolic processes. No",
+   "evidence": {
+    "major_strengths": 3,
+    "major_weaknesses": 1,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "biochemistry"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_ai_1",
+   "title": "[artificial intelligence] : Defining Deception in Decision Making Problem With the rapid advancement of machine learning systems that interact with humans—including...",
+   "statement": "Research Plan: Defining Deception in Decision Making Problem With the rapid advancement of machine learning systems that interact with humans—including language models, dialogue systems, and recommendation systems—there is growing concern about the potential for these systems to deceive and manipulate people on a large scale. Current approaches to defining deception are limited, primarily focusing on supervised learning methods for detecting false statements, which fails to capture the complexity of deceptive behavior in interactive settings. We identify several key limitations in existing deception definitions: (1) omissions may be inevitable when complete information sharing is infeasible; (2) technically true statements can still convey misleading impressions; (3) listeners' prior beliefs may mean that technically false statements actually bring understanding closer to truth; and (4) statements further from literal truth may sometimes lead listeners to actions more aligned with their goals. Our hypothesis is that a complete definition of deception must go beyond simply considering the logical truth of individual statements and should account for the sequential nature of interact",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 8,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "artificial intelligence"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_1",
+   "title": "[neuroscience] : Modeled Grid Cells Aligned by a Flexible Attractor Problem Grid cells in the medial entorhinal cortex provide spatial representation through...",
+   "statement": "Research Plan: Modeled Grid Cells Aligned by a Flexible Attractor Problem Grid cells in the medial entorhinal cortex provide spatial representation through hexagonal periodic firing patterns, with cells in the same module sharing spacing and orientation while differing only in spatial phase. Current computational models typically assume that this alignment results from two-dimensional continuous attractor networks that directly mirror the two-dimensional space being represented. However, this approach presents several limitations that motivate our investigation. First, the assumption that network architecture dimensionality must match representational space dimensionality has not been rigorously tested. Two-dimensional attractors impose rigid constraints on neural activity, yet experimental evidence shows grid maps can undergo global and local modifications under various manipulations. Second, the mechanisms for forming and maintaining such complex, fine-tuned two-dimensional networks remain poorly understood, often requiring independent functional representations of two-dimensional space as prerequisites. Third, grid cells demonstrate versatility in representing one-dimensional va",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 7,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_25",
+   "title": "[neuroscience] We aim to investigate the neural mechanisms underlying flexible temporal construals from different perspectives.",
+   "statement": "Research Plan Problem We aim to investigate the neural mechanisms underlying flexible temporal construals from different perspectives. Humans conceptualize time in terms of space, allowing them to adopt various viewpoints when thinking about temporal sequences. We can engage in \"mental time travel\" by projecting ourselves internally through a timeline to remember the past and imagine the future, or we can adopt \"mental time watching\" by taking an external standpoint to have a panoramic view of temporal events. The distinction between these temporal perspectives relates to philosophical concepts of time reference frames: the A-series (egocentric, with events ordered relative to the observer's subjective \"now\") and the B-series (allocentric, concerning the order of events regardless of the observer's position). However, the neural mechanisms that support these flexible temporal construals remain unclear. We hypothesize that the brain implements complementary allocentric and egocentric reference frames for temporal representation, similar to those proposed for spatial cognition. Specifically, we predict that the medial temporal lobe (particularly the hippocampus) stores temporal seque",
+   "evidence": {
+    "major_strengths": 4,
+    "major_weaknesses": 3,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_5",
+   "title": "[neuroscience] Sleep-associated memory consolidation and reactivation play crucial roles in language acquisition and new word learning.",
+   "statement": "Research Plan Problem Sleep-associated memory consolidation and reactivation play crucial roles in language acquisition and new word learning. However, the extent to which properties of word learning difficulty impact sleep-associated memory reactivation remains unclear. Previous research has shown that artificial words with phonotactic properties similar to real words are easier to learn and remember, suggesting that pre-existing knowledge about sound structure facilitates encoding and consolidation. Yet findings regarding the effects of similarity to pre-existing knowledge on sleep consolidation are controversial - some studies suggest reduced similarity facilitates consolidation during sleep, while others indicate beneficial effects of pre-existing knowledge. We hypothesize that learning difficulty, as manipulated through phonotactical properties of artificial words, will impact the effectiveness of targeted memory reactivation (TMR) during sleep. Based on previous findings showing that prior knowledge and encoding depth influence TMR effectiveness, we expect higher effectiveness of TMR for easy-to-learn words compared to difficult words, accompanied by higher oscillatory activi",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 6,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_eco_13",
+   "title": "[ecology] : Fitness Drivers of Division of Labor in Vertebrates Problem We aim to address a significant gap in our understanding of division of labor...",
+   "statement": "Research Plan: Fitness Drivers of Division of Labor in Vertebrates Problem We aim to address a significant gap in our understanding of division of labor evolution beyond eusocial insects. While division of labor as a means to increase productivity is well-documented in eusocial insect societies with sterile workers, empirical evidence and theoretical frameworks for understanding division of labor in vertebrates remain scarce. Most previous theoretical work has focused exclusively on eusocial systems where workers can only obtain fitness benefits indirectly through kin selection, resulting in low conflict of interest between group members. In cooperatively breeding vertebrates, however, the situation differs fundamentally. These societies are characterized by more equitable sharing of reproduction, low or mixed kinship, and often include unrelated helpers. Since sterile workers are absent in vertebrate societies, conflict can be much higher than in eusocial insect societies, and direct fitness benefits may be more relevant than indirect benefits in the evolution of division of labor. We hypothesize that the joint influence of direct and indirect fitness benefits has never been syste",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 6,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "ecology"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_eco_5",
+   "title": "[ecology] : Partitioning Changes in Ecosystem Productivity by Effects of Species Interactions in Biodiversity Experiments Problem Current biodiversity...",
+   "statement": "Research Plan: Partitioning Changes in Ecosystem Productivity by Effects of Species Interactions in Biodiversity Experiments Problem Current biodiversity experiments face significant limitations in distinguishing the effects of different types of species interactions on ecosystem productivity. The widely used additive partitioning method compares species performance in mixtures with expectations from monocultures, decomposing net biodiversity effects into complementarity effects (CE) and selection effects (SE). However, neither of these components can be reliably linked to specific effects of species interactions. We hypothesize that positive biodiversity effects detected through current null expectations may often result from competitive interactions rather than truly positive interactions (resource partitioning and facilitation). Competitive interactions can produce positive biodiversity effects when the yield gain of more competitive species from increased resource availability exceeds the yield loss of less competitive species from decreased resource availability. This occurs because competitive interactions are the predominant type of interspecific relationships in plants and",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 11,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "ecology"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_eco_16",
+   "title": "[ecology] Eukaryotic plankton play pivotal roles in marine ecosystems, including nutrient cycling, carbon fixation, and energy transfer, with phytoplankton...",
+   "statement": "Research Plan Problem Eukaryotic plankton play pivotal roles in marine ecosystems, including nutrient cycling, carbon fixation, and energy transfer, with phytoplankton responsible for approximately half of Earth's primary production. Despite their importance, current research approaches face significant limitations due to a technological dichotomy between optical methods (primarily used for taxonomic purposes) and genomics (which excels at describing biochemistry of microbial communities). This separation hampers efforts to link the morpho-optical properties of each species with its genetic and biomolecular makeup, leading to fragmented information and limited reproducibility. The most accurate method to characterize plankton community heterogeneity and functions requires determining taxonomic composition and examining molecular capabilities of each species. However, isolation and biomolecular analysis of individual species is slow, labor-intensive, and often restricted to laboratory-culturable species. While shotgun metagenomics and metatranscriptomics provide excellent tools for studying entire community biochemistry, they lack single-organism resolution and can be difficult to r",
+   "evidence": {
+    "major_strengths": 4,
+    "major_weaknesses": 3,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "ecology"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_17",
+   "title": "[neuroscience] : Striatal Crosstalk Between Dopamine and Serotonin Systems Problem We aim to investigate the complex and poorly understood interactions between...",
+   "statement": "Research Plan: Striatal Crosstalk Between Dopamine and Serotonin Systems Problem We aim to investigate the complex and poorly understood interactions between dopamine (DA) and serotonin (5-HT) systems in the striatum. Two conflicting hypotheses exist regarding these interactions. The opponency hypothesis suggests that DA and 5-HT have opposite functions, with DA promoting behavioral activation while 5-HT suppresses behavior. Pharmacological studies support this view, showing that DA and 5-HT agonists or antagonists have opposite effects on reward processing, feeding behavior, and self-stimulation. Recent fiber photometry recordings further suggest that DA and 5-HT exhibit inverse activity patterns in the striatum in response to reward and following choice actions. Alternatively, 5-HT could directly enhance DA activity or share properties that facilitate reinforcement processing similar to DA. Local 5-HT infusion into the striatum can increase extracellular DA levels, and selective serotonin reuptake inhibitors (SSRIs) can modulate DA self-stimulation thresholds and enhance cocaine's reinforcing effects. Furthermore, serotonergic activity in the dorsal raphe interacts with DA, encod",
+   "evidence": {
+    "major_strengths": 2,
+    "major_weaknesses": 1,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_ai_4",
+   "title": "[artificial intelligence] : ESM-Effect Framework for Mutation Functional Effect Prediction Problem We address critical limitations in computational mutation effect...",
+   "statement": "Research Plan: ESM-Effect Framework for Mutation Functional Effect Prediction Problem We address critical limitations in computational mutation effect prediction, particularly for functional effects rather than traditional pathogenicity predictions. Current approaches face three main challenges: (1) methods using static ESM1 embeddings or multimodal features either fall short in accuracy or involve complex preprocessing pipelines, (2) functional effect prediction suffers from a lack of standardized datasets and metrics for robust benchmarking, and (3) existing pathogenicity predictors struggle to accurately predict bidirectional functional effects of specific mutations, such as rare gain-of-function enzyme mutations. The motivation stems from the clinical need for precise functional insights into mutations, as Deep Mutational Scans (DMS) are laborious, expensive, and rare. While pathogenicity predictors can distinguish benign from pathogenic mutations, they cannot reliably capture the complex biological specificity required for predicting whether mutations increase or decrease specific protein properties. We hypothesize that systematic optimization of ESM2-based approaches through",
+   "evidence": {
+    "major_strengths": 3,
+    "major_weaknesses": 2,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "artificial intelligence"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_ai_22",
+   "title": "[artificial intelligence] : FCoReBench - Can Large Language Models Solve Challenging First-Order Combinatorial Reasoning Problems?",
+   "statement": "Research Plan: FCoReBench - Can Large Language Models Solve Challenging First-Order Combinatorial Reasoning Problems? Problem We aim to assess the reasoning limits of modern large language models (LLMs) by investigating their ability to solve computationally intensive, first-order combinatorial reasoning problems. These problems, such as graph coloring, knapsack, and cryptarithmetic, have long served as important testbeds for AI systems and present unique challenges due to their first-order nature - meaning they can be instantiated with potentially infinite problem instances of varying sizes. Current work on challenging benchmarks has limited focus on exploiting the first-order structure of these problems. We hypothesize that existing LLM approaches, even when augmented with symbolic solvers, will perform poorly on such structured problems and show degraded performance as problem instance size increases. We expect that the structured, first-order nature of these problems requires specialized approaches that can leverage both the reasoning capabilities of LLMs and the computational power of symbolic solvers. Our research questions are: (1) Can LLMs solve challenging first-order comb",
+   "evidence": {
+    "major_strengths": 5,
+    "major_weaknesses": 4,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "artificial intelligence"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_ai_23",
+   "title": "[artificial intelligence] : scKGOT - Intercellular Signaling Inference with Knowledge Graph Optimal Transport Problem We aim to address the challenge of accurately...",
+   "statement": "Research Plan: scKGOT - Intercellular Signaling Inference with Knowledge Graph Optimal Transport Problem We aim to address the challenge of accurately inferring intercellular signaling and pathway activity from single-cell transcriptomic data. Current methods for analyzing cell-cell communication have significant limitations: they primarily focus on direct predictions of ligand-receptor pairs based on gene expression and correlation between genes, without fully leveraging the complex biological pathways that mediate intercellular communication. The fundamental issue is that simply examining expression levels of ligand and receptor genes cannot reliably capture the activated signaling pathways mediating intercellular communication. While some existing methods like NicheNet and CellCall attempt to identify both ligand-receptor pairs and downstream genes, they fail to make full use of biological pathways in their inference process. This represents a critical gap since ligand-receptor-mediated cell-cell communication relies on the activation of specific signaling pathways such as JAK-STAT, PKC, and MAPK pathways. We hypothesize that by integrating prior knowledge of signaling pathways",
+   "evidence": {
+    "major_strengths": 6,
+    "major_weaknesses": 3,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "artificial intelligence"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_15",
+   "title": "[neuroscience] We aim to investigate how adolescence affects auditory processing and learning in mice, specifically examining whether ongoing brain development...",
+   "statement": "Research Plan Problem We aim to investigate how adolescence affects auditory processing and learning in mice, specifically examining whether ongoing brain development during this period impacts sensory discrimination abilities and the underlying neural mechanisms. While adolescence is characterized by heightened brain plasticity, the extent to which sensory and cognitive functions have matured during this developmental stage remains unclear, with studies showing inconsistent results regarding adolescent learning capabilities. Our research is motivated by the concept that brain development involves multiple, overlapping critical periods that can affect each other, rather than discrete developmental windows. Although the critical period for pure tone representation in the auditory cortex closes by approximately postnatal day 15 (before adolescence begins), we hypothesize that learning of pure tone discrimination will remain malleable during adolescence because other perceptual features and cognitive mechanisms are still developing. We predict that adolescent mice will show distinct behavioral performance and cortical representations compared to adults when learning an auditory discri",
+   "evidence": {
+    "major_strengths": 5,
+    "major_weaknesses": 1,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_6",
+   "title": "[neuroscience] : The Transformation of Sensory to Perceptual Braille Letter Representations in the Visually Deprived Brain Problem We aim to investigate...",
+   "statement": "Research Plan: The Transformation of Sensory to Perceptual Braille Letter Representations in the Visually Deprived Brain Problem We aim to investigate experience-based plasticity of the human cortex at its boundaries by studying information processing in individuals who lost vision at birth or early in life. The complete loss of a sensory modality represents one of the most extreme changes in human experience, providing a unique experimental opportunity to characterize cortical plasticity at its limits. Previous research has shown that cortical structures most strongly activated by visual input in sighted brains are activated by various cognitive functions in visually deprived brains, including braille reading. However, overlapping functional responses alone cannot inform us about the nature of these activations - specifically, what kind of information they represent and what role they play in cognitive processing. We will investigate the tactile braille system in blind participants to elucidate the nature of information processing in the visually deprived brain. Braille readers commonly use both hands, requiring their brain to transform sensory tactile input into a hand-independen",
+   "evidence": {
+    "major_strengths": 3,
+    "major_weaknesses": 2,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_biochem_2",
+   "title": "[biochemistry] : Non-autonomous cell redox-pairs dictate niche homeostasis in multi-lineage stem populations Problem We aim to investigate the fundamental...",
+   "statement": "Research Plan: Non-autonomous cell redox-pairs dictate niche homeostasis in multi-lineage stem populations Problem We aim to investigate the fundamental question of how stem cells harmonize their redox potential by possessing a restrained oxidant system. While reactive oxygen species (ROS) have been established as key molecules influencing cell fate decisions like maintenance and differentiation, these redox-dependent events are mainly considered to be cell intrinsic in nature. However, we hypothesize that oxygen-derived entities may function as intercellular communicating agents. Our research focuses on the multi-stem cell lineage-based niche architecture in Drosophila testis, where we suspect that a perfectly balanced redox differential between Germline Stem Cells (GSCs) and Cystic Stem Cells (CySCs) is essential for niche homeostasis. We hypothesize that CySCs, by virtue of their higher redox threshold and clustering of mitochondria at the GSC-CySC interface, generate an intercellular redox gradient that maintains physiological ROS levels in GSCs. We predict that disruption of intercellular redox equilibrium between these two adjoining stem cell populations will result in deregu",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 7,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "biochemistry"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_9",
+   "title": "[neuroscience] Cooperation is essential for societal success, yet research consistently shows that adolescents cooperate less than adults in social dilemmas.",
+   "statement": "Research Plan Problem Cooperation is essential for societal success, yet research consistently shows that adolescents cooperate less than adults in social dilemmas. This reduced cooperation is commonly attributed to underdeveloped mentalizing abilities that limit adolescents' expectations of others' cooperative intentions. However, the internal computational processes underlying this developmental difference remain largely unexplored. We observe that adolescents' lower cooperation appears selectively - emerging primarily after their partner's cooperation but not following defection. This pattern suggests that factors beyond mentalizing deficits may be at play. We hypothesize that adolescents may prioritize maximizing immediate rewards over long-term reciprocity, making defection the optimal strategy when they are confident their partner will cooperate. Our research questions focus on: (1) confirming whether adolescents exhibit lower overall cooperation compared to adults, particularly following partner cooperation; (2) identifying the mental variables contributing to these differences through computational modeling; and (3) determining whether reduced cooperation stems from inappro",
+   "evidence": {
+    "major_strengths": 4,
+    "major_weaknesses": 3,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_28",
+   "title": "[neuroscience] We aim to investigate the relationship between cognitive abilities and mental health in children, specifically examining how this relationship is...",
+   "statement": "Research Plan Problem We aim to investigate the relationship between cognitive abilities and mental health in children, specifically examining how this relationship is represented at different neurobiological levels of analysis. While cognitive abilities are frequently associated with mental health across various disorders beginning in childhood, the extent to which this relationship is captured by different neurobiological units of analysis—such as multimodal neuroimaging and polygenic scores (PGS)—remains unclear. According to the National Institute of Mental Health's Research Domain Criteria (RDoC) framework, cognitive abilities should be investigated not only behaviorally but also neurobiologically, from the brain to genes. Understanding this neurobiology will be a milestone toward completing the transdiagnostic etiology of mental health. We must also consider how these neurobiological units capture variations due to environmental factors, such as socio-demographics, lifestyles, and childhood developmental adverse events. We hypothesize that the relationship between cognitive abilities and mental health can be partially explained by cognitive abilities at neural and genetic lev",
+   "evidence": {
+    "major_strengths": 3,
+    "major_weaknesses": 3,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_ai_27",
+   "title": "[artificial intelligence] : Vision-Based Pseudo-Tactile Information Extraction and Localization for Dexterous Grasping Problem Dexterous robotic hand grasping remains a...",
+   "statement": "Research Plan: Vision-Based Pseudo-Tactile Information Extraction and Localization for Dexterous Grasping Problem Dexterous robotic hand grasping remains a challenging problem due to two primary limitations: the difficulty in acquiring tactile perception during mechanical manipulation and the complexity of multi-finger contact scenarios. Current tactile sensing systems for dexterous hands are generally costly and rely on expensive external sensors such as high-precision LiDAR, which greatly limits their widespread application in robotics. We hypothesize that tactile information can be effectively extracted from visual data by analyzing surface characteristics in 3D point clouds, and that precise fingertip contact localization can be achieved through high-fidelity simulation. Our research addresses the fundamental question of whether vision-based systems can provide reliable pseudo-tactile feedback for robotic grasping without requiring physical tactile sensors. The motivation for this work stems from the need for a low-cost, high-performance tactile sensing and grasping positioning system that can enhance robotic manipulation capabilities while providing accessible sensory data for",
+   "evidence": {
+    "major_strengths": 1,
+    "major_weaknesses": 11,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "artificial intelligence"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_biochem_18",
+   "title": "[biochemistry] : Endogenous Oligomer Formation Underlies DVL2 Condensates and Promotes Wnt/β-catenin Signaling Problem The Wnt/β-catenin signaling pathway is...",
+   "statement": "Research Plan: Endogenous Oligomer Formation Underlies DVL2 Condensates and Promotes Wnt/β-catenin Signaling Problem The Wnt/β-catenin signaling pathway is crucial for stem cell proliferation and tissue regeneration, with deregulation linked to diseases like colorectal cancer. Activation of this pathway critically depends on polymerization of dishevelled 2 (DVL2) into biomolecular condensates. However, a fundamental paradox exists: the known DVL2 self-interaction sites have low affinity (mid-micromolar range) and DVL2 exists at low cellular concentrations, which should strongly disfavor the polymerization required for pathway activation. While DVL2 overexpression studies have shown that it can form microscopically visible assemblies characterized as phase-separated biomolecular condensates, there remains controversial debate about whether DVL2 forms condensates at endogenous expression levels. Recent studies report conflicting findings - some observe only small DVL2 assemblies with fewer than 10 molecules, others report single large condensates at the centrosome, and still others describe approximately 100 condensates per cell. Additionally, the three vertebrate DVL isoforms (DVL1,",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 9,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "biochemistry"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_biochem_22",
+   "title": "[biochemistry] : Establishing the Foundations for a Data-Centric AI Approach for Virtual Drug Screening Problem We observe that researchers have predominantly...",
+   "statement": "Research Plan: Establishing the Foundations for a Data-Centric AI Approach for Virtual Drug Screening Problem We observe that researchers have predominantly adopted model-centric artificial intelligence (AI) approaches in cheminformatics by developing increasingly sophisticated AI methods to leverage growing chemical libraries. While complex deep learning methods have been shown to outperform conventional machine learning (ML) methods in QSAR and ligand-based virtual screening, such approaches generally lack explainability. Instead of pursuing more sophisticated AI methods (i.e., a model-centric approach), we want to explore the potential of a data-centric AI paradigm for virtual screening. A data-centric AI would automatically identify the right type of data to collect, clean, and curate for later use by a predictive AI. This approach is particularly needed given the large volumes of chemical data that exist in chemical databases – PubChem alone has over 100 million unique compounds. However, a systematic assessment of the attributes and properties of suitable data is needed before we can develop such an approach. We hypothesize that it is not the result of deficiencies in current",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 7,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "biochemistry"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_eco_12",
+   "title": "[ecology] : An Illusion of a Macroecological Law, Abundance-Occupancy Relationships Problem We aim to investigate the validity of abundance-occupancy...",
+   "statement": "Research Plan: An Illusion of a Macroecological Law, Abundance-Occupancy Relationships Problem We aim to investigate the validity of abundance-occupancy relationships (AORs), which are considered one of the most general and robust patterns in ecology and sometimes referred to as a macroecological law. The AOR asserts that locally abundant species tend to be widely distributed, while locally rare species tend to be geographically restricted in their range. Despite being widely accepted and underpinning many practical applications in ecology and conservation, the mechanism driving this relationship has never been proven and remains unresolved. We hypothesize that publication bias and confirmation bias may have created an illusion of AORs as a 'universal' pattern. While a previous meta-analysis of 279 effect sizes showed a remarkably strong overall effect (r = 0.58), we suspect that sampling bias, publication bias, and confirmation bias could generate artifactual AORs. Our research questions focus on: (1) whether AORs truly exist when examined with large, methodologically consistent datasets free from publication and confirmation bias, and (2) how sampling intensity affects the magnit",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 12,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "ecology"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_eco_3",
+   "title": "[ecology] Pesticide-induced resurgence, where pest insect populations increase following pesticide application, poses a serious threat to sustainable crop...",
+   "statement": "Research Plan Problem Pesticide-induced resurgence, where pest insect populations increase following pesticide application, poses a serious threat to sustainable crop pest control. While this phenomenon has been observed in brown planthopper (BPH) populations following exposure to certain insecticides, the molecular mechanisms underlying pesticide-enhanced reproduction remain poorly understood. We have observed that when farmers use emamectin benzoate (EB) and abamectin to control rice leaffolders in China, BPH outbreaks frequently occur in the same fields. These avermectin pesticides act as allosteric modulators of glutamate-gated chloride channels (GluCls) and are highly effective against Lepidoptera. However, since BPH and rice leaffolders have overlapping migratory paths but different occurrence periods, BPH arriving later may be exposed to sublethal concentrations of these compounds. Previous studies have shown that sublethal doses of certain pesticides can enhance BPH fecundity, with increases in circulating juvenile hormone (JH) III titers being implicated. However, the regulation of JH is complex, and the key molecular actors involved in JH-mediated pesticide-enhanced repro",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 6,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "ecology"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_biochem_11",
+   "title": "[biochemistry] : Structural Insights into Human Propionyl-CoA Carboxylase (PCC) and 3-Methylcrotonyl-CoA Carboxylase (MCC) Problem We aim to address the limited...",
+   "statement": "Research Plan: Structural Insights into Human Propionyl-CoA Carboxylase (PCC) and 3-Methylcrotonyl-CoA Carboxylase (MCC) Problem We aim to address the limited structural understanding of human biotin-dependent carboxylases (BDCs), specifically propionyl-CoA carboxylase (PCC) and 3-methylcrotonyl-CoA carboxylase (MCC). While these enzymes play crucial roles in metabolic processes—PCC catalyzes the carboxylation of propionyl-CoA in the metabolism of odd-chain fatty acids, cholesterol, and specific amino acids, and MCC catalyzes the carboxylation of 3-methylcrotonyl-CoA in leucine metabolism—our structural knowledge remains constrained. Only a low-resolution (15 Å) cryo-EM structure of human PCC has been reported, and no high-resolution structure of human MCC exists. This knowledge gap limits our understanding of substrate specificity, catalytic mechanisms, and the coordination between different functional domains in these essential metabolic enzymes. We hypothesize that high-resolution structures of human PCC and MCC in various substrate-bound states will reveal the molecular basis of substrate specificity and provide insights into the catalytic process, particularly regarding biotin",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 0,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "biochemistry"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_eco_9",
+   "title": "[ecology] We aim to investigate the Solstice-as-Phenology-Switch hypothesis, which posits that the summer solstice (21 June) acts as a phenological \"switch...",
+   "statement": "Research Plan Problem We aim to investigate the Solstice-as-Phenology-Switch hypothesis, which posits that the summer solstice (21 June) acts as a phenological \"switch point\" where the effects of temperature on autumn phenology reverse. Specifically, we hypothesize that pre-solstice warming advances autumn bud set while post-solstice warming delays it. However, the flexibility of this switch point remains poorly understood, particularly regarding how developmental constraints influence this temperature effect reversal. Recent observations show that autumn phenology delays are much smaller compared to spring advances under climate warming, despite experimental evidence of high autumn sensitivity to temperature. We hypothesize that developmental constraints mediate these responses, with early-season development rates determining when trees become sensitive to late-season cooling signals. Additionally, since trees primarily grow at night when temperatures and water deficits are lower, we expect daytime and nighttime temperatures to have different effects on growth cessation before and after the solstice. Our conceptual model suggests that early-season development has an advancing effe",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 6,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "ecology"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_ai_34",
+   "title": "[artificial intelligence] : Tensor Train Decomposition for Adversarial Attacks on Computer Vision Models Problem Deep neural networks (DNNs) are widely deployed but remain...",
+   "statement": "Research Plan: Tensor Train Decomposition for Adversarial Attacks on Computer Vision Models Problem Deep neural networks (DNNs) are widely deployed but remain vulnerable to adversarial attacks, making it crucial to understand their potential weaknesses for developing effective defense mechanisms. While white-box attacks that leverage model architecture and gradients are highly successful, they are impractical for real-world scenarios where internal model structure is unknown. Black-box attacks, which only require query access to the target model, are more realistic but face significant challenges. Current black-box attack methods rely on gradient-free optimization algorithms, but these classical approaches often prove ineffective in high-dimensional spaces typical of computer vision problems. The challenge lies in efficiently searching the vast perturbation space to find adversarial examples while maintaining imperceptibility and minimizing the number of queries to the target model. We hypothesize that tensor train (TT) decomposition, which has shown success in various multidimensional applications, can provide a more effective framework for black-box adversarial attacks by efficie",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 11,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "artificial intelligence"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_biochem_20",
+   "title": "[biochemistry] Toxoplasma gondii infects 25-30% of the global human population and causes life-threatening diseases in immunocompromised patients.",
+   "statement": "Research Plan Problem Toxoplasma gondii infects 25-30% of the global human population and causes life-threatening diseases in immunocompromised patients. The parasite exists in two main forms: fast-replicating tachyzoites that cause acute infections, and semi-dormant bradyzoites that persist within tissue cysts in brain and muscle tissue, responsible for chronic infections and disease transmission. Currently, no medical treatment exists to eradicate these tissue cysts with their rigid cyst wall from infected individuals. Existing drugs such as antifolates or cytochrome bc1 inhibitors (atovaquone, buparvaquone, endochin-like quinolones) suppress tachyzoite growth but consistently fail to eradicate mature bradyzoites. The underlying reasons for these treatment failures remain unclear - whether target proteins become dispensable for bradyzoite survival or whether failures result from poor drug permeability across the blood-brain barrier and cyst wall. We hypothesize that identifying compounds with simultaneous activity against both tachyzoites and bradyzoites will reveal essential metabolic pathways in bradyzoites and provide new therapeutic targets. The lack of genetic tools to direc",
+   "evidence": {
+    "major_strengths": 2,
+    "major_weaknesses": 0,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "biochemistry"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_ai_33",
+   "title": "[artificial intelligence] : Zephyr GAN - Redefining GAN with Flexible Gradient Control Problem We aim to address fundamental limitations in Generative Adversarial Networks...",
+   "statement": "Research Plan: Zephyr GAN - Redefining GAN with Flexible Gradient Control Problem We aim to address fundamental limitations in Generative Adversarial Networks (GANs) that stem from the choice of loss functions used in discriminator training. Current commonly used loss functions such as cross-entropy and least squares suffer from several critical issues: - **Vanishing gradients**: Cross-entropy loss leads to vanishing gradients when the discriminator becomes overly confident, which impedes the generator's learning - **Training instability**: Existing loss functions create unstable training dynamics that prevent GANs from consistently achieving Nash equilibria - **Sensitivity to outliers**: Least squares loss over-penalizes outliers, leading to inefficient learning and focus on rare samples - **Optimization issues**: Wasserstein loss, while addressing some gradient problems, introduces optimization difficulties requiring careful hyperparameter tuning Our hypothesis is that these limitations can be overcome by introducing a novel loss function that provides smooth gradient flow, enhanced robustness to outliers, and flexible gradient control throughout the training process. Method We p",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 8,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "artificial intelligence"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_ai_5",
+   "title": "[artificial intelligence] : Flow Matching for One-Step Sampling Problem Flow-based generative models have emerged as powerful tools for mapping simple distributions to...",
+   "statement": "Research Plan: Flow Matching for One-Step Sampling Problem Flow-based generative models have emerged as powerful tools for mapping simple distributions to complex ones through continuous-time stochastic processes. While these models offer an effective framework for density estimation and sample generation, they face a significant computational bottleneck: the requirement to solve ordinary differential equations (ODEs) during the sampling process. This ODE-solving step incurs substantial computational costs, particularly when dealing with large datasets and numerous time points, making the sampling process prohibitively slow for practical applications requiring fast generation of large amounts of data. Current Flow Matching (FM) approaches, while theoretically sound, suffer from long sampling times due to this ODE dependency during inference. Although existing acceleration methods exist—including better coupling algorithms, faster sampling on pretrained models, knowledge distillation, stepsize optimization, and improved ODE solvers—they still fundamentally rely on iterative ODE solving, limiting their speed improvements. We hypothesize that by leveraging explicit formulas for the ve",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 7,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "artificial intelligence"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_eco_11",
+   "title": "[ecology] Understanding plant phenological responses to climate warming is crucial for predicting changes in plant communities and ecosystems, but current...",
+   "statement": "Research Plan Problem Understanding plant phenological responses to climate warming is crucial for predicting changes in plant communities and ecosystems, but current approaches face significant limitations. Numerous observational studies and controlled experiments have produced varying results, with observed phenological changes differing by research approach, climatic region, and functional group. For example, observed changes are often smaller with experimental studies, native species, and warmer regions. We hypothesize that these differential responses result from the complex interplay of multiple drivers of spring phenology that are not adequately captured by current sensitivity analysis methods. Plants in the northern hemisphere require an accumulation of cool winter temperatures (winter chilling) to break dormancy and an accumulation of warm spring temperatures (spring forcing, degree days) to initiate species events. However, changes in spring phenology are also constrained by insufficient winter chilling, photoperiod effects, and environmental stresses such as drought and spring freezing. The fundamental problem is that current methods for quantifying phenological changes",
+   "evidence": {
+    "major_strengths": 3,
+    "major_weaknesses": 3,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "ecology"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_ai_31",
+   "title": "[artificial intelligence] We investigate how In-Context Reinforcement Learning (ICRL) affects the ability of large language models to discover specification gaming strategies.",
+   "statement": "Research Plan Problem We investigate how In-Context Reinforcement Learning (ICRL) affects the ability of large language models to discover specification gaming strategies. Previous work by Denison et al. (2024) demonstrated that training \"helpful-only\" LLMs with reinforcement learning on a curriculum of gameable environments can lead models to generalize to egregious specification gaming behaviors, such as editing their own reward function or modifying task checklists to appear more successful. However, this prior work suggested that \"pernicious behaviors may be too complex to be discovered via exploration\" without intentional training on gameable tasks. We hypothesize that iterative in-context reflection—which we term \"in-context reinforcement learning\" (ICRL)—may enable frontier models trained to be helpful, harmless, and honest to engage in specification gaming without requiring training on a curriculum of tasks. We further hypothesize that incorporating ICRL into expert iteration training may increase a model's propensity to learn specification-gaming policies compared to standard expert iteration methods. Our research addresses two key questions: (1) Can frontier models discov",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 7,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "artificial intelligence"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_biochem_19",
+   "title": "[biochemistry] The mechanism of action of medicinal biguanides, particularly metformin and phenformin, remains poorly understood despite their established...",
+   "statement": "Research Plan Problem The mechanism of action of medicinal biguanides, particularly metformin and phenformin, remains poorly understood despite their established therapeutic benefits. While metformin has been used since the 1950s for treating type II diabetes and shows promise in cancer prevention, its molecular targets and mechanisms are still elusive. Current evidence suggests that energy metabolism plays a pivotal role in biguanide effectiveness, with studies indicating that at supra-pharmacological doses, metformin moderately inhibits complex I of the respiratory chain. However, the concentrations required to observe direct complex I inhibition in vitro are much higher than those needed for biological effects, suggesting additional or alternative targets may be involved. We hypothesize that biguanides may interact with multiple mitochondrial targets beyond complex I, potentially including components of the F1Fo-ATP synthase complex. Previous work has shown that biguanides likely disrupt cristae organization, a process mediated by ATP synthase oligomerization, and that atrazine (a biguanide derivative) can bind and inhibit F1Fo-ATP synthase. We propose that the e subunit of F1Fo",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 7,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "biochemistry"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_8",
+   "title": "[neuroscience] Synchronous neuronal ensembles play a pivotal role in the consolidation of long-term memory in the hippocampus, but their organization during the...",
+   "statement": "Research Plan Problem Synchronous neuronal ensembles play a pivotal role in the consolidation of long-term memory in the hippocampus, but their organization during the acquisition of spatial memory remains less clear. While synchronous ensembles among CA1 pyramidal cells (CA1PCs) during offline memory consolidation are well-characterized, particularly during sharp-wave ripples, their organization during online acquisition of spatial memory—such as when animals enter a new environment and new place cells form—remains unclear. Previous studies have identified correlated activities among place cells during theta oscillation, but these operate on the timescale of theta periods (~125ms) rather than the shorter timescales (10-30 ms) characteristic of population synchrony. Population synchrony on shorter timescales is speculated to be reduced by the presence of theta oscillations. Additionally, while correlated membrane potentials have been proposed to underlie the synchrony of neuronal ensembles, multicellular recordings of subthreshold membrane voltages (subVms) have not yet provided direct experimental evidence. We hypothesize that investigating the temporal relationships of sub- and s",
+   "evidence": {
+    "major_strengths": 2,
+    "major_weaknesses": 2,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_biochem_25",
+   "title": "[biochemistry] We seek to investigate whether the nucleus possesses a unique protein quality control (PQC) surveillance mechanism analogous to the...",
+   "statement": "Research Plan Problem We seek to investigate whether the nucleus possesses a unique protein quality control (PQC) surveillance mechanism analogous to the well-characterized unfolded protein responses in other membrane-bound organelles, such as the endoplasmic reticulum (erUPR) and mitochondria (mtUPR). Our previous work demonstrated that mammalian cells mount a robust transcriptional response when exposed to unfolded protein throughout the cell, uniquely engaging the p53 pathway - a response not observed with other protein folding stresses like heat shock or tunicamycin treatment. This selective p53 activation by unfolded protein suggests an unexplored role for p53 in PQC surveillance. However, we were unable to determine whether this p53 response occurs equally in response to nuclear versus cytosolic unfolded protein due to technical limitations. We hypothesize that the nucleus has distinct protein quality control mechanisms compared to the cytosol, and that p53 may serve as a specific sensor or effector in a nuclear-specific unfolded protein response pathway. Our research questions are: (1) Does unfolded protein in the nucleus elicit different cellular responses compared to unfol",
+   "evidence": {
+    "major_strengths": 1,
+    "major_weaknesses": 1,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "biochemistry"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_10",
+   "title": "[neuroscience] : Normative Evidence Weighting and Accumulation in Correlated Environments Problem We aim to investigate how humans form perceptual decisions when...",
+   "statement": "Research Plan: Normative Evidence Weighting and Accumulation in Correlated Environments Problem We aim to investigate how humans form perceptual decisions when sensory observations are correlated, addressing a fundamental gap in decision-making research. While previous studies have established that the brain follows normative principles for weighing and accumulating evidence over time with independent observations, it remains unclear whether these principles extend to correlated environments. The motivation for this research stems from the recognition that correlations between observations can dramatically impact the weight of evidence they provide for decision-making. In real-world scenarios, observations are rarely independent, yet most laboratory studies have been restricted to tasks with statistically independent observations. This limitation has prevented us from understanding whether decision-makers can compute the normative weight of evidence—the log-likelihood ratio (logLR)—or rely on approximations when faced with correlated information. We hypothesize that humans can adaptively adjust their evidence weighting to account for correlations in observations, following approxim",
+   "evidence": {
+    "major_strengths": 6,
+    "major_weaknesses": 3,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_30",
+   "title": "[neuroscience] The striatum, as the central hub of cortico-basal ganglia loops, contains functionally heterogeneous subregions that mediate various processes of...",
+   "statement": "Research Plan Problem The striatum, as the central hub of cortico-basal ganglia loops, contains functionally heterogeneous subregions that mediate various processes of procedural learning through parallel processing. While previous studies have established a model where functional dominance shifts from associative subregions (caudate/anterior putamen in primates, dorsomedial striatum in rodents) to sensorimotor subregions (posterior putamen in primates, dorsolateral striatum in rodents) during motor learning progression, deviations from this model are evident in decision-making tasks based on external sensory cues. We hypothesize that the acquisition of sensory cue-based decision-making requires wide-range spatiotemporal processing within the striatum, involving multiple striatal subregions beyond the traditional DMS-to-DLS transition model. Specifically, we propose that different striatal subregions engage at distinct temporal stages during auditory discrimination learning and contribute to different behavioral strategies - those based on stimulus-response associations versus response-outcome associations. Our research questions focus on: (1) when and how different striatal subreg",
+   "evidence": {
+    "major_strengths": 4,
+    "major_weaknesses": 2,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_ai_38",
+   "title": "[artificial intelligence] : Principal Counterfactual Fairness Problem We address a fundamental gap in the counterfactual fairness literature: the question of \"which...",
+   "statement": "Research Plan: Principal Counterfactual Fairness Problem We address a fundamental gap in the counterfactual fairness literature: the question of \"which attributes and individuals should be protected\" is rarely discussed. Current counterfactual fairness approaches require that algorithmic decisions remain unchanged when protected attributes are altered, but this blanket requirement may not always be appropriate. For instance, when considering leg disability as a protected attribute, algorithms should not treat individuals with disabilities differently in college admissions, but it may be reasonable to consider this factor when selecting runner athletes. The key insight is that when and how to enforce fairness should depend on the causal relationship between the protected attribute and the outcome of interest. We hypothesize that counterfactual fairness should only be required for individuals whose protected attribute has no individual causal effect on the outcome of interest. This approach would allow us to distinguish between cases where a protected attribute legitimately affects outcomes (like disability affecting athletic performance) versus cases where it should not (like disabi",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 8,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "artificial intelligence"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_eco_18",
+   "title": "[ecology] : Full Factorial Construction of Synthetic Microbial Communities Problem We aim to address the significant technical barriers that limit the...",
+   "statement": "Research Plan: Full Factorial Construction of Synthetic Microbial Communities Problem We aim to address the significant technical barriers that limit the widespread adoption of full factorial design in microbial consortium research. Currently, constructing combinatorially complete species assemblages - necessary for dissecting the complexity of microbial interactions and finding optimal microbial consortia - is accomplished through either painstaking, labor-intensive liquid handling procedures or state-of-the-art microfluidic devices that are not accessible to most laboratories. The combinatorial nature of full factorial design makes the assembly of all possible communities extremely challenging. The number of unique liquid handling events required to form all combinations of m species scales as m2^(m-1), making manual assembly draining, slow, and prone to human error. For this reason, studies reporting full factorial construction of microbial consortia are very rare, and the field has largely relied on fractional factorial design where only a subset of representative species combinations are constructed. We hypothesize that a simple, rapid, low-cost, and highly accessible liquid h",
+   "evidence": {
+    "major_strengths": 3,
+    "major_weaknesses": 0,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "ecology"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_biochem_14",
+   "title": "[biochemistry] : Isobaric Crosslinking Mass Spectrometry Technology for Studying Conformational and Structural Changes in Proteins and Complexes Problem Dynamic...",
+   "statement": "Research Plan: Isobaric Crosslinking Mass Spectrometry Technology for Studying Conformational and Structural Changes in Proteins and Complexes Problem Dynamic conformational and structural changes in proteins and protein complexes play a central and ubiquitous role in the regulation of protein function, yet studying these changes remains very challenging, especially for large protein complexes under physiological conditions. While direct structural methods like X-ray crystallography, NMR, SAXS, and cryo-EM can provide high-resolution information, they face limitations including difficulty crystallizing all conformations and incompatibility with many physiological conditions. Indirect methods such as limited proteolysis, FRET, chemical footprinting, and crosslinking can be performed under physiological conditions but present challenges in interpreting data to infer correct conformational changes. Existing quantitative crosslinking mass spectrometry (qCLMS) strategies have significant limitations. TMT-labeling approaches require multiple processing steps before sample combination, potentially introducing quantification artifacts. Isotopically labeled crosslinkers (d0/d4 BS3, d0/d12 E",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 7,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "biochemistry"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_eco_7",
+   "title": "[ecology] Global biodiversity is declining at an unprecedented rate, with agriculture identified as a major driver of this decline.",
+   "statement": "Research Plan Problem Global biodiversity is declining at an unprecedented rate, with agriculture identified as a major driver of this decline. Insects, which account for 80% of animal species worldwide, are experiencing particularly severe declines, with terrestrial insect biomass decreasing by 75% in some areas over the last 30 years. This erosion of insect communities threatens ecosystem functioning and provision of ecosystem services essential for crop production. Current biodiversity conservation strategies in agriculture face a fundamental challenge: how to maintain adequate food production while supporting biodiversity. The concept of land sharing, which combines food production with biodiversity conservation on agricultural land, offers promise but requires sustainable agricultural practices that retain yield while enhancing biodiversity. Crop diversification, particularly through intercropping, has shown potential to enhance biodiversity without compromising yield. However, traditional intercropping is often considered impractical for mechanized farming systems. Strip cropping—where crops are grown in alternating strips wide enough for standard agricultural machinery yet n",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 8,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "ecology"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_31",
+   "title": "[neuroscience] : The Influence of Temporal Context on Vision Over Multiple Time Scales Problem We aim to inv\\estigate how past sensory experiences influence...",
+   "statement": "Research Plan: The Influence of Temporal Context on Vision Over Multiple Time Scales Problem We aim to inv\\estigate how past sensory experiences influence perception of the present across multiple temporal scales. Currently, multiple research subfields have emerged to study this phenomenon at different temporal scales, which fall into three categories: the influence of immediately preceding sensory events (micro), short sequences of events (meso), and regularities over long sequences of events (macro). However, this compartmentalized approach limits comparison between temporal context effects at different scales and leaves unclear whether common mechanisms operate across scales. The central research question is whether temporal context serves perception differently at each time scale through unique adaptive mechanisms, or whether a common rule applies at all scales, signaling a unifying adaptive mechanism. Predictive coding theory offers a normative framework for understanding temporal context influence across scales, but contradictory evidence from distinct experimental paradigms has challenged this unification, particularly regarding whether expected events are \"sharpened\" or \"da",
+   "evidence": {
+    "major_strengths": 3,
+    "major_weaknesses": 2,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_neuro_19",
+   "title": "[neuroscience] : Inference Technique for Synaptic Conductances in Rhythmically Active Networks Problem We aim to address a fundamental challenge in neurobiology:...",
+   "statement": "Research Plan: Inference Technique for Synaptic Conductances in Rhythmically Active Networks Problem We aim to address a fundamental challenge in neurobiology: extracting and separating patterns of inhibitory and excitatory synaptic conductances at high temporal resolution from single neuronal intracellular recordings in rhythmically active networks. Understanding synaptic interactions between excitatory and inhibitory interneurons within rhythmic neural circuits, such as central pattern generation (CPG) circuits for rhythmic motor behaviors, is critical for deciphering circuit interactions and functional architecture. Current methods for extracting dynamic patterns of input synaptic conductances from intracellular recordings have limitations in providing continuous, high-resolution readouts of excitatory and inhibitory synaptic conductances. These patterns often involve temporally complex excitatory and inhibitory synaptic inputs that can be superimposed during circuit activity, complicating the separation of these components. We hypothesize that by developing a robust analytical technique based on fundamental electrophysiological principles, we can extract nearly continuous reado",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 13,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "neuroscience"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_biochem_12",
+   "title": "[biochemistry] We aim to reassess the substrate specificities of two major Staphylococcus aureus peptidoglycan hydrolases: lysostaphin (LSS) and LytM.",
+   "statement": "Research Plan Problem We aim to reassess the substrate specificities of two major Staphylococcus aureus peptidoglycan hydrolases: lysostaphin (LSS) and LytM. Despite decades of research, the exact molecular targets and substrate specificities of these lysostaphin-like zinc-dependent metalloendopeptidases remain enigmatic and contradictory. The motivation for this research stems from the urgent need for alternative antimicrobial strategies in the age of antibiotic resistance, particularly against methicillin-resistant S. aureus (MRSA) strains. Peptidoglycan hydrolases represent promising bacteriocins and druggable targets for treating multidrug-resistant S. aureus infections. However, profound knowledge of their structure, function, and substrate specificity is instrumental to harness their full potential as a new breed of antibiotics. Both LSS and LytM belong to the M23 family of metalloendopeptidases and have been designated as glycyl-glycine hydrolases that specifically target the pentaglycine cross-bridge of S. aureus peptidoglycan. However, previous studies have reported inconsistent results regarding the exact cross-bridge bonds that these enzymes target, with different resear",
+   "evidence": {
+    "major_strengths": 3,
+    "major_weaknesses": 1,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "biochemistry"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_biochem_10",
+   "title": "[biochemistry] : Genome-wide Mapping of Native Co-localized G4s and R-loops in Living Cells Problem Non-B DNA structures, particularly G-quadruplexes (G4s) and...",
+   "statement": "Research Plan: Genome-wide Mapping of Native Co-localized G4s and R-loops in Living Cells Problem Non-B DNA structures, particularly G-quadruplexes (G4s) and R-loops, are emerging as dynamic functional genomic elements that regulate gene expression. While both structures have been extensively studied individually, their interplay in regulating DNA repair, replication, and transcription is becoming increasingly apparent. However, a comprehensive understanding of native co-localized G4s and R-loops in living cells under physiological conditions is currently lacking. Existing detection methods rely heavily on antibody-based approaches using the single-chain variable fragment (scFv) BG4 for G4s and the monoclonal antibody S9.6 for R-loops. These approaches present several limitations: (1) the addition of high-affinity antibodies may shift the equilibrium toward folded states, potentially creating artifacts since G4s and R-loops exist at low steady-state levels under physiological conditions; (2) the specificity of the S9.6 antibody for R-loops has been questioned for accurate quantification and mapping; and (3) current methods do not adequately capture the native co-occurrence of these",
+   "evidence": {
+    "major_strengths": 2,
+    "major_weaknesses": 1,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "biochemistry"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_biochem_7",
+   "title": "[biochemistry] : Coordinated Regulation of Chemotaxis and Resistance to Copper by CsoR in Pseudomonas putida Problem Copper is an essential enzyme cofactor in...",
+   "statement": "Research Plan: Coordinated Regulation of Chemotaxis and Resistance to Copper by CsoR in Pseudomonas putida Problem Copper is an essential enzyme cofactor in bacteria, but excess copper is highly toxic. Bacteria have evolved multiple strategies to cope with copper stress, including increasing copper resistance through efflux pumps and copper-binding proteins, and initiating chemorepellent responses to avoid copper-rich environments. However, it remains unclear how bacteria coordinate these two responses - chemotaxis and resistance to copper. The chemotaxis kinase CheA plays a central role in bacterial chemotaxis signaling and has been shown to interact with proteins from other systems in various bacterial species, suggesting that CheA-mediated crosstalk coordinates complex behaviors. While copper resistance mechanisms are well-characterized across diverse bacterial species, the mechanisms of bacterial chemotaxis to copper are poorly studied. Most importantly, no mechanism has been identified for how bacteria coordinate chemotaxis and copper resistance responses. We hypothesize that bacteria use regulatory proteins that can simultaneously control both chemotaxis and copper resistance",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 6,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "biochemistry"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_ai_29",
+   "title": "[artificial intelligence] : Robust Heterogeneous Treatment Effect Estimation Under Covariate Perturbation Problem We address a critical limitation in heterogeneous...",
+   "statement": "Research Plan: Robust Heterogeneous Treatment Effect Estimation Under Covariate Perturbation Problem We address a critical limitation in heterogeneous treatment effect (HTE) estimation: the lack of robustness against covariate perturbation in existing causal machine learning methods. While current representation learning approaches like CFR, TARNet, and DragonNet have shown solid theoretical guarantees for estimating conditional average treatment effects (CATE), they assume that covariates are accurately observed. In practice, however, covariates are often subject to measurement errors or perturbations. For example, in healthcare applications estimating treatment effects on cardiovascular disease, ECG data represents a perturbed observation of actual heart status due to scan resolution limitations. Such covariate perturbations can lead to incorrect treatment evaluations and decisions with unpredictable consequences. While some existing work addresses measurement error in causal inference, these methods require strong assumptions about extra variables or specific distribution families that cannot be tested from observed data, limiting their generality. We hypothesize that by control",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 7,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "artificial intelligence"
+  },
+  {
+   "source": "ScholarIdeas",
+   "external_id": "anchor_ai_8",
+   "title": "[artificial intelligence] : GenomeOcean - Efficient Foundation Model for Genome Generation Problem We aim to address the underexplored potential of generative modeling in...",
+   "statement": "Research Plan: GenomeOcean - Efficient Foundation Model for Genome Generation Problem We aim to address the underexplored potential of generative modeling in genomics by developing a genome foundation model that can synthesize new DNA sequences. While existing genome foundation models like DNABERT and Nucleotide Transformers excel at discriminative tasks such as promoter prediction and splice site detection, they leave the generative capabilities largely untapped. Generative genome models hold promise for synthetic biology applications and designing organisms with desired traits. We hypothesize that for a generative genome model to be valuable in real-world applications, it must satisfy two fundamental criteria: contextual adherence and computational efficiency. Contextual adherence means the generated sequences should faithfully follow the input context while remaining biologically plausible, retaining species-specific information and demonstrating appropriate functional characteristics. Computational efficiency is crucial because generating novel, realistic DNA sequences often requires extensive experimentation with large numbers of candidates. We further hypothesize that trainin",
+   "evidence": {
+    "major_strengths": 0,
+    "major_weaknesses": 6,
+    "grading": {
+     "basis": "quartiles of this sample",
+     "strong_if_net_ge": 0,
+     "weak_if_net_le": -6
+    },
+    "dataset": "hananour/ScholarIdeas",
+    "licence": "MIT"
+   },
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "scholarideas",
+   "field": "artificial intelligence"
+  }
+ ]
+}

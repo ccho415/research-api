@@ -588,6 +588,37 @@ def anchors_save(body: AnchorsIn, x_api_key: Optional[str] = Header(None)):
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+@app.post("/admin/load-anchors")
+def anchors_load(x_api_key: Optional[str] = Header(None)):
+    """Load the ScholarIdeas anchors that ship with the repository.
+
+    The grades come from expert rubrics rather than from a model, which is what
+    makes them usable as a scale at all: the tournament is judged by a model, so
+    a yardstick a model also wrote would calibrate the ranking against its own
+    taste and tell us nothing.
+
+    Feasibility is left null. The rubrics grade an idea's merit as reviewers saw
+    it, which is contribution. They say nothing about whether this researcher
+    could obtain the data, and filling that in would put a guess into the axis
+    the lexicographic order depends on keeping separate.
+    """
+    check_key(x_api_key)
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "data", "scholarideas_anchors.json")
+    if not os.path.exists(path):
+        raise HTTPException(404, "data/scholarideas_anchors.json is not deployed")
+    import json as _json
+    import tourney
+    try:
+        with open(path, encoding="utf-8") as fh:
+            payload = _json.load(fh)
+        out = tourney.save_anchors(payload.get("anchors") or [])
+        return {**out, "source": payload.get("source"),
+                "grading": payload.get("grading")}
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.get("/compute/anchors")
 def anchors_list(origin: Optional[str] = None, limit: int = 50,
                  x_api_key: Optional[str] = Header(None)):
