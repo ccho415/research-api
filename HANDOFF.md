@@ -36,7 +36,8 @@ n8n 用內網 `api.zeabur.internal` 呼叫 api，不經過公開網際網路。
 | 四個審閱介面 👁①–④ | ❌ 完全未建，沒有任何前端 |
 | 第 0 階段（修 domain-profile） | ✅ **已做完，本文件先前記錯**。skill 是 `v2.0.0`，四個修正都在 |
 | 第 1 階段（16 項重驗） | ❌ 未做。PRD 寫「先驗證再蓋」，這一半仍是已知的偏離 |
-| W1 領域框架 | ⚠️ 地基已備妥（`packs/` 進 repo、端點可用），工作流未建 |
+| W1 領域框架 | ⚠️ 工作流已建（`NRe3eCGX4bEDegvo`），**還沒用真題目跑過**。要拿一個 ECG 題目驗 Q2 有答案時真的會載入第二個包 |
+| **W5 錦標賽** | ⚠️ 資料層完成（migration 005 已套用、57 筆錨點入庫），工作流未建 |
 
 ### 第 0 階段其實做完了（2026-08-28 更正）
 
@@ -198,7 +199,23 @@ POST /compute/harvest/start         非同步採集，立刻回 id
 GET  /compute/harvest/{id}          輪詢採集結果
 GET  /compute/harvest?project_id=   最近一次採集
 POST /admin/migrate                 見上
+GET  /compute/packs                 路由選單（摘要，不是整包）
+GET  /compute/packs/{key}           單一範式包／領域模組全文
+POST /admin/sync-packs              把磁碟上的包灌進 skill_prompt
+GET  /compute/prompts               目前生效的提示詞版本
+POST /compute/frame/save            寫 project.domain_frame
+GET  /compute/frame?project_id=     讀領域框架
+GET  /compute/anchors[?origin=]     校準錨點
+POST /compute/anchors/save
+POST /admin/load-anchors            灌 repo 內附的 54 筆 ScholarIdeas 錨點
+POST /compute/tournament/start
+POST /compute/tournament/matches    對局結果（錨點對局也存這裡）
+POST /compute/tournament/rankings
+GET  /compute/tournament/{id}       名次，每個參賽者的完整題目都併進來
 ```
+
+`GET /admin/config` 現在會回 `build.routes`：**線上實際存在的路由清單**。
+用它判斷推送有沒有部署完成，不要看時鐘——建置要三到六分鐘，而且推測錯過。
 
 `GET /compute/ideas` 會把**最新一次的 `novelty_check` 併進來回傳**（verdict、rounds、
 coverage_limits）。刻意如此：一個方向如果只有敘述沒有判決與警語，那正好是最會誤導人
@@ -207,6 +224,37 @@ coverage_limits）。刻意如此：一個方向如果只有敘述沒有判決�
 
 `GET /compute/dedup` 同理併進兩個**完整題目**，不是 id。PRD 的顯示規則不是裝飾：
 判斷兩個方向是不是同一個，一定要兩個都讀得到，他們實跑時發現代號與截斷標題根本判不了。
+
+---
+
+### 錨點：已灌 57 筆（2026-08-28）
+
+| 來源 | 筆數 | `origin` | 等級怎麼來的 |
+|---|---|---|---|
+| ScholarIdeas | 54（27 strong／27 weak） | `scholarideas` | **專家 rubric**：`net = 重大優點 − 重大缺點`，再按樣本四分位切 |
+| 使用者的實際決定 | 3 | `local` | PRD 第十五節，使用者自己的採用／否決與理由 |
+
+領域：AI 13、神經 16、生化 14、生態 11，加上三筆醫學影像／代謝。
+
+**三件會被忘掉、忘掉就出錯的事：**
+
+1. **裁判不可以看到錨點的等級，也不該知道誰是錨點。** 這是 ScholarIdeas 自己的
+   使用說明寫的：等級只在事後計分時揭露。看得到刻度的裁判不是在被校準。
+   跟「判斷輸入剝除作者訊號」是同一條原則。
+2. **ScholarIdeas 的 `grade_feasibility` 全部是 NULL，這是刻意的。** rubric 評的是
+   審稿人眼中這個想法好不好，那是貢獻性；它完全沒講使用者拿不拿得到資料。
+   自己填一個進去，等於把模型的猜測放進字典序裡必須跟貢獻性分開的那一軸。
+3. **等級詞彙是混的**：ScholarIdeas 只有 strong／weak 兩級，本地錨點有
+   strong／middling／weak 三級。計分那一步要能吃兩種，不要假設三級。
+
+**本地錨點永遠不進 repo。** 那是使用者的研究策略——在做什麼、缺哪些資料——
+而這個 repo 是公開的。它們只能經由 n8n 內網用 `POST /compute/anchors/save` 灌進去，
+payload 留在 scratchpad。ScholarIdeas 是 MIT 公開資料，所以 `data/` 底下那份沒問題。
+
+**第三筆（量子增強醫療 MLLM）有一個懸而未決的問題。** PRD 第十五節建議把它重新框成
+「檢驗量子增強特徵建模的優勢在高維度微小局部變化的醫學影像上是否真的成立」，
+並說「如果你同意改框，這個錨點就標 `grade_contribution = strong`」。使用者沒有回覆過，
+所以現在存的是**未改框的 middling**，改框建議寫在 `evidence` 欄裡。要問。
 
 ---
 
@@ -343,7 +391,7 @@ elo     順序翻轉不一致率 0.0（確定性裁判下的預期值），排�
 |---|---|
 | **Zeabur 部署** | **接了 GitHub，推 main 就自動部署**（GitHub deployments API 26 筆全是 `Deployed by Zeabur`）。**不要再叫使用者手動部署** |
 | **`ACADEMIC_MAILTO` / `NCBI_API_KEY`** | **兩個都已設定**。不要再加「回報選配設定有無」的端點——加過又撤掉了（`0b84350` → `dac5d6a`） |
-| **部署版本回報** | **不要加 build/commit 標記到 `/admin/config`**。同上，加過又撤掉 |
+| **部署版本回報** | **不要加 commit hash**（`0b84350` 加了，使用者四分鐘後用 `dac5d6a` 撤掉）。`/admin/config` 改回報 `build.routes`——線上實際存在的路由清單。**這是不同的東西，不要再把它當成被撤掉的那個一起刪** |
 | **模型分工** | 生成走 Gemini；**錦標賽對局判斷、可行性分級走 Anthropic Sonnet 5**；新穎性最終判定 Opus 5；唱反調 critic 必須與生成端不同家。理由是設計二的獨立性，不是避免干擾 |
 | **`idea.title`** | 用**詞組**（`MLH1 V384D x Gefitinib`），不是 statement 的前綴。`triage.idea_text` 會串接 title 與 statement，前綴會讓句首問句樣板被算兩次權重 |
 | **判不了時的 `novelty_check.verdict`** | 存 **NULL**。schema 那四個詞（scooped/incremental/adjacent/no_prior_art）任一個都是在斷言未經確立的事 |

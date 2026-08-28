@@ -764,19 +764,18 @@ def admin_config(x_api_key: Optional[str] = Header(None)):
     finished building, and the guess was wrong at least once: a run started two
     minutes after the deploy was registered, while builds take three to six.
 
-    A commit hash would answer it only if the platform exposes one, and it says
-    nothing about what the code does. The route list is the deployment,
-    observed rather than inferred - if the endpoint you just wrote is in it,
-    your push is live.
+    Routes, and deliberately not a commit hash. The hash was added once in
+    `0b84350` and reverted by the user four minutes later in `dac5d6a`, so it
+    stays out. The route list is a different answer to the same question and a
+    better one: a hash tells you which revision only if you can map revisions to
+    behaviour from memory, while the route list is the deployment observed
+    rather than inferred - if the endpoint you just wrote is in it, your push is
+    live.
     """
     check_key(x_api_key)
     report = backup.config_report()
     routes = sorted({r.path for r in app.routes if getattr(r, "path", None)})
-    commit = next((os.environ[k] for k in
-                   ("ZEABUR_GIT_COMMIT_SHA", "GIT_COMMIT", "SOURCE_COMMIT")
-                   if os.environ.get(k)), None)
-    report["build"] = {"commit": commit, "n_routes": len(routes),
-                       "routes": routes}
+    report["build"] = {"n_routes": len(routes), "routes": routes}
     return report
 
 
