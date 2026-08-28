@@ -588,25 +588,45 @@ def anchors_save(body: AnchorsIn, x_api_key: Optional[str] = Header(None)):
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+class AnchorSetIn(BaseModel):
+    set: Optional[str] = None
+
+
+ANCHOR_FILES = {
+    "scholarideas": "scholarideas_anchors.json",
+    "published": "published_anchors.json",
+}
+
+
 @app.post("/admin/load-anchors")
-def anchors_load(x_api_key: Optional[str] = Header(None)):
-    """Load the ScholarIdeas anchors that ship with the repository.
+def anchors_load(body: AnchorSetIn = AnchorSetIn(),
+                 x_api_key: Optional[str] = Header(None)):
+    """Load one of the anchor sets that ship with the repository.
 
-    The grades come from expert rubrics rather than from a model, which is what
-    makes them usable as a scale at all: the tournament is judged by a model, so
-    a yardstick a model also wrote would calibrate the ranking against its own
-    taste and tell us nothing.
+    Named sets rather than a path, because a caller-supplied filename here
+    would read any file the process can reach.
 
-    Feasibility is left null. The rubrics grade an idea's merit as reviewers saw
-    it, which is contribution. They say nothing about whether this researcher
-    could obtain the data, and filling that in would put a guess into the axis
-    the lexicographic order depends on keeping separate.
+    Neither set is graded by a model, which is what makes either usable as a
+    scale at all: the tournament is judged by a model, so a yardstick a model
+    also wrote would calibrate the ranking against its own taste and tell us
+    nothing. `scholarideas` takes its grades from expert review rubrics;
+    `published` ties each one to an external checkable fact - citation counts,
+    guideline adoption, or a paper stating outright that a line of work stopped
+    adding information.
+
+    Feasibility is null throughout. Both sets grade what a direction would
+    contribute to its field. Neither says anything about whether this
+    researcher could obtain the data, and filling that in would put a guess
+    into the axis the lexicographic order depends on keeping separate.
     """
     check_key(x_api_key)
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "data", "scholarideas_anchors.json")
+    which = (body.set or "scholarideas").strip()
+    if which not in ANCHOR_FILES:
+        raise HTTPException(400, "set must be one of " + ", ".join(ANCHOR_FILES))
+    name = ANCHOR_FILES[which]
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", name)
     if not os.path.exists(path):
-        raise HTTPException(404, "data/scholarideas_anchors.json is not deployed")
+        raise HTTPException(404, f"data/{name} is not deployed")
     import json as _json
     import tourney
     try:

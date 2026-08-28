@@ -1,0 +1,160 @@
+{
+ "source": "已發表研究方向，等級來自外部可查證據",
+ "n": 9,
+ "為什麼是這個形式": [
+  "PRD 第十五節寫著：本地錨點的等級由使用者的實際決定產生，不是模型自評——這是它比跨領域錨點更有價值的原因。",
+  "同樣的道理反過來說：如果這些等級是模型判的，這把尺就是模型的意見，而錦標賽也是模型在判，等於拿自己的尺量自己。",
+  "所以每一筆的等級都綁在一個外部、可查、與這個系統無關的事實上——被引數、指引採納、或有文獻明講這條線沒有增加資訊。",
+  "只有 strong / weak 兩級。middling 找不到乾淨的外部證據，硬給一個等於把猜測混進來，那正是這份檔案要避免的事。",
+  "grade_feasibility 全部 NULL。這些講的是對領域的貢獻，完全沒講使用者拿不拿得到資料。"
+ ],
+ "weak 的判準不是被推翻": "一個能給出結論的方向，結論是正是負都是高貢獻——PRD 第十五節對量子那筆的論證就是這樣。所以這裡的 weak 一律是「有文獻明講這條線沒有增加資訊」，不是「後來被證明是錯的」。",
+ "identifiers": "PMID / DOI / 被引數全部來自 2026-08-28 對 Europe PMC 的實際檢索，沒有一個是憑記憶寫的。",
+
+ "anchors": [
+  {
+   "source": "已發表研究方向",
+   "external_id": "pub_clin_sglt2_independent",
+   "title": "[臨床醫學] 檢驗降血糖藥的心血管益處是否獨立於血糖控制之外",
+   "statement": "以心血管結局試驗檢驗 SGLT2 抑制劑降低心衰住院與心血管死亡的效果，是否來自降血糖以外的機轉；再把同一個問題帶到沒有糖尿病的心衰病人身上。",
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "published",
+   "field": "臨床醫學",
+   "evidence": {
+    "主要文獻": "Zinman et al., EMPA-REG OUTCOME. PMID 26378978, DOI 10.1056/NEJMoa1504720, 被引 8747",
+    "延伸文獻": "McMurray et al., DAPA-HF. PMID 31535829, DOI 10.1056/NEJMoa1911303, 被引 5254",
+    "外部證據": "問題的答案改寫了一整個藥物類別的適應症：從糖尿病用藥擴展到非糖尿病心衰病人。兩篇合計被引超過一萬四千次。",
+    "這個錨點示範的是": "把一個既有療法的作用機轉當成問題本身來檢驗，而不是再測一次療效"
+   }
+  },
+  {
+   "source": "已發表研究方向",
+   "external_id": "pub_clin_vitd_rct",
+   "title": "[臨床醫學] 用隨機分派檢驗維生素 D 補充能否預防癌症與心血管事件",
+   "statement": "在兩萬多名一般人口中隨機分派維生素 D 與安慰劑，檢驗長期補充是否降低侵襲性癌症發生率與主要心血管事件——這個關聯在觀察性研究裡強而一致，但因果方向從未被確立。",
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "published",
+   "field": "臨床醫學",
+   "evidence": {
+    "主要文獻": "Manson et al., VITAL. PMID 30415629, DOI 10.1056/NEJMoa1809944, 被引 1186",
+    "外部證據": "25,871 名受試者的隨機試驗，兩個主要終點都是陰性。陰性結果終結了一條大量觀察性研究支撐、卻無法自行確立因果的線。",
+    "這個錨點示範的是": "陰性結果也是高貢獻——一個方向的價值在於能不能得出結論，不在於結論的方向。這與 PRD 第十五節建議把量子那筆改框成「檢驗宣稱是否成立」是同一個論證",
+    "注意": "不要把這筆讀成「維生素 D 沒用所以這個方向不好」。方向好，是因為它把一個懸而未決的因果問題關掉了"
+   }
+  },
+  {
+   "source": "已發表研究方向",
+   "external_id": "pub_clin_aprotinin_redundant",
+   "title": "[臨床醫學] 在效果已由累積統合分析確立之後，再做一個同樣的隨機試驗",
+   "statement": "再執行一個隨機對照試驗，檢驗 aprotinin 能否減少心臟手術的圍術期輸血需求。",
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "published",
+   "field": "臨床醫學",
+   "evidence": {
+    "主要文獻": "Fergusson et al., Clinical Trials 2005. PMID 16279145, DOI 10.1191/1740774505cn085oa, 被引 109",
+    "外部證據": "累積統合分析顯示效果在 1992 年第 12 個試驗就已經確立（勝算比穩定在 0.25，p < 1e-6）。此後仍有 52 個非必要的隨機試驗被資助、執行、發表；後續試驗引用先前試驗的比例中位數只有 20%。",
+    "為什麼是 weak 而不是「錯」": "這條線的問題不是結論錯了，是它不再增加任何資訊——這正是貢獻性意義下的弱。而且代價是實際的：被隨機分到不給藥那組的病人承擔了不必要的風險",
+    "這個錨點示範的是": "已經有答案的問題再問一次，貢獻性是低的，跟執行品質好不好無關"
+   }
+  },
+
+  {
+   "source": "已發表研究方向",
+   "external_id": "pub_epi_mendelian_randomization",
+   "title": "[流行病學] 用基因變異當工具變數，把觀察性關聯裡的因果與干擾分開",
+   "statement": "利用配子形成時等位基因的隨機分配，把與暴露相關的基因變異當作工具變數，估計暴露對疾病的因果效應，繞開觀察性研究無法排除的干擾與反向因果。",
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "published",
+   "field": "流行病學",
+   "evidence": {
+    "主要文獻": "Davey Smith & Ebrahim, Int J Epidemiol 2003. PMID 12689998, DOI 10.1093/ije/dyg070, 被引 4691",
+    "外部證據": "提出的不是一個結果而是一個方法，之後成為流病領域的標準工具，被引近五千次。",
+    "這個錨點示範的是": "方法本身可以是高貢獻——但要注意這與「架構變體屬弱新穎」不衝突：這裡改變的是能不能回答因果問題，不是效能多幾個百分點"
+   }
+  },
+  {
+   "source": "已發表研究方向",
+   "external_id": "pub_epi_nutrient_association",
+   "title": "[流行病學] 再做一個觀察性研究，檢驗某營養素血中濃度與疾病風險的關聯",
+   "statement": "在一個世代或橫斷面樣本中，檢驗某微量營養素的血中濃度是否與後續疾病風險相關，並以此推論補充該營養素可能有保護效果。",
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "published",
+   "field": "流行病學",
+   "evidence": {
+    "主要文獻": "Omenn et al., CARET. PMID 8602180, DOI 10.1056/NEJM199605023341802, 被引 2043",
+    "外部證據": "β-胡蘿蔔素的觀察性保護關聯強而一致，隨機試驗卻顯示補充後肺癌發生率與死亡率都**上升**，試驗因此提前中止。同樣的模式在維生素 D 重演（見 pub_clin_vitd_rct）。",
+    "為什麼是 weak": "這個設計無法把營養素濃度與整體健康行為分開，所以不論結果如何都不會改變我們對因果的認識——問題出在設計，不在樣本數或分析技巧",
+    "這個錨點示範的是": "同一個主題可以同時有 weak 與 strong 的框法。觀察性關聯是 weak，隨機分派檢驗是 strong"
+   }
+  },
+  {
+   "source": "已發表研究方向",
+   "external_id": "pub_epi_unplanned_association_search",
+   "title": "[流行病學] 在既有資料集裡搜尋暴露與結果的關聯，沒有事前分析計畫",
+   "statement": "取用一個既有的大型資料集，在多個暴露與多個結果之間搜尋統計上顯著的關聯，再為找到的關聯建構解釋。",
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "published",
+   "field": "流行病學",
+   "evidence": {
+    "主要文獻": "Ioannidis, PLoS Med 2005. PMID 16060722, DOI 10.1371/journal.pmed.0020124, 被引 5020",
+    "外部證據": "論證了在檢定數量多、事前機率低、彈性高的條件下，發表出來的顯著發現為真的機率低於一半。這正是這類設計的條件。",
+    "為什麼是 weak": "產出的關聯期望上多半不成立，所以這條線的資訊量接近零——與資料集大小無關，大資料集反而放大這個問題",
+    "這個錨點示範的是": "可行性很高的方向可以貢獻性很低。這是 VLA 超音波那筆的反面，兩筆合起來把兩個軸撐開"
+   }
+  },
+
+  {
+   "source": "已發表研究方向",
+   "external_id": "pub_biotech_crispr_programmable",
+   "title": "[生物技術] 把細菌免疫系統的核酸酶改造成可程式化的定點切割工具",
+   "statement": "證明 Cas9 的切割位點由一段可置換的嚮導 RNA 決定，因此可以用設計 RNA 序列的方式，把這個酵素導向任意 DNA 位點。",
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "published",
+   "field": "生物技術",
+   "evidence": {
+    "主要文獻": "Jinek et al., Science 2012. PMID 22745249, DOI 10.1126/science.1225829, 被引 11954",
+    "外部證據": "被引近一萬兩千次，並獲 2020 年諾貝爾化學獎（Charpentier、Doudna）。",
+    "這個錨點示範的是": "把一個已知現象重新理解成可控制的工具——貢獻不在發現新東西，在於發現既有的東西可以被指揮"
+   }
+  },
+  {
+   "source": "已發表研究方向",
+   "external_id": "pub_biotech_mrna_nucleoside",
+   "title": "[生物技術] 檢驗核苷修飾能否讓外源 RNA 不觸發先天免疫反應",
+   "statement": "檢驗 RNA 上的天然核苷修飾是否是先天免疫系統區分自身與外來 RNA 的依據，若是，則修飾過的合成 RNA 應該可以進入細胞而不引發發炎反應。",
+   "grade_contribution": "strong",
+   "grade_feasibility": null,
+   "origin": "published",
+   "field": "生物技術",
+   "evidence": {
+    "主要文獻": "Karikó et al., Immunity 2005. PMID 16111635, DOI 10.1016/j.immuni.2005.06.008, 被引 2074",
+    "外部證據": "解掉了合成 mRNA 無法當治療用的那個障礙，成為 mRNA 疫苗平台的基礎；2023 年諾貝爾生醫獎（Karikó、Weissman）。",
+    "這個錨點示範的是": "當時被視為冷門、發表在非頂級期刊、被引數遠低於 CRISPR 那筆，等級一樣是 strong——貢獻性不等於當下的關注度。這一條直接對應對照組實驗發現的「注意力不是貢獻」"
+   }
+  },
+  {
+   "source": "已發表研究方向",
+   "external_id": "pub_biotech_single_cellline_target",
+   "title": "[生物技術] 在單一細胞株驗證一個新標靶，沒有獨立重複",
+   "statement": "在單一癌細胞株中顯示抑制某個分子會降低增殖或存活，據此主張該分子是可成藥的治療標靶。",
+   "grade_contribution": "weak",
+   "grade_feasibility": null,
+   "origin": "published",
+   "field": "生物技術",
+   "evidence": {
+    "主要文獻": "Begley & Ellis, Nature 2012. PMID 22460880, DOI 10.1038/483531a, 被引 1685",
+    "佐證文獻": "Prinz et al., Nat Rev Drug Discov 2011. PMID 21892149, DOI 10.1038/nrd3439-c1, 被引 1115",
+    "外部證據": "53 個被視為里程碑的臨床前腫瘤研究中，只有 6 個（11%）能被重現。Bayer 的獨立盤點得到同一量級的結果。",
+    "為什麼是 weak": "這個設計的產出在期望上多半重現不了，所以後續投資建立在不成立的前提上——資訊量低不是因為想法平庸，是因為證據強度不足以支撐它宣稱的東西",
+    "這個錨點示範的是": "貢獻性要看「這個設計成立時能確立什麼」，不是看宣稱有多大"
+   }
+  }
+ ]
+}
