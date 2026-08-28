@@ -327,6 +327,46 @@ def ideas_save(body: SaveDirectionsIn, x_api_key: Optional[str] = Header(None)):
 # --------------------------------------------------------------------------
 # triage
 # --------------------------------------------------------------------------
+class SaveDedupIn(BaseModel):
+    run_id: str
+    pairs: List[Dict[str, Any]]
+
+
+@app.post("/compute/dedup/save")
+def dedup_save(body: SaveDedupIn, x_api_key: Optional[str] = Header(None)):
+    """Store the judgement on each candidate pair.
+
+    A pair nobody was sure about keeps a null verdict, which is what puts it in
+    front of a person later. Writing a guess there would quietly remove the
+    pairs that most needed looking at.
+    """
+    check_key(x_api_key)
+    import db
+    try:
+        return db.save_dedup_pairs(body.run_id, body.pairs)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/dedup")
+def dedup_list(run_id: str, undecided_only: bool = False, limit: int = 200,
+               x_api_key: Optional[str] = Header(None)):
+    """Candidate pairs, with both directions written out in full.
+
+    Both statements come back rather than ids because deciding whether two
+    directions are the same one requires reading both, and their own trial run
+    found that codes and truncated titles made that judgement impossible.
+    """
+    check_key(x_api_key)
+    import db
+    try:
+        return db.list_dedup_pairs(run_id, undecided_only, limit)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 class DedupIn(BaseModel):
     ideas: List[Dict[str, Any]]
     threshold: float = 0.15

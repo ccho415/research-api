@@ -601,3 +601,84 @@ def list_ideas(project_id=None, run_id=None, status=None, limit=200):
             rows.append(d)
 
     return {"n": len(rows), "project_id": project_id, "ideas": rows}
+
+
+def save_dedup_pairs(run_id, pairs):
+    """Store what was judged about each candidate pair.
+
+    A pair the model was unsure about is stored with a null verdict rather than
+    forced to duplicate or distinct. That null is the review queue: the PRD asks
+    for the uncertain ones to reach a person, and a guess written into the
+    verdict column would remove exactly the pairs that needed the person.
+    """
+    if not run_id:
+        raise ValueError("need run_id")
+    rows = []
+    with connect() as conn:
+        with conn.cursor() as cur:
+            for p in pairs or []:
+                a, b = p.get("idea_a") or p.get("a"), p.get("idea_b") or p.get("b")
+                if not a or not b:
+                    continue
+                verdict = (p.get("verdict") or "").strip().lower() or None
+                if verdict not in ("duplicate", "distinct", None):
+                    verdict = None
+                cur.execute(
+                    "INSERT INTO dedup_pair (run_id, idea_a, idea_b, score, cosine,"
+                    "                        jaccard, verdict, decided_by, decided_at) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s,"
+                    "        CASE WHEN %s IS NULL THEN NULL ELSE now() END) "
+                    "RETURNING id",
+                    (run_id, a, b, p.get("score"), p.get("cosine"), p.get("jaccard"),
+                     verdict, p.get("decided_by") if verdict else None, verdict))
+                rows.append({"id": str(cur.fetchone()["id"]), "idea_a": a,
+                             "idea_b": b, "verdict": verdict})
+        conn.commit()
+
+    undecided = sum(1 for r in rows if r["verdict"] is None)
+    return {"run_id": run_id, "n_saved": len(rows), "n_undecided": undecided,
+            "pairs": rows}
+
+
+def list_dedup_pairs(run_id, undecided_only=False, limit=200):
+    """Candidate pairs with both directions written out in full.
+
+    Both statements are joined in rather than left as ids because the display
+    rule is not decoration: judging whether two directions are the same one
+    needs both of them on screen, and their trial run found that a table of
+    codes and truncated titles made the judgement impossible to make.
+    """
+    where, args = ["d.run_id = %s"], [run_id]
+    if undecided_only:
+        where.append("d.verdict IS NULL")
+    args.append(int(limit))
+
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT d.id, d.score, d.cosine, d.jaccard, d.verdict, d.decided_by,"
+            "       d.decided_at,"
+            "       a.id AS a_id, a.code AS a_code, a.title AS a_title,"
+            "       a.statement AS a_statement,"
+            "       b.id AS b_id, b.code AS b_code, b.title AS b_title,"
+            "       b.statement AS b_statement "
+            "FROM dedup_pair d "
+            "JOIN idea a ON a.id = d.idea_a "
+            "JOIN idea b ON b.id = d.idea_b "
+            f"WHERE {' AND '.join(where)} "
+            "ORDER BY d.verdict IS NOT NULL, d.score DESC NULLS LAST "
+            "LIMIT %s", args)
+        out = []
+        for r in cur.fetchall():
+            d = dict(r)
+            for k in ("id", "a_id", "b_id"):
+                d[k] = str(d[k])
+            if d.get("decided_at") is not None:
+                d["decided_at"] = d["decided_at"].isoformat()
+            for k in ("score", "cosine", "jaccard"):
+                if d.get(k) is not None:
+                    d[k] = float(d[k])
+            out.append(d)
+
+    return {"run_id": run_id, "n": len(out),
+            "n_undecided": sum(1 for x in out if x["verdict"] is None),
+            "pairs": out}
