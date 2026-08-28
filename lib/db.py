@@ -626,8 +626,13 @@ def save_dedup_pairs(run_id, pairs):
                 cur.execute(
                     "INSERT INTO dedup_pair (run_id, idea_a, idea_b, score, cosine,"
                     "                        jaccard, verdict, decided_by, decided_at) "
+                    # The cast is required: the last parameter appears only in a
+                    # comparison against NULL, so Postgres has nothing to infer
+                    # its type from and refuses the statement outright.
+                    # Timestamped server-side rather than from Python so the row
+                    # carries the database's clock, not the caller's.
                     "VALUES (%s, %s, %s, %s, %s, %s, %s, %s,"
-                    "        CASE WHEN %s IS NULL THEN NULL ELSE now() END) "
+                    "        CASE WHEN %s::text IS NULL THEN NULL ELSE now() END) "
                     "RETURNING id",
                     (run_id, a, b, p.get("score"), p.get("cosine"), p.get("jaccard"),
                      verdict, p.get("decided_by") if verdict else None, verdict))
