@@ -566,6 +566,113 @@ def dedup_list(run_id: str, undecided_only: bool = False, limit: int = 200,
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+# --------------------------------------------------------------------------
+# tournament
+# --------------------------------------------------------------------------
+class AnchorsIn(BaseModel):
+    anchors: List[Dict[str, Any]]
+
+
+@app.post("/compute/anchors/save")
+def anchors_save(body: AnchorsIn, x_api_key: Optional[str] = Header(None)):
+    """Seed or update calibration anchors.
+
+    Anchors are on by default, not optional. Without them a ranking is only
+    relative and nobody can say whether the first place is actually good enough.
+    """
+    check_key(x_api_key)
+    import tourney
+    try:
+        return tourney.save_anchors(body.anchors)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/anchors")
+def anchors_list(origin: Optional[str] = None, limit: int = 50,
+                 x_api_key: Optional[str] = Header(None)):
+    check_key(x_api_key)
+    import tourney
+    try:
+        return tourney.list_anchors(origin, limit)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class TournamentStartIn(BaseModel):
+    project_id: str
+    run_id: Optional[str] = None
+    criteria: Optional[List[str]] = None
+    k_factor: float = 32
+    removed: Optional[List[Dict[str, Any]]] = None
+
+
+@app.post("/compute/tournament/start")
+def tournament_start(body: TournamentStartIn,
+                     x_api_key: Optional[str] = Header(None)):
+    """Open a tournament and record who was cut before it began, and why.
+
+    The reasons are constrained to two by the database. A run once eliminated
+    candidates for being outside the researcher's own methods, which smuggles a
+    personal constraint into a judgement meant to be about contribution to the
+    field, and a rule that lives only in a prompt breaks without a trace.
+    """
+    check_key(x_api_key)
+    import tourney
+    try:
+        started = tourney.start_tournament(body.project_id, body.run_id,
+                                           body.criteria, body.k_factor)
+        if body.removed:
+            started["reduction"] = tourney.save_field_reduction(
+                started["tournament_id"], body.removed)
+        return started
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class MatchesIn(BaseModel):
+    tournament_id: str
+    matches: List[Dict[str, Any]]
+
+
+@app.post("/compute/tournament/matches")
+def tournament_matches(body: MatchesIn, x_api_key: Optional[str] = Header(None)):
+    check_key(x_api_key)
+    import tourney
+    try:
+        return tourney.save_matches(body.tournament_id, body.matches)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class RankingsIn(BaseModel):
+    tournament_id: str
+    rankings: List[Dict[str, Any]]
+
+
+@app.post("/compute/tournament/rankings")
+def tournament_rankings(body: RankingsIn, x_api_key: Optional[str] = Header(None)):
+    check_key(x_api_key)
+    import tourney
+    try:
+        return tourney.save_rankings(body.tournament_id, body.rankings)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/tournament/{tournament_id}")
+def tournament_get(tournament_id: str, x_api_key: Optional[str] = Header(None)):
+    check_key(x_api_key)
+    import tourney
+    try:
+        row = tourney.get_tournament(tournament_id)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+    if not row:
+        raise HTTPException(404, "no such tournament")
+    return row
+
+
 class DedupIn(BaseModel):
     ideas: List[Dict[str, Any]]
     threshold: float = 0.15
