@@ -31,7 +31,7 @@ n8n 用內網 `api.zeabur.internal` 呼叫 api，不經過公開網際網路。
 | **W-ALERT 失敗告警** | ✅ 已發布並實測（見下） |
 | **W3 想點子** | ✅ 產出會寫進 `idea` + `novelty_check`，含 `method_sketch` 與 `required_variables`。**素材仍是寫死的 base64**，見下方採集層 |
 | **W4 去重** | ✅ 端到端通過（執行 67，20 組寫入 `dedup_pair`） |
-| **採集層** | ⚠️ 程式與 migration 003 都已上線，**但還沒實際跑過一次** |
+| **採集層** | ✅ 實跑通過，快取驗收見下 |
 | W1 領域框架 | ❌ 未建。**這是方法軸的前置**，沒有它 S3 的方法軸跑不了 |
 | S5–S11 | ❌ 未建。W4（S5 去重）的計算端點已備妥且實測過 |
 | 四個審閱介面 👁①–④ | ❌ 完全未建，沒有任何前端 |
@@ -104,9 +104,27 @@ tools/build_background.py   11,000 篇 2005–2015 摘要算背景詞頻
 tools/harvest_gaps.py       標題概念 + Discussion 缺口句
 tools/verify_directions.py  lib/verify.py 的 CLI 前身，邏輯已搬進 lib
 lib/harvest.py     缺口採集：從 paper 快取讀論文、抓 Discussion、存 paper_section
+                   **PMCID 要能用 DOI 解析，不能只靠 PMID**——PubMed 被封鎖，
+                   快取裡的論文多半只有 DOI。只認 PMID 的版本 40 篇一篇都沒查
 migrations/002_w2_literature_layer.sql   已執行
 migrations/003_harvest_layer.sql         已執行（2026-08-28，22→24 表）
 ```
+
+### 採集層驗收（2026-08-28，40 篇論文）
+
+```
+第一次（只認 PMID）   全文  0   缺口句  0    2.1 秒   ← 一次外部請求都沒發
+第二次（DOI 解析）    全文 17   缺口句 19   87.4 秒   ← 真的在抓
+第三次（讀快取）      全文 17   缺口句 19    1.8 秒   ← 全部命中，結果相同
+```
+
+**87 秒 → 1.8 秒、結果完全相同**，這是把採集做成 job 並快取全文的整個理由。
+
+**注意第一次和第三次都是約 2 秒，意義卻完全相反**：一個什麼都沒查，一個全部命中。
+光看執行時間分不出來，所以 `harvest.result.lookup` 會記 `n_resolved` /
+`n_without_identifier` / `n_with_fulltext`——採集找不到東西時，要說得出是哪一種找不到。
+
+40 篇裡 17 篇有開放全文（42%），與 `harvest_gaps.py` 當初實測相符（60 篇 34 篇有 Discussion）。
 
 ### migration 怎麼跑
 
