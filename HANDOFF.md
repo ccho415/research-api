@@ -62,8 +62,18 @@ n8n 用內網 `api.zeabur.internal` 呼叫 api，不經過公開網際網路。
 
 ```
 表單 → 載入素材(寫死) → Gemini 產方向 → 收集 → 查 MeSH 與論文數
-     → Gemini 分組 → 掛回並驗證 → 數命中(三區帶) → 排序 → 寫入 DB
+     → Gemini 分組 → 掛回並驗證 → 數命中(三區帶) → 排序
+     → Gemini 產方法草圖 → 掛回並驗證引用 → 寫入 DB
 ```
+
+**執行 61 端到端驗證通過**（2026-08-28）：15 列存入，判決映射正確
+（scooped 4／adjacent 8／no_prior_art 2／NULL 1），`code` 與 `method_sketch` 齊全。
+
+**分組已兩次改變判決，兩次都朝安全方向**：
+- `Afatinib` + `Gefitinib` 併成一個位置（同為 EGFR-TKI）
+- `ROS1` + `RET` 併成一個位置 → `(ROS1 OR RET) AND Tomography` 查到切點前 63 篇、
+  切點後 174 篇，判成 **ALREADY DONE**。不合併的話三個詞 AND 會是 0 篇，
+  誤判成沒人做過。這就是設計上「錯誤方向要安全」的實例。
 
 憑證 ID：
 
@@ -202,9 +212,11 @@ Gemini 的配對         11 / 15
    `GET /compute/ideas` 已備妥。
    PRD 要求三步：腳本提候選 → AI 逐組判 → **AI 自己再掃一遍全清單**
    （腳本抓不到跨語言重複，分數是 0.0）。中文門檻要另外校準。
-   **注意**：專案 `cab10537-8a27-4993-b850-db4a825184bd` 裡有 15 列來自跑動
-   `1cfe06e8-76c5-4983-9160-72d1e542bbe0` 的**降級資料**（verdict/code 為 NULL，
-   原因見下方已修項）。W4 讀取時用 `run_id` 過濾到較新的跑動，不要用 `project_id`。
+   **W4 要用這個跑動的資料**：
+   `run_id = 922e3e3d-ec97-436c-be37-c5a243028d9a`（執行 61，2026-08-28，15 列完整）。
+   同一個專案 `cab10537-8a27-4993-b850-db4a825184bd` 裡另有 15 列來自跑動
+   `1cfe06e8-...` 的**降級資料**（verdict/code 為 NULL，原因見下方已修項）。
+   **用 `run_id` 過濾，不要用 `project_id`**，否則會把壞資料一起拿去去重。
 3. **建 W1 領域框架**（S1）——沒有它，S3 的方法軸和 S4 的交叉都做不了。
    也是 `method_sketch.paradigm_source` 目前只能標 `inferred` 的原因。
 5. 把缺口採集器產品化（現在是本機工具 `tools/harvest_gaps.py`，
