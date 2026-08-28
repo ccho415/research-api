@@ -29,15 +29,27 @@ def save_anchors(anchors):
                 if not title:
                     continue
                 origin = a.get("origin") or "local"
-                cur.execute("SELECT id FROM anchor WHERE title = %s AND origin = %s",
-                            (title, origin))
+                # external_id is the identity; the title is only a label. An
+                # anchor can be reframed - the quantum one was, from applying a
+                # method to testing whether the method's claimed advantage holds
+                # - and reframing rewrites the title. Keyed on the title, that
+                # update silently becomes an insert, and the tournament then
+                # has the same anchor twice at two different grades.
+                ext = (a.get("external_id") or "").strip()
+                if ext:
+                    cur.execute("SELECT id FROM anchor WHERE external_id = %s"
+                                "  AND origin = %s", (ext, origin))
+                else:
+                    cur.execute("SELECT id FROM anchor WHERE title = %s"
+                                "  AND origin = %s", (title, origin))
                 row = cur.fetchone()
                 if row:
                     cur.execute(
-                        "UPDATE anchor SET statement = %s, evidence = %s,"
-                        "  grade_contribution = %s, grade_feasibility = %s,"
-                        "  field = %s WHERE id = %s RETURNING id",
-                        (a.get("statement"),
+                        "UPDATE anchor SET title = %s, statement = %s,"
+                        "  evidence = %s, grade_contribution = %s,"
+                        "  grade_feasibility = %s, field = %s"
+                        " WHERE id = %s RETURNING id",
+                        (title, a.get("statement"),
                          psycopg.types.json.Jsonb(a.get("evidence") or {}),
                          a.get("grade_contribution"), a.get("grade_feasibility"),
                          a.get("field"), row["id"]))
