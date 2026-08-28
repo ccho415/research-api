@@ -234,6 +234,17 @@ def triage_dedup(ideas, threshold=0.15, top=15):
             "n_candidate_pairs": len(pairs), "candidate_pairs": pairs}
 
 
+# The lexicographic order, in order. Four, not five, and ranked rather than
+# listed: a flat list of criteria reads as a scorecard, and a scorecard gets
+# averaged, which is the one thing the ordering exists to prevent.
+#
+# "clarity" used to be in here and had to go. A weak direction that is written
+# well beats a strong one that is written roughly on any criterion a judge
+# reads as a checklist item, and how a sentence is phrased is not a property of
+# the research.
+CRITERIA = ["contribution", "novelty", "conclusiveness", "feasibility"]
+
+
 def triage_pairs(ideas, anchors=None, criteria=None, shuffle_seed=0, batch_size=3):
     """Mirrors `triage.py pairs`, and enforces batch isolation.
 
@@ -246,10 +257,6 @@ def triage_pairs(ideas, anchors=None, criteria=None, shuffle_seed=0, batch_size=
     """
     ideas = _normalise(ideas)
     anchors = _normalise(anchors or [])
-    for a in anchors:
-        a["is_anchor"] = True
-        a.setdefault("grade_contribution", "ungraded")
-
     field = ideas + anchors
     ids = [r["id"] for r in field]
     if len(set(ids)) != len(ids):
@@ -283,13 +290,8 @@ def triage_pairs(ideas, anchors=None, criteria=None, shuffle_seed=0, batch_size=
     return {"n_ideas": len(ideas), "n_anchors": len(anchors),
             "n_matches": len(sched), "batch_size": batch_size,
             "n_batches": (len(sched) + batch_size - 1) // batch_size,
-            "criteria": criteria or ["contribution", "novelty",
-                                     "expected effectiveness", "clarity",
-                                     "feasibility"],
-            "ideas": {r["id"]: tri.idea_text(r)[:300] for r in field},
-            "anchors": {a["id"]: {"grade_contribution": a.get("grade_contribution"),
-                                  "grade_feasibility": a.get("grade_feasibility"),
-                                  "text": tri.idea_text(a)[:300]} for a in anchors},
+            "criteria": criteria or CRITERIA,
+            "competitors": {r["id"]: tri.idea_text(r)[:300] for r in field},
             "matches": sched}
 
 
@@ -315,11 +317,18 @@ def triage_elo(matches, ideas=None, anchors=None, k=32.0):
         rating[l] += k * (sl - el)
         rating[r] += k * ((1 - sl) - (1 - el))
 
-    seen, flips = {}, []
+    # Only a pair judged in both orderings can disagree with itself, so only
+    # those go in the denominator. Counting every distinct pair understates the
+    # rate whenever the schedule is partial, and the gate this feeds - five to
+    # twenty percent - reads an understated rate as a well-behaved judge.
+    seen, flips, rejudged = {}, [], set()
     for m in played:
         key = tuple(sorted((m["left"], m["right"])))
-        if key in seen and seen[key] != m["winner"]:
-            flips.append({"pair": list(key), "verdicts": [seen[key], m["winner"]]})
+        if key in seen:
+            rejudged.add(key)
+            if seen[key] != m["winner"]:
+                flips.append({"pair": list(key),
+                              "verdicts": [seen[key], m["winner"]]})
         seen[key] = m["winner"]
 
     titles = {r["id"]: tri.idea_text(r)[:160] for r in _normalise(ideas or [])}
@@ -337,7 +346,9 @@ def triage_elo(matches, ideas=None, anchors=None, k=32.0):
 
     out = {"n_matches_played": len(played), "k_factor": k,
            "order_flip_disagreements": flips,
-           "order_flip_rate": round(len(flips) / max(len(seen), 1), 3),
+           "n_pairs_judged_both_ways": len(rejudged),
+           "order_flip_rate": (round(len(flips) / len(rejudged), 3)
+                               if rejudged else None),
            "ranking": table}
 
     if grade:
@@ -349,6 +360,11 @@ def triage_elo(matches, ideas=None, anchors=None, k=32.0):
                  for g, v in sorted(by_grade.items())}
         strong = bands.get("strong", {}).get("mean_elo")
         weak = bands.get("weak", {}).get("mean_elo")
+        # "between the bands" is a claim about both ends, so it needs both ends.
+        # With only one grade in play it used to be said anyway, which reads as
+        # a calibration and is not one - the same failure as a novelty verdict
+        # asserting what the query never established.
+        both = strong is not None and weak is not None
         for r in table:
             if r["is_anchor"]:
                 continue
@@ -356,7 +372,12 @@ def triage_elo(matches, ideas=None, anchors=None, k=32.0):
                 r["calibration"] = "at or above the strong anchors"
             elif weak is not None and r["elo"] <= weak:
                 r["calibration"] = "at or below the weak anchors"
-            else:
+            elif both:
                 r["calibration"] = "between the anchor bands"
+            else:
+                r["calibration"] = None
+                r["calibration_note"] = (
+                    "not calibrated: the anchors that played carry only "
+                    + ", ".join(sorted(bands)) + " grades")
         out["anchor_bands"] = bands
     return out
