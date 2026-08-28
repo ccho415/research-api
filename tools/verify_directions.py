@@ -26,7 +26,9 @@ import concepts as C  # noqa: E402
 sys.stdout.reconfigure(encoding="utf-8")
 
 EPMC = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
-UA = {"User-Agent": "research-api/1.0 (direction verification; popo1664@gmail.com)"}
+UA = {"User-Agent": "research-api/1.0 (direction verification"
+                    + (f"; {os.environ['ACADEMIC_MAILTO']}"
+                       if os.environ.get("ACADEMIC_MAILTO") else "") + ")"}
 
 # Synonyms MeSH does not carry because they are how people abbreviate in prose,
 # not how the thesaurus records them.  Known to be incomplete: a term arriving

@@ -370,8 +370,28 @@ _NOVELTY = {"ALREADY DONE": "scooped", "PURSUED SINCE": "scooped"}
 _NO_RULING = ("TERM TOO RARE", "NO TERMS", "SINGLE GROUP", "CHECK FAILED")
 
 
+def _verdict_of(row):
+    """The check's verdict, under either name it travels by.
+
+    The reporting step renames `verdict` to `verdict_tag` on purpose - four
+    experiments established that the word is the least reliable field in the
+    output, so it is demoted below the evidence when a person reads it. Reading
+    only the original name here stored fifteen rows with a null verdict and no
+    error, which is the quiet kind of wrong.
+    """
+    return row.get("verdict") or row.get("verdict_tag")
+
+
+def _code_of(row):
+    """The model's own ordering, under either name it travels by."""
+    v = row.get("rank")
+    if v is None:
+        v = row.get("rank_from_model")
+    return None if v is None else str(v)
+
+
 def _novelty_verdict(row):
-    v = row.get("verdict")
+    v = _verdict_of(row)
     if v in _NOVELTY:
         return _NOVELTY[v]
     if v == "STILL OPEN":
@@ -389,8 +409,8 @@ def _coverage_limits(row):
     the evidence behind it deserves.
     """
     notes = []
-    if row.get("verdict") in _NO_RULING:
-        notes.append("no ruling: " + str(row.get("why") or row.get("verdict")))
+    if _verdict_of(row) in _NO_RULING:
+        notes.append("no ruling: " + str(row.get("why") or _verdict_of(row)))
     if len(row.get("groups") or row.get("term_groups") or []) >= 3:
         notes.append("three or more slots ANDed as exact phrases; directions of this "
                      "shape were pursued at 6% against 28% for two-slot ones, so a "
@@ -402,7 +422,7 @@ def _coverage_limits(row):
     # Only where `adjacent` is the verdict being relied on. Once the record has
     # already answered - scooped - what the zone would have hinted is moot, and
     # repeating it there buries the caveat that matters under one that does not.
-    if row.get("zone") == "ADJACENT" and row.get("verdict") == "STILL OPEN":
+    if row.get("zone") == "ADJACENT" and _verdict_of(row) == "STILL OPEN":
         notes.append("adjacent means these concepts are being written about together, "
                      "not that this is a good question; random recombinations of the "
                      "same words land here more often than reasoned ones")
@@ -482,7 +502,7 @@ def save_directions(directions, topic=None, project_id=None, run_id=None, cutoff
                     "        %s, %s) "
                     "RETURNING id",
                     (project_id,
-                     None if d.get("rank") is None else str(d.get("rank")),
+                     _code_of(d),
                      title, statement,
                      psycopg.types.json.Jsonb({
                          "built_from": d.get("built_from"),
@@ -502,7 +522,7 @@ def save_directions(directions, topic=None, project_id=None, run_id=None, cutoff
                     "VALUES (%s, %s, %s, %s, %s)",
                     (idea_id, run_id, _novelty_verdict(d),
                      psycopg.types.json.Jsonb({
-                         "check_verdict": d.get("verdict"),
+                         "check_verdict": _verdict_of(d),
                          "zone": d.get("zone"),
                          "cutoff": cutoff,
                          "query": d.get("query"),
@@ -513,9 +533,9 @@ def save_directions(directions, topic=None, project_id=None, run_id=None, cutoff
                          "rare_terms": d.get("rare_terms"),
                      }),
                      _coverage_limits(d)))
-                saved.append({"idea_id": str(idea_id), "code": d.get("rank"),
+                saved.append({"idea_id": str(idea_id), "code": _code_of(d),
                               "verdict": _novelty_verdict(d),
-                              "check_verdict": d.get("verdict")})
+                              "check_verdict": _verdict_of(d)})
 
             cur.execute("UPDATE run SET status = 'done', finished_at = now() "
                         "WHERE id = %s", (run_id,))
@@ -523,3 +543,61 @@ def save_directions(directions, topic=None, project_id=None, run_id=None, cutoff
 
     return {"project_id": str(project_id), "run_id": str(run_id),
             "n_saved": len(saved), "ideas": saved}
+
+
+def list_ideas(project_id=None, run_id=None, status=None, limit=200):
+    """Read back the directions and the latest thing said about each.
+
+    W4 needs this and there was no way to get an idea out of the database at
+    all: `save_directions` wrote, and nothing read. The novelty check is joined
+    on rather than fetched separately because a direction without its verdict
+    and its coverage limits is exactly the half of the record that misleads -
+    the statement always reads plausibly, and the caveats are what say how much
+    to trust it.
+
+    Only the most recent check per idea is returned. A direction that was
+    re-checked has an older row too, and handing back both would double every
+    idea in the deduplication that consumes this.
+    """
+    where, args = [], []
+    if project_id:
+        where.append("i.project_id = %s")
+        args.append(project_id)
+    if run_id:
+        where.append("n.run_id = %s")
+        args.append(run_id)
+    if status:
+        where.append("i.status = %s")
+        args.append(status)
+    clause = ("WHERE " + " AND ".join(where)) if where else ""
+    args.append(int(limit))
+
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT i.id, i.project_id, i.code, i.title, i.statement, i.axis,"
+            "       i.origin, i.source_note, i.status, i.grounding,"
+            "       i.method_sketch, i.required_variables, i.why_matters,"
+            "       i.created_at,"
+            "       n.verdict, n.rounds, n.coverage_limits, n.checked_at,"
+            "       n.run_id "
+            "FROM idea i "
+            "LEFT JOIN LATERAL ("
+            "    SELECT * FROM novelty_check c"
+            "    WHERE c.idea_id = i.id"
+            "    ORDER BY c.checked_at DESC LIMIT 1"
+            ") n ON true "
+            f"{clause} "
+            "ORDER BY i.created_at, i.code "
+            "LIMIT %s", args)
+        rows = []
+        for r in cur.fetchall():
+            d = dict(r)
+            for k in ("id", "project_id", "run_id"):
+                if d.get(k) is not None:
+                    d[k] = str(d[k])
+            for k in ("created_at", "checked_at"):
+                if d.get(k) is not None:
+                    d[k] = d[k].isoformat()
+            rows.append(d)
+
+    return {"n": len(rows), "project_id": project_id, "ideas": rows}

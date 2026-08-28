@@ -278,6 +278,27 @@ class SaveDirectionsIn(BaseModel):
     cutoff: Optional[int] = None
 
 
+@app.get("/compute/ideas")
+def ideas_list(project_id: Optional[str] = None, run_id: Optional[str] = None,
+               status: Optional[str] = None, limit: int = 200,
+               x_api_key: Optional[str] = Header(None)):
+    """The stored directions, each with the most recent check against them.
+
+    The verdict and its coverage limits come back attached rather than on
+    request, because a direction without them is the half of the record that
+    misleads: the statement always reads plausibly and the caveats are what say
+    how far to trust it.
+    """
+    check_key(x_api_key)
+    if not (project_id or run_id):
+        raise HTTPException(400, "need project_id or run_id")
+    import db
+    try:
+        return db.list_ideas(project_id, run_id, status, limit)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.post("/compute/ideas/save")
 def ideas_save(body: SaveDirectionsIn, x_api_key: Optional[str] = Header(None)):
     """Store the directions and the record's answer about each one.

@@ -33,6 +33,7 @@ out, so n8n can call it on directions that have never touched a disk.
 """
 
 import json
+import os
 import time
 import urllib.parse
 import urllib.request
@@ -40,7 +41,14 @@ import urllib.request
 import concepts as C
 
 EPMC = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
-UA = {"User-Agent": "research-api/1.0 (direction verification; popo1664@gmail.com)"}
+
+# The contact address belongs in the environment, not in the source. This repo
+# is public, and a hard-coded personal address in a User-Agent is scrapeable
+# from it forever. Europe PMC only asks for a way to reach whoever is calling;
+# an unset variable costs politeness, not access.
+UA = {"User-Agent": "research-api/1.0 (direction verification"
+                    + (f"; {os.environ['ACADEMIC_MAILTO']}"
+                       if os.environ.get("ACADEMIC_MAILTO") else "") + ")"}
 
 # Synonyms MeSH does not carry because they are how people abbreviate in prose,
 # not how the thesaurus records them.  `Tregs` and `Treg` are in neither the
