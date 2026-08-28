@@ -468,10 +468,18 @@ def save_directions(directions, topic=None, project_id=None, run_id=None, cutoff
                 slots = d.get("term_groups") or d.get("groups") or []
                 label = " x ".join(" / ".join(str(t) for t in g) for g in slots if g)
                 title = label[:200] or statement[:200]
+                # Absent rather than invented. A sketch the model never produced
+                # is worse as an empty shell than as a null: the shell reads as
+                # though the question of how to do this was answered.
+                sketch = d.get("method_sketch") or None
+                needs = d.get("required_variables") or None
+
                 cur.execute(
                     "INSERT INTO idea (project_id, code, title, statement, axis,"
-                    "                  origin, grounding, why_matters, status) "
-                    "VALUES (%s, %s, %s, %s, 'topic', 'generated', %s, %s, 'candidate') "
+                    "                  origin, grounding, why_matters, status,"
+                    "                  method_sketch, required_variables) "
+                    "VALUES (%s, %s, %s, %s, 'topic', 'generated', %s, %s, 'candidate',"
+                    "        %s, %s) "
                     "RETURNING id",
                     (project_id,
                      None if d.get("rank") is None else str(d.get("rank")),
@@ -483,7 +491,9 @@ def save_directions(directions, topic=None, project_id=None, run_id=None, cutoff
                          "weak_terms": d.get("weak_terms") or None,
                          "grouping_applied": d.get("grouping_applied"),
                      }),
-                     d.get("why_now")))
+                     d.get("why_now"),
+                     psycopg.types.json.Jsonb(sketch) if sketch else None,
+                     psycopg.types.json.Jsonb(needs) if needs else None))
                 idea_id = cur.fetchone()["id"]
 
                 cur.execute(
