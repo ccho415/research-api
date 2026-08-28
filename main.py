@@ -534,6 +534,63 @@ def admin_backup(x_api_key: Optional[str] = Header(None)):
         background=BackgroundTask(done))
 
 
+class MigrateIn(BaseModel):
+    file: str
+    # Not optional, and not defaulted. The n8n instance and this project have
+    # separate databases on the same server, and a migration applied to the
+    # wrong one is both silent and hard to undo. Naming the expected database
+    # makes the check structural instead of something the caller remembers.
+    expect_database: str
+
+
+@app.post("/admin/migrate")
+def admin_migrate(body: MigrateIn, x_api_key: Optional[str] = Header(None)):
+    """Apply one migration file from the repository, in a transaction.
+
+    The file is read from `migrations/` rather than posted in, so what runs is
+    what is version-controlled. Transcribing SQL into a workflow would make the
+    schema and the file two separate truths, and a typo between them does not
+    announce itself.
+    """
+    check_key(x_api_key)
+
+    name = os.path.basename(body.file)
+    if not name.endswith(".sql") or name != body.file:
+        raise HTTPException(400, "file must be a plain .sql name in migrations/")
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "migrations", name)
+    if not os.path.exists(path):
+        raise HTTPException(404, f"no such migration: {name}")
+
+    import db
+    try:
+        with db.connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT current_database() AS db")
+                actual = cur.fetchone()["db"]
+                if actual != body.expect_database:
+                    raise HTTPException(
+                        400, f"connected to '{actual}', not '{body.expect_database}' "
+                             "- refusing to migrate")
+                cur.execute("SELECT count(*) AS n FROM information_schema.tables "
+                            "WHERE table_schema = 'public'")
+                before = cur.fetchone()["n"]
+
+                with open(path, encoding="utf-8") as fh:
+                    cur.execute(fh.read())
+
+                cur.execute("SELECT count(*) AS n FROM information_schema.tables "
+                            "WHERE table_schema = 'public'")
+                after = cur.fetchone()["n"]
+            conn.commit()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:500]}")
+
+    return {"file": name, "database": actual, "applied": True,
+            "tables_before": before, "tables_after": after}
+
+
 @app.post("/admin/restore-drill")
 async def admin_restore_drill(request: Request,
                               x_api_key: Optional[str] = Header(None)):
