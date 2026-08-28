@@ -757,9 +757,27 @@ def triage_elo(body: EloIn, x_api_key: Optional[str] = Header(None)):
 # --------------------------------------------------------------------------
 @app.get("/admin/config")
 def admin_config(x_api_key: Optional[str] = Header(None)):
-    """Where the database settings came from. Never returns the password."""
+    """Where the database settings came from, and what code is actually live.
+
+    The deployed routes are listed because that is the question actually being
+    asked. A whole day went into guessing from the clock whether a push had
+    finished building, and the guess was wrong at least once: a run started two
+    minutes after the deploy was registered, while builds take three to six.
+
+    A commit hash would answer it only if the platform exposes one, and it says
+    nothing about what the code does. The route list is the deployment,
+    observed rather than inferred - if the endpoint you just wrote is in it,
+    your push is live.
+    """
     check_key(x_api_key)
-    return backup.config_report()
+    report = backup.config_report()
+    routes = sorted({r.path for r in app.routes if getattr(r, "path", None)})
+    commit = next((os.environ[k] for k in
+                   ("ZEABUR_GIT_COMMIT_SHA", "GIT_COMMIT", "SOURCE_COMMIT")
+                   if os.environ.get(k)), None)
+    report["build"] = {"commit": commit, "n_routes": len(routes),
+                       "routes": routes}
+    return report
 
 
 @app.get("/admin/dbstats")
