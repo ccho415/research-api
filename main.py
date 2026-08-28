@@ -220,6 +220,35 @@ class VerifyIn(BaseModel):
     # How thin a term may be before the direction is reported as unjudgeable
     # rather than open. Travels in the request because it is a judgement.
     min_term_papers: int = 25
+    # Whether to also ask full text whether the concepts meet at all. Two extra
+    # requests per direction, and the only thing that separates "nobody has
+    # done this" from "these words have nothing to do with each other".
+    zones: bool = True
+
+
+class DescribeTermsIn(BaseModel):
+    terms: List[str]
+
+
+@app.post("/compute/verify/terms")
+def verify_terms(body: DescribeTermsIn, x_api_key: Optional[str] = Header(None)):
+    """What MeSH knows about each term, and how many papers it reaches.
+
+    This runs before the grouping decision rather than after, because the
+    decision needs evidence the model does not have: MeSH covers only about a
+    third of the entities that matter here, and a term it has never heard of
+    that still reaches half a million papers is a word rather than an entity.
+    Both facts are reported without a verdict attached - what to do about them
+    is the caller's call.
+    """
+    check_key(x_api_key)
+    if not body.terms:
+        raise HTTPException(400, "need at least 1 term")
+    import verify
+    try:
+        return {"terms": verify.describe_terms(body.terms)}
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
 @app.post("/compute/verify/directions")
@@ -235,7 +264,8 @@ def verify_directions(body: VerifyIn, x_api_key: Optional[str] = Header(None)):
         raise HTTPException(400, "need at least 1 direction")
     import verify
     try:
-        return verify.verify(body.directions, body.cutoff, body.min_term_papers)
+        return verify.verify(body.directions, body.cutoff, body.min_term_papers,
+                             body.zones)
     except Exception as e:
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
