@@ -875,6 +875,76 @@ def feasibility_list(project_id: Optional[str] = None,
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+class NoveltySearchIn(BaseModel):
+    rounds: List[Dict[str, Any]]
+    domain: Optional[str] = "general"
+    limit: int = 5
+
+
+@app.post("/compute/novelty/search")
+def novelty_search(body: NoveltySearchIn, x_api_key: Optional[str] = Header(None)):
+    """Run one search per round and report what each one found.
+
+    Batched because ten rounds against one service want pacing, and because the
+    papers come back attached to the round that found them - which is what lets
+    the verdict cite something that was actually retrieved rather than
+    remembered.
+    """
+    check_key(x_api_key)
+    import novelty
+    try:
+        return novelty.run_rounds(body.rounds, body.domain, body.limit)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class NoveltySaveIn(BaseModel):
+    idea_id: str
+    verdict: Optional[str] = None
+    rounds: List[Dict[str, Any]]
+    run_id: Optional[str] = None
+    closest_papers: Optional[List[Dict[str, Any]]] = None
+    coverage_limits: Optional[str] = None
+    facets: Optional[Dict[str, Any]] = None
+    method: Optional[str] = "adversarial"
+
+
+@app.post("/compute/novelty/save")
+def novelty_save(body: NoveltySaveIn, x_api_key: Optional[str] = Header(None)):
+    """Store an adversarial check, refusing the verdicts nothing supports.
+
+    scooped and incremental name a specific paper and must cite one.
+    no_prior_art is a bounded negative and must carry its bounds. And three
+    empty rounds in one vocabulary followed by a novelty claim is refused
+    outright - that is the dominant way a false novelty claim gets made.
+    """
+    check_key(x_api_key)
+    import novelty
+    try:
+        return novelty.save_novelty(
+            body.idea_id, body.verdict, body.rounds, body.run_id,
+            body.closest_papers, body.coverage_limits, body.facets,
+            body.method or "adversarial")
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/novelty")
+def novelty_list(project_id: Optional[str] = None,
+                 method: str = "adversarial",
+                 x_api_key: Optional[str] = Header(None)):
+    check_key(x_api_key)
+    import novelty
+    try:
+        return novelty.list_novelty(project_id, None, method)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.post("/compute/tournament/start")
 def tournament_start(body: TournamentStartIn,
                      x_api_key: Optional[str] = Header(None)):
