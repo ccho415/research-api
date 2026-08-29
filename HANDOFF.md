@@ -36,7 +36,7 @@ n8n 用內網 `api.zeabur.internal` 呼叫 api，不經過公開網際網路。
 | 四個審閱介面 👁①–④ | ❌ 完全未建，沒有任何前端 |
 | 第 0 階段（修 domain-profile） | ✅ **已做完，本文件先前記錯**。skill 是 `v2.0.0`，四個修正都在 |
 | 第 1 階段（16 項重驗） | ❌ 未做。PRD 寫「先驗證再蓋」，這一半仍是已知的偏離 |
-| W1 領域框架 | ⚠️ 工作流已建（`NRe3eCGX4bEDegvo`），**還沒用真題目跑過**。要拿一個 ECG 題目驗 Q2 有答案時真的會載入第二個包 |
+| W1 領域框架 | ✅ 用 ECG 題目實跑通過（執行 142），`second_pack_forced: true`。已從 Sonnet 4.5 換到 **Sonnet 5**，實測 $0.0114／次 |
 | **W5 錦標賽** | ✅ 執行 121 **三個守門全過**，錨點排序零錯位。仍未驗：場地放大後的表現。見下方「W5 兩次跑動」 |
 
 ### 第 0 階段其實做完了（2026-08-28 更正）
@@ -80,7 +80,7 @@ Q2 強制第二包   neuro_18 就是死在這一條
 | `5hjjy6sjMPBJaHGg` | W-LINE 通知測試 | ✅ 已驗證通過（執行 47） |
 | `3kLQ9JvEdLBYnsWe` | **W-ADMIN research-api 診斷** | 表單觸發，下拉選任一 GET 端點。**這是從 Claude Code 呼叫 API 的唯一管道**（內網打不到），確認部署與讀回資料都靠它 |
 | `CqaYzcqjNNgI05AP` | **W5 錦標賽** | 20 節點。表單 `/form/w5-tournament`，`n8nUserAuth`。錯誤工作流指向 W-ALERT。執行 116 端到端通過 |
-| `NRe3eCGX4bEDegvo` | W1 領域框架判定 | **尚未用真題目跑過** |
+| `NRe3eCGX4bEDegvo` | W1 領域框架判定 | 6 節點。表單 `/form/w1-frame`。**Sonnet 5**，回傳帶 `cost` |
 | `lzjAL1ONErAwLkoK` | W4 去重 | 見上：只記配對、沒記存活者，已用 `/compute/dedup/resolve` 補 |
 | `LnIml88jxxjU5gSV` | W0 連線測試 | — |
 
@@ -264,6 +264,39 @@ coverage_limits）。刻意如此：一個方向如果只有敘述沒有判決�
 第二判準直接視為平手。這跟對照組實驗一致——那些計數本來就幾乎沒有鑑別力，
 本來就不該被重壓。**要真正修掉得對錨點也跑一次機械查核，而那個查核已經被證明沒用**，
 所以不值得。
+
+### W1 實跑通過，並修掉三個一起發生的問題（2026-08-29）
+
+題目：「用深度學習從單導程 ECG 偵測無症狀心房顫動，並驗證它在基層診所人群的可用性」。
+挑這個是因為它應該逼出 Q2 有答案——主要主張是模型效能，但**可用性宣稱**也必須成立。
+
+結果（執行 142）：
+
+```
+q1 computational   模型在定義好的任務上打敗基準
+q2 observational   可用性宣稱要靠有代表性的世代驗證；抽樣有偏誤的話
+                   benchmark 再漂亮，可用性宣稱仍然不成立
+q3 physiological-signal-ai
+second_pack_forced true      pack_versions 齊全      confidence high
+費用 輸入 1869 / 輸出 769 token = $0.0114
+```
+
+**Q2 強制第二個包這條規則成立了。** 這是 HANDOFF 先前列為待驗的那一項。
+
+同時修掉三個必須一起改的東西：
+
+1. **模型還停在 `claude-sonnet-4-5-20250929`。** 便利貼寫著「目前用 Gemini 暫代，
+   憑證加了之後換掉」——憑證加了、節點也換成 Anthropic 了，但換成 4.5 而不是
+   PRD 第十一節定的 Sonnet 5。已改。
+2. **`temperature: 0` 還在。** Sonnet 4.5 收得下，Sonnet 5 會直接 400。
+   換模型前不拿掉就會炸。已拿掉。
+3. **`decided_by` 在程式碼裡寫死成 `claude-sonnet-4-5-20250929`。**
+   換模型時沒跟著改的話，**每一份框架都會署名一個沒有參與判定的模型**。
+   已改成從回應的 `model` 欄讀。會說謊的來源欄位比沒有更糟。
+
+`Route With Sonnet` 的 `simplify` 也關掉了，所以 `Build The Frame` 會回傳 `cost`。
+那個 `cost` **刻意放在 frame 外面**——`Save The Frame` 只送 `project_id` 與 `frame`，
+一次跑動花多少錢不屬於「當初判了什麼」這份不可變紀錄。
 
 ### Anthropic 節點的兩個坑（2026-08-29 實測）
 
