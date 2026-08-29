@@ -32,7 +32,7 @@ n8n 用內網 `api.zeabur.internal` 呼叫 api，不經過公開網際網路。
 | **W3 想點子** | ✅ 產出會寫進 `idea` + `novelty_check`，含 `method_sketch` 與 `required_variables`。素材已改成從 `/compute/harvest` 讀（`Load The Harvest` → `Shape The Material`），**寫死的 base64 已拿掉** |
 | **W4 去重** | ✅ 正常運作（`922e3e3d` 20 組、執行 123 對 `a1b7e106` 再 20 組，全部 `distinct`）。它**只記配對、不記誰活下來**，那一半已用 `/compute/dedup/resolve` 補上 |
 | **採集層** | ✅ 實跑通過，快取驗收見下 |
-| **W6 可行性分級（S7）** | ✅ 端到端跑通（執行 149，8 個方向 79 秒 **$0.08**）。四個守門過三個——缺研究背景檔那條是真的缺，不是缺陷 |
+| **W6 可行性分級（S7）** | ✅ 端到端跑通並修正四項（執行 151，8 個方向 57 秒 **$0.059**）。三個守門全過，但書另計 |
 | S8–S11 | ❌ 未建（新穎性驗證、唱反調、可行性複核、報告） |
 | 四個審閱介面 👁①–④ | ❌ 完全未建，沒有任何前端 |
 | 第 0 階段（修 domain-profile） | ✅ **已做完，本文件先前記錯**。skill 是 `v2.0.0`，四個修正都在 |
@@ -358,11 +358,29 @@ A 0    B 0    C 1    D 7
 
 檔名是 `tools/inventory.py` 不是 `profile.py`——後者會遮蔽標準庫模組。
 
-#### 這次沒驗到的
+#### 四項修正已驗（執行 151，2026-08-29）
 
-`/compute/frame` 回 `domain_frame: null`——這個專案沒跑過 W1，所以**範式包沒有參與分級**。
-PRD 說 Tier B 的意思是領域相關的（觀察性看 place×time 的公開資料、計算性看公開
-benchmark 但瓶頸通常是算力）。要驗這條，得在同一個有 domain_frame 的專案上跑。
+先給 PM2.5 專案補跑 W1（`observational` + `measurement` + `environmental-health`），
+再重跑 W6。`n_tier_b_sources: 3`，三個包的 Tier B 段落都進去了。
+
+**範式包確實改變了判斷，不只是多送了字。** 修正前後對照：
+
+```
+修正前  「SO2 could join via district × visit_date ...（days, free）」
+修正後  「SO2 itself is Tier B ... but is not the binding constraint here」
+```
+
+**「什麼才是真正的瓶頸」這句話是修正後才出現的**——而 skill 說那正是這一步最常見的錯誤。
+另外它也開始用包裡才有的來源名稱（satellite AOD、national noise maps），
+以及把 GBD 那筆判成「**a fundamental scope mismatch, not just a missing variable**」。
+
+守門與但書拆開之後 `all_gates_pass: true`（三個守門全過），
+「沒有研究背景檔」移到 `caveats`。指示燈不再永遠是紅的。
+
+費用反而降了：**$0.0593**（修正前 $0.0800）。輸入從 2,977 升到 3,969（多了 Tier B 段落），
+但輸出從 7,404 降到 5,137——有包可依據時，模型少推理了。單次觀察，不要過度解讀。
+
+**仍未驗**：`datasets_ignored` 那條路徑（目前只有一份資料清單，多份時的行為沒被走到）。
 
 ### 滿場地實跑：規模、費用、翻轉率（執行 144，2026-08-29）
 
