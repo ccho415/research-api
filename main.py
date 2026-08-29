@@ -729,6 +729,118 @@ def ideas_live(project_id: Optional[str] = None, run_id: Optional[str] = None,
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+class DatasetIn(BaseModel):
+    project_id: str
+    inventory: Dict[str, Any]
+    filename: Optional[str] = None
+    pack: Optional[str] = None
+
+
+@app.post("/compute/dataset/save")
+def dataset_save(body: DatasetIn, x_api_key: Optional[str] = Header(None)):
+    """Store a field inventory produced locally by tools/inventory.py.
+
+    Rejects anything carrying rows. The local tool does not emit them, but this
+    endpoint accepts any body and an inventory is the same shape a careless
+    paste of the source data would have. Once a clinical extract reaches a
+    server it cannot be taken back, so the check is here rather than in a note.
+    """
+    check_key(x_api_key)
+    import datasets
+    try:
+        return datasets.save_dataset(body.project_id, body.inventory,
+                                     body.filename, body.pack)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/dataset")
+def dataset_list(project_id: str, x_api_key: Optional[str] = Header(None)):
+    check_key(x_api_key)
+    import datasets
+    try:
+        return datasets.list_datasets(project_id)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class ProfileIn(BaseModel):
+    project_id: str
+    content: Dict[str, Any]
+    derived_from: Optional[str] = None
+
+
+@app.post("/compute/profile/save")
+def profile_save(body: ProfileIn, x_api_key: Optional[str] = Header(None)):
+    """A new version of the research profile. Older versions are never rewritten."""
+    check_key(x_api_key)
+    import datasets
+    try:
+        return datasets.save_profile(body.project_id, body.content,
+                                     body.derived_from)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/profile")
+def profile_get(project_id: str, x_api_key: Optional[str] = Header(None)):
+    """The current profile, or an explicit statement that there is none.
+
+    Grading runs either way. Without a profile every tier has to be marked a
+    generic default rather than a judgement about this researcher, so the
+    absence travels as a note instead of as an empty object.
+    """
+    check_key(x_api_key)
+    import datasets
+    try:
+        return datasets.get_profile(project_id)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class FeasibilityIn(BaseModel):
+    assessments: List[Dict[str, Any]]
+    dataset_id: Optional[str] = None
+
+
+@app.post("/compute/feasibility/save")
+def feasibility_save(body: FeasibilityIn, x_api_key: Optional[str] = Header(None)):
+    """Store one tier per direction, refusing the ones that say nothing.
+
+    A B or C without the missing variable and the route means "no" while
+    reading as "maybe", and someone plans around a tier they cannot reach.
+    """
+    check_key(x_api_key)
+    import datasets
+    try:
+        return datasets.save_feasibility(body.assessments, body.dataset_id)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/feasibility")
+def feasibility_list(project_id: Optional[str] = None,
+                     x_api_key: Optional[str] = Header(None)):
+    """The board, grouped but never reordered.
+
+    Within each group the tournament's order stands. Sorting by tier would make
+    feasibility the primary axis, and a tier C direction can be worth far more
+    than a tier A one.
+    """
+    check_key(x_api_key)
+    import datasets
+    try:
+        return datasets.list_feasibility(project_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.post("/compute/tournament/start")
 def tournament_start(body: TournamentStartIn,
                      x_api_key: Optional[str] = Header(None)):
