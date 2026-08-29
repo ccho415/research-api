@@ -685,6 +685,31 @@ def dedup_resolve(body: ResolveIn, x_api_key: Optional[str] = Header(None)):
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+class KeepIn(BaseModel):
+    idea_id: str
+    decided_by: Optional[str] = "human"
+
+
+@app.post("/compute/dedup/keep")
+def dedup_keep(body: KeepIn, x_api_key: Optional[str] = Header(None)):
+    """Pin one direction as the survivor of its cluster, overruling the rule.
+
+    The resolver has always refused to overrule a person, but nothing could make
+    it one - the state it looked for could not be produced by any endpoint. This
+    is the primitive the deduplication review screen needs, and without it that
+    branch was guarding a decision nobody could record.
+    """
+    check_key(x_api_key)
+    import tourney
+    try:
+        out = tourney.keep_this_one(body.idea_id, body.decided_by or "human")
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+    if not out:
+        raise HTTPException(404, "no such idea")
+    return out
+
+
 @app.get("/compute/ideas/live")
 def ideas_live(project_id: Optional[str] = None, run_id: Optional[str] = None,
                limit: int = 200, x_api_key: Optional[str] = Header(None)):

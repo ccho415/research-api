@@ -357,9 +357,19 @@ def resolve_duplicates(run_id, decided_by="rule", dry_run=False):
                     keep = sorted(human, key=lambda i: row[i]["created_at"])[0]
                     basis = "kept by a person"
                 else:
-                    keep = sorted(group, key=lambda i: (-completeness(i),
-                                                        row[i]["created_at"]))[0]
-                    basis = "fullest record, then written first"
+                    # created_at cannot break the tie on its own. Every
+                    # direction from one run is inserted in a single statement
+                    # and shares a timestamp to the microsecond, so on the
+                    # normal case it separates nothing and the survivor came
+                    # down to dictionary order. `code` is the model's own rank,
+                    # stable across reads; the id is the last resort so that two
+                    # runs of this over the same data always agree.
+                    keep = sorted(group, key=lambda i: (
+                        -completeness(i),
+                        row[i]["created_at"],
+                        str(row[i].get("code") or "~"),
+                        i))[0]
+                    basis = "fullest record, then earliest, then lowest code"
                 losers = [g for g in group if g != keep]
                 clusters.append({
                     "keep": keep, "keep_code": row[keep].get("code"),
@@ -423,3 +433,29 @@ def live_ideas(project_id=None, run_id=None, limit=200):
             d["created_at"] = d["created_at"].isoformat()
             out.append(d)
     return {"n": len(out), "ideas": out}
+
+
+def keep_this_one(idea_id, decided_by="human"):
+    """Pin a direction as the survivor of its duplicate cluster.
+
+    `resolve_duplicates` already refuses to overrule a person, but nothing could
+    make it one: the branch checked for `merge_decided_by = 'human'` on a row
+    with `merged_into IS NULL`, and no endpoint could produce that state. It was
+    unreachable code guarding a decision nobody could record.
+
+    This is the primitive the deduplication review screen needs - the reviewer
+    disagrees with the rule's choice and names the one to keep - and it is what
+    makes the branch testable at all.
+    """
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE idea SET merged_into = NULL, merge_decided_by = %s,"
+                "  merge_decided_at = now() WHERE id = %s RETURNING id, code, title",
+                (decided_by, idea_id))
+            row = cur.fetchone()
+        conn.commit()
+    if not row:
+        return None
+    return {"idea_id": str(row["id"]), "code": row["code"],
+            "title": row["title"], "decided_by": decided_by}
