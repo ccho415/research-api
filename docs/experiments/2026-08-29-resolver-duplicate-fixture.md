@@ -82,8 +82,40 @@ POST /compute/dedup/resolve  {"dry_run": true}
 resolve 標記的是**敗方**，不是存活者。那是一段在守護「沒有人記得下來的決定」的死碼。
 補了 `POST /compute/dedup/keep`，那也正是去重審閱介面 👁① 需要的原語。
 
+## 跨語言重複（第二組測試資料）
+
+專案 `c4e71649`，run `b8f3f102`，六筆，三組英文三組中文：
+
+| code | 方向 | 意圖 |
+|---|---|---|
+| 1 | fine particulate matter × ischaemic stroke recurrence | 與 2 相同 |
+| 2 | 細懸浮微粒 × 缺血性腦中風再發 | 與 1 相同，**零共同字詞** |
+| 3 | obstructive sleep apnoea × white matter hyperintensities | 與 4 相同 |
+| 4 | 阻塞性睡眠呼吸中止症 × 白質高訊號 | 與 3 相同 |
+| 5 | 腸道菌相 × 認知功能恢復 | 中文，不重複 |
+| 6 | statin therapy × post-stroke depression | 英文，不重複 |
+
+**腳本完全看不到那兩組。** `score_range` 是 `[0, 0.064]`，全部低於 0.15 門檻，
+而且真正重複的 1~2 與 3~4 **連候選配對都沒進**——腳本挑出的五組候選全是不相干的組合。
+這正是詞彙相似度對跨語言的失效方式：分數不是「低」，是**排不進前五**。
+
+**`Sweep The Whole List` 兩組都抓到了**，理由自己寫出了原因：
+
+```
+duplicate  1~2  "These are the same question regarding PM2.5 exposure and stroke
+                 recurrence in elderly patients, translated between English and Chinese."
+duplicate  3~4  "These are the same question regarding the link between sleep apnea
+                 severity and white matter hyperintensities, translated between
+                 English and Chinese."
+```
+
+不重複的都保持 distinct，包含只有中文的第 5 筆。合併之後英文留下、中文被併
+（完整度相同，靠 `code` 決勝）。
+
+**這是 `Sweep The Whole List` 存在的唯一理由，而它成立了。** 沒有這一步，
+一份中英混寫的方向清單會把每一組翻譯重複都留在場上。
+
 ## 仍未驗證
 
-- **W4 找不找得出跨語言重複**（中文對英文）。`Sweep The Whole List` 那一步就是為此存在，
-  這次七筆全是英文，那條路徑沒被走到。
-- 真實跑動裡重複率有多高。這組是刻意造的，不能推論。
+- 真實跑動裡重複率有多高。這兩組都是刻意造的，不能推論。
+- 中文**與中文之間**的近似重複（不是翻譯，是換句話說）。這次的中文彼此都是不同題目。
