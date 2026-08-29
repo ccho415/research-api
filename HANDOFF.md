@@ -1,7 +1,7 @@
 # 交接文件 — 研究方向發想系統
 
 **寫給：接手這個專案的任何一個新的 Claude Code 工作階段。**
-最後更新：2026-08-28（第二次，含對照組實驗結果）
+最後更新：2026-08-29（W5 錦標賽建好、66 筆錨點入庫）
 
 > **先讀完這一份再動手。** 上一個工作階段沒讀，結果重新踩了一次「thinking token
 > 算在 maxOutputTokens 裡」——那條在本文件的環境備忘裡本來就寫著。
@@ -32,7 +32,7 @@ n8n 用內網 `api.zeabur.internal` 呼叫 api，不經過公開網際網路。
 | **W3 想點子** | ✅ 產出會寫進 `idea` + `novelty_check`，含 `method_sketch` 與 `required_variables`。**素材仍是寫死的 base64**，見下方採集層 |
 | **W4 去重** | ⚠️ 端到端通過（執行 67，20 組寫入 `dedup_pair`），但**只記配對、沒記誰活下來**。見下方「去重缺一半」 |
 | **採集層** | ✅ 實跑通過，快取驗收見下 |
-| S5–S11 | ❌ 未建。W4（S5 去重）的計算端點已備妥且實測過 |
+| S7–S11 | ❌ 未建。S5 去重＝W4、S6 錦標賽＝W5，兩個都已建 |
 | 四個審閱介面 👁①–④ | ❌ 完全未建，沒有任何前端 |
 | 第 0 階段（修 domain-profile） | ✅ **已做完，本文件先前記錯**。skill 是 `v2.0.0`，四個修正都在 |
 | 第 1 階段（16 項重驗） | ❌ 未做。PRD 寫「先驗證再蓋」，這一半仍是已知的偏離 |
@@ -105,12 +105,13 @@ Q2 強制第二包   neuro_18 就是死在這一條
 
 | ID | 名稱 | 型別 |
 |---|---|---|
-| `Pt36z1ZQwT84ARd5` | Research API Key | httpHeaderAuth |
+| `Pt36z1ZQwT84ARd5` | Research API Key | **httpTemplatedCustomAuth**（不是 httpHeaderAuth，本文件先前記錯） |
 | `eCLOk0QB1CM31sM1` | Postgres | postgres |
 | `tgUuL2avuGxFtJHi` | Google Drive | googleDriveOAuth2Api |
 | `CZonQ0U8wL27CAKM` | Google Gemini (PaLM) | googlePalmApi |
 | `ry2UKtnf3GjmXq8d` | OpenAI | openAiApi |
 | `dAytbkY0WTl24Yjm` | LINE Messaging API | httpHeaderAuth |
+| `cBicCMYnLzAZQyae` | **Anthropic account** | anthropicApi。W5 的兩個判斷節點用它 |
 
 ---
 
