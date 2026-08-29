@@ -32,7 +32,8 @@ n8n 用內網 `api.zeabur.internal` 呼叫 api，不經過公開網際網路。
 | **W3 想點子** | ✅ 產出會寫進 `idea` + `novelty_check`，含 `method_sketch` 與 `required_variables`。素材已改成從 `/compute/harvest` 讀（`Load The Harvest` → `Shape The Material`），**寫死的 base64 已拿掉** |
 | **W4 去重** | ✅ 正常運作（`922e3e3d` 20 組、執行 123 對 `a1b7e106` 再 20 組，全部 `distinct`）。它**只記配對、不記誰活下來**，那一半已用 `/compute/dedup/resolve` 補上 |
 | **採集層** | ✅ 實跑通過，快取驗收見下 |
-| S7–S11 | ❌ 未建。S5 去重＝W4、S6 錦標賽＝W5，兩個都已建 |
+| **W6 可行性分級（S7）** | ✅ 端到端跑通（執行 149，8 個方向 79 秒 **$0.08**）。四個守門過三個——缺研究背景檔那條是真的缺，不是缺陷 |
+| S8–S11 | ❌ 未建（新穎性驗證、唱反調、可行性複核、報告） |
 | 四個審閱介面 👁①–④ | ❌ 完全未建，沒有任何前端 |
 | 第 0 階段（修 domain-profile） | ✅ **已做完，本文件先前記錯**。skill 是 `v2.0.0`，四個修正都在 |
 | 第 1 階段（16 項重驗） | ❌ 未做。PRD 寫「先驗證再蓋」，這一半仍是已知的偏離 |
@@ -79,6 +80,7 @@ Q2 強制第二包   neuro_18 就是死在這一條
 | `UobSYUAU2C4j38tY` | **W-ALERT 失敗推 LINE** | 已發布。W-BACKUP 與 W2 的 `errorWorkflow` 都指向它 |
 | `5hjjy6sjMPBJaHGg` | W-LINE 通知測試 | ✅ 已驗證通過（執行 47） |
 | `3kLQ9JvEdLBYnsWe` | **W-ADMIN research-api 診斷** | 表單觸發，下拉選任一 GET 端點。**這是從 Claude Code 呼叫 API 的唯一管道**（內網打不到），確認部署與讀回資料都靠它 |
+| `xKB9e0sepZPaPTYM` | **W6 可行性分級** | 12 節點。表單 `/form/w6-feasibility`。輸入是本機產出的欄位清單，原始資料永遠不會到這裡 |
 | `CqaYzcqjNNgI05AP` | **W5 錦標賽** | 20 節點。表單 `/form/w5-tournament`，`n8nUserAuth`。錯誤工作流指向 W-ALERT。執行 116 端到端通過 |
 | `NRe3eCGX4bEDegvo` | W1 領域框架判定 | 6 節點。表單 `/form/w1-frame`。**Sonnet 5**，回傳帶 `cost` |
 | `lzjAL1ONErAwLkoK` | W4 去重 | 見上：只記配對、沒記存活者，已用 `/compute/dedup/resolve` 補 |
@@ -214,6 +216,12 @@ POST /compute/anchors/save
 POST /admin/load-anchors            灌 repo 內附的 54 筆 ScholarIdeas 錨點
 POST /compute/dedup/resolve         決定重複裡誰活下來（dry_run 給審閱介面看）
 POST /compute/dedup/keep            人工指定存活者，推翻規則（👁① 的原語）
+POST /compute/dataset/save          上傳本機產出的欄位清單（會擋帶 rows 的）
+GET  /compute/dataset?project_id=   資料清單
+POST /compute/profile/save          研究背景檔，逐版本存，舊版不覆寫
+GET  /compute/profile?project_id=   目前版本，沒有就明說沒有
+POST /compute/feasibility/save      A/B/C/D，B/C 沒去路會被拒
+GET  /compute/feasibility?project_id=  分級看板，分組但不重排
 GET  /compute/ideas/live            場上的方向，不含被合併掉的
 POST /compute/tournament/start
 POST /compute/tournament/matches    對局結果（錨點對局也存這裡）
@@ -307,6 +315,54 @@ second_pack_forced true      pack_versions 齊全      confidence high
 2. **Anthropic 節點沒有 Gemini 那個 `jsonOutput` 開關。** 回覆是純文字，
    所以 W3 那套搶救碼（挖巢狀字串、讀第一個平衡物件、任意深度撿完整物件）
    照抄過來是必要的，不是防禦性多寫。
+
+### W6 可行性分級（S7）實跑通過（執行 149，2026-08-29）
+
+8 個方向對照 11 欄的測試世代，79 秒，**$0.08**（輸入 2,977／輸出 7,404 token）。
+
+```
+A 0    B 0    C 1    D 7
+守門 4 過 3（缺的那條是「沒有研究背景檔」——真的沒有，不是缺陷）
+```
+
+全部 D 是**正確答案**：方向來自 PM2.5×腦中風的缺口採集，而測試世代只有年齡、
+抽菸、fev1_fvc、二元中風結果。分級的品質從細節看得出來：
+
+- 「`outcome_stroke` 不區分出血性與缺血性」——看出二元結果撐不起亞型問題
+- 「只有 `fev1_fvc` 這個 proxy，沒有診斷碼」——**明確拒絕把 proxy 拉伸成 COPD 診斷**，
+  那正是 skill 裡寫的「最誘人的失敗」
+- C 那筆寫出了 join key：「district × visit_date，來自國家環境監測網，公開，約一天」
+- 每一則 power note 都點名 n=60、4 個行政區，並指出交互作用／亞群設計需要數倍樣本
+
+#### 這一層的三個硬約束都實測過
+
+1. **原始資料永遠不會到這裡。** `tools/inventory.py` 在本機產出欄位清單。
+   對一份**故意塞滿個資**的測試資料驗過：11 欄裡 4 欄標為個資（姓名、身分證字號、
+   chart_no、clinical_note），**輸出 JSON 裡找不到任何一個原始值**
+   （扣掉宣告過的 levels 與 min/max 之後為 0）。
+2. **上傳端點會擋。** 帶 `rows` 鍵的 payload 回 400；「標了個資卻還帶 levels」的
+   也回 400（那個形狀代表清單在剖析後被手動改過）。兩條都實測過。
+3. **B/C 沒有去路就寫不進去。** migration 008 的 CHECK 強制
+   `tier IN ('A','B','C','D')`，且 B/C 必須同時有 `missing` 與 `route_to_tier_a`。
+
+#### 本機剖析器抓到的兩個錯，值得記住
+
+**中文病歷整段被當成 level 輸出。** 自由文字門檻原本是 80 字元——那是照英文校的。
+一段完整的中文病歷（主訴、抽菸史、理學檢查）只有 44 個字，直接穿過去。
+已改成**加權長度，CJK 算兩倍**，並補上 note／主訴／病摘 等欄名比對。
+
+**`clinical_note` 被標成 `joins_on=site`**，因為它包含 `clinic`。
+加 `` 不能修——`_` 是 word character，所以 `date` 配不到 `visit_date`、
+`lat` 配不到 `latitude`。欄位名絕大多數是 snake_case，**改成切詞比對**，
+12 個測試名稱全部正確。
+
+檔名是 `tools/inventory.py` 不是 `profile.py`——後者會遮蔽標準庫模組。
+
+#### 這次沒驗到的
+
+`/compute/frame` 回 `domain_frame: null`——這個專案沒跑過 W1，所以**範式包沒有參與分級**。
+PRD 說 Tier B 的意思是領域相關的（觀察性看 place×time 的公開資料、計算性看公開
+benchmark 但瓶頸通常是算力）。要驗這條，得在同一個有 domain_frame 的專案上跑。
 
 ### 滿場地實跑：規模、費用、翻轉率（執行 144，2026-08-29）
 
