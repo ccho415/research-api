@@ -180,11 +180,20 @@ def save_feasibility(assessments, dataset_id=None):
 
 
 def list_feasibility(project_id=None, idea_ids=None):
-    """The grading with each direction written out in full.
+    """The grading with each direction written out in full, in tournament order.
 
     Joined in rather than left as ids, for the reason the PRD gives about every
     screen in this system: a table of codes cannot be judged, and being judged
     is the entire purpose of showing it to anyone.
+
+    The rank is joined in for a narrower reason. Every consumer of this endpoint
+    takes the head of a tier and spends money on it - a novelty check, a debate
+    between two models - and until this ordering existed the head was whichever
+    direction happened to sort first by uuid. The callers said they were taking
+    the highest-ranked and they were taking an arbitrary one, which is the exact
+    shape of mistake this system is built to make impossible rather than
+    unlikely. Directions with no ranking sort last rather than first, so an
+    ungraded one never quietly wins the position.
     """
     where, args = [], []
     if project_id:
@@ -201,7 +210,13 @@ def list_feasibility(project_id=None, idea_ids=None):
             "SELECT DISTINCT ON (f.idea_id) f.id, f.idea_id, f.dataset_id,"
             "       f.tier, f.missing, f.route_to_tier_a, f.design,"
             "       f.power_note, f.assessed_at,"
-            "       i.code, i.title, i.statement "
+            "       i.code, i.title, i.statement,"
+            # The latest tournament for this idea's project, because a project
+            # can be re-run and the older standings are not the current answer.
+            "       (SELECT r.rank FROM ranking r"
+            "          JOIN tournament t ON t.id = r.tournament_id"
+            "         WHERE r.idea_id = f.idea_id AND t.project_id = i.project_id"
+            "         ORDER BY t.created_at DESC LIMIT 1) AS rank "
             "FROM feasibility f JOIN idea i ON i.id = f.idea_id "
             "WHERE " + " AND ".join(where) + " "
             "ORDER BY f.idea_id, f.assessed_at DESC", args)
@@ -213,6 +228,12 @@ def list_feasibility(project_id=None, idea_ids=None):
             d["dataset_id"] = None if d["dataset_id"] is None else str(d["dataset_id"])
             d["assessed_at"] = d["assessed_at"].isoformat()
             rows.append(d)
+
+    # DISTINCT ON forces its own ORDER BY, so the ranking is applied here rather
+    # than in the query. Unranked last, then by code, then by title - never by
+    # tier, which would make feasibility the primary axis by the back door.
+    rows.sort(key=lambda d: (d["rank"] is None, d["rank"] or 0,
+                             str(d["code"] or "~"), d["title"] or ""))
 
     # Grouped the way the PRD asks the board to read - doable now, needs
     # acquisition, parked - but never reordered within a group. The tournament
