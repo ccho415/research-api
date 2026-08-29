@@ -400,11 +400,16 @@ def frame_get(project_id: str, section: Optional[str] = None,
         import packs
         frame = row.get("domain_frame") or {}
         keys = frame.get("pack_keys") or []
+        # Comma-separated, because a caller usually wants two: novelty checking
+        # needs both what counts as new in this field and what the frame cannot
+        # see, and the second is where the collision will be.
+        wanted = [h.strip() for h in section.split(",") if h.strip()]
         found = []
         for k in keys:
-            got = packs.section(k, section)
-            if got:
-                found.append(got)
+            for h in wanted:
+                got = packs.section(k, h)
+                if got:
+                    found.append(got)
         row["sections"] = found
         # An empty list and a missing frame are different failures and the
         # caller has to tell them apart: no frame means nobody routed this
