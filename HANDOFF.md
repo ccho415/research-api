@@ -213,6 +213,7 @@ GET  /compute/anchors[?origin=]     校準錨點
 POST /compute/anchors/save
 POST /admin/load-anchors            灌 repo 內附的 54 筆 ScholarIdeas 錨點
 POST /compute/dedup/resolve         決定重複裡誰活下來（dry_run 給審閱介面看）
+POST /compute/dedup/keep            人工指定存活者，推翻規則（👁① 的原語）
 GET  /compute/ideas/live            場上的方向，不含被合併掉的
 POST /compute/tournament/start
 POST /compute/tournament/matches    對局結果（錨點對局也存這裡）
@@ -411,11 +412,27 @@ distinct，所以 0 clusters 是完全正確的答案。真正該跑的
 **規則**：斷言「某個東西不存在」之前，先確認手上的查詢**看得見**它。
 `resolve` 回 0 的意思是「沒有重複」，不是「沒有資料」。
 
-### 去重合併仍未被真的驗過
+### 去重合併已驗證（2026-08-29）
 
-到目前為止**資料庫裡一組 `verdict = 'duplicate'` 都沒有**（兩次 W4、40 組配對全判 distinct）。
-所以 `/compute/dedup/resolve` 只驗到「端點通、查得到、回得乾淨」，
-**union-find、存活者規則、人工覆寫分支仍然一次都沒有真的跑過**。
+造了一組真的重複方向跑過一遍，六個行為全部成立：遞移合併、存活者取記錄最完整的、
+同分決勝是決定性的、`uncertain` 不合併、`distinct` 不合併、`/compute/ideas/live`
+確實把合併掉的擋在錦標賽外。人工覆寫也另外驗過。
+
+完整紀錄：`docs/experiments/2026-08-29-resolver-duplicate-fixture.md`。
+測試專案 `7d495464`，**是測試資料，不要拿它當真實跑動的樣本**。
+
+順帶修掉兩個缺陷：
+
+- **`created_at` 當不了決勝鍵**。一次跑動的方向在同一個 statement 裡插入，
+  時間戳精確到微秒都相同（七筆全是 `10:23:36.900265`），所以「同分取先寫的」
+  在正常情況下**完全沒有鑑別力**，存活者實際上由字典迭代順序決定。
+  已再退到 `code` 與 `id`。
+- **人工覆寫分支到不了**。它檢查 `merge_decided_by = 'human'` 且 `merged_into IS NULL`，
+  而沒有任何端點能產生那個狀態——用 `decided_by='human'` 跑 resolve 標記的是**敗方**。
+  補了 `POST /compute/dedup/keep`，那也是去重審閱介面 👁① 需要的原語。
+
+**仍未驗**：W4 找不找得出**跨語言**重複（`Sweep The Whole List` 就是為此存在，
+這次七筆全英文，那條路徑沒走到）。
 
 ### 去重缺一半：只記重複，沒記誰活下來（2026-08-28 發現並補上）
 
