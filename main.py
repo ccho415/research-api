@@ -950,6 +950,90 @@ def novelty_list(project_id: Optional[str] = None,
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+@app.get("/compute/debate/state")
+def debate_state(idea_id: str, x_api_key: Optional[str] = Header(None)):
+    """Where the argument stands, plus the papers the critic is allowed to cite.
+
+    The evidence pool is every paper an actual search returned for this idea. A
+    model asked to back an objection with a citation and given no citations will
+    produce a plausible DOI, so it is never put in that position.
+    """
+    check_key(x_api_key)
+    import debate
+    try:
+        return debate.debate_state(idea_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class DebateRoundIn(BaseModel):
+    idea_id: str
+    proposer_model: str
+    critic_model: str
+    objections: List[Dict[str, Any]] = []
+    idea_version_after: Optional[str] = None
+    novelty_recheck_id: Optional[str] = None
+    termination_reason: Optional[str] = None
+
+
+@app.post("/compute/debate/round")
+def debate_round(body: DebateRoundIn, x_api_key: Optional[str] = Header(None)):
+    """Record one exchange, and work out from the record whether it was the last.
+
+    Termination is computed here and not accepted from the caller. The caller is
+    holding a model's opinion about whether it is finished arguing, and that is
+    the one question the arguing model should not be answering.
+
+    Objections that fail the rubric are rejected individually rather than
+    failing the round: a critic that produced four usable objections and one
+    softened concession should lose the concession, not the round.
+    """
+    check_key(x_api_key)
+    import debate
+    try:
+        return debate.save_round(
+            body.idea_id, body.proposer_model, body.critic_model,
+            body.objections, body.idea_version_after,
+            body.novelty_recheck_id, body.termination_reason)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class DebateAdoptIn(BaseModel):
+    idea_id: str
+    note: Optional[str] = None
+
+
+@app.post("/compute/debate/adopt")
+def debate_adopt(body: DebateAdoptIn, x_api_key: Optional[str] = Header(None)):
+    """Record the survived version as a child direction. The original stays."""
+    check_key(x_api_key)
+    import debate
+    try:
+        return debate.apply_revision(body.idea_id, body.note)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/debate")
+def debate_get(idea_id: str, x_api_key: Optional[str] = Header(None)):
+    """The whole transcript, every objection under the round that raised it."""
+    check_key(x_api_key)
+    import debate
+    try:
+        return debate.get_debate(idea_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.post("/compute/tournament/start")
 def tournament_start(body: TournamentStartIn,
                      x_api_key: Optional[str] = Header(None)):
