@@ -403,6 +403,17 @@ def apply_revision(idea_id, note=None):
     if not state["terminated"]:
         raise ValueError("the debate has not stopped yet; adopting a revision "
                          "mid-argument records a winner before the argument ends")
+    # A drift stop is not a finish line. The debate was cut off precisely
+    # because the text being defended had stopped being the direction that was
+    # proposed, so its last version is not an improved version of anything -
+    # adopting it would launder the walk into a result.
+    if (state["termination_reason"] or "").startswith("drift"):
+        raise ValueError(
+            "this debate was stopped for drift, so its final text is not an "
+            "improved version of the original - it is a different direction "
+            "that arrived one reasonable-looking step at a time. Read the "
+            "transcript and propose it as its own direction if it is worth "
+            f"having. ({state['termination_reason']})")
     if state["current_statement"] == state["original_statement"]:
         return {"idea_id": str(idea_id), "changed": False,
                 "note": "no round revised the statement"}

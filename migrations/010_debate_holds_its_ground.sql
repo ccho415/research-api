@@ -21,6 +21,17 @@
 
 ALTER TABLE objection ADD COLUMN IF NOT EXISTS cited jsonb;
 
+-- 每輪辯論後要重跑新穎性、記錄距離軌跡。那個重跑是**三個查詢**，不是 S8 的十四輪，
+-- 而且沒有模型判決——它只是量「修訂後的敘述離最近的論文變遠還是變近」。
+--
+-- 如果它也存成 `adversarial`，`list_novelty` 只取最新一筆，十四輪推不翻的判決
+-- 就會被一個三查詢、沒有判決的檢查蓋掉，而且從欄位上看不出來。
+-- 引用池也只從 `adversarial` 取，所以這條分界同時擋住「用重跑的結果去當證據」。
+ALTER TABLE novelty_check DROP CONSTRAINT IF EXISTS novelty_method_allowed;
+ALTER TABLE novelty_check ADD CONSTRAINT novelty_method_allowed
+    CHECK (method IS NULL
+           OR method IN ('mechanical', 'adversarial', 'debate_recheck'));
+
 ALTER TABLE objection DROP CONSTRAINT IF EXISTS objection_severity_allowed;
 ALTER TABLE objection ADD CONSTRAINT objection_severity_allowed
     CHECK (severity IS NULL OR severity IN ('major', 'minor'));
