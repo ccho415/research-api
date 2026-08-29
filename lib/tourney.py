@@ -13,6 +13,28 @@ import psycopg
 from db import connect
 
 
+def _groups(a):
+    """The search slots, or nothing. Never an empty list.
+
+    An empty list would reach the check as a direction with no terms, which
+    builds a query of nothing but a date filter - that matches most of MEDLINE
+    and comes back as the most confident possible answer from no evidence.
+    """
+    g = a.get("term_groups")
+    if not g or not isinstance(g, list):
+        return None
+    return psycopg.types.json.Jsonb(g)
+
+
+def _year(a):
+    y = a.get("cutoff")
+    try:
+        y = int(y)
+    except (TypeError, ValueError):
+        return None
+    return y if 1800 <= y <= 2100 else None
+
+
 def save_anchors(anchors):
     """Seed or update the calibration anchors.
 
@@ -49,23 +71,25 @@ def save_anchors(anchors):
                     cur.execute(
                         "UPDATE anchor SET title = %s, statement = %s,"
                         "  evidence = %s, grade_contribution = %s,"
-                        "  grade_feasibility = %s, field = %s"
+                        "  grade_feasibility = %s, field = %s,"
+                        "  term_groups = %s, cutoff = %s"
                         " WHERE id = %s RETURNING id",
                         (title, a.get("statement"),
                          psycopg.types.json.Jsonb(a.get("evidence") or {}),
                          a.get("grade_contribution"), a.get("grade_feasibility"),
-                         a.get("field"), row["id"]))
+                         a.get("field"), _groups(a), _year(a), row["id"]))
                 else:
                     cur.execute(
                         "INSERT INTO anchor (source, external_id, title, statement,"
                         "  evidence, grade_contribution, grade_feasibility, origin,"
-                        "  field) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) "
+                        "  field, term_groups, cutoff) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
                         "RETURNING id",
                         (a.get("source"), a.get("external_id"), title,
                          a.get("statement"),
                          psycopg.types.json.Jsonb(a.get("evidence") or {}),
                          a.get("grade_contribution"), a.get("grade_feasibility"),
-                         origin, a.get("field")))
+                         origin, a.get("field"), _groups(a), _year(a)))
                 out.append(str(cur.fetchone()["id"]))
         conn.commit()
     return {"n": len(out), "anchor_ids": out}
@@ -81,7 +105,8 @@ def list_anchors(origin=None, limit=50):
     with connect() as conn, conn.cursor() as cur:
         cur.execute(
             "SELECT id, source, external_id, title, statement, evidence,"
-            "       grade_contribution, grade_feasibility, origin, field, added_at "
+            "       grade_contribution, grade_feasibility, origin, field,"
+            "       term_groups, cutoff, added_at "
             "FROM anchor " + clause + " ORDER BY added_at LIMIT %s", args)
         rows = []
         for r in cur.fetchall():

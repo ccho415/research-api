@@ -290,6 +290,18 @@ def verify(directions, cutoff=2015, min_term_papers=MIN_TERM_PAPERS, zones=True)
         return seen_counts[key]
 
     for r in directions:
+        # A direction is measured at the moment it was proposed, not at some
+        # shared date. The batch cutoff is the harvest year for generated
+        # directions, but a calibration anchor drawn from published work has to
+        # be counted against its own year: judged at 2015, the CRISPR anchor has
+        # thousands of prior papers and reads as long since done, which would
+        # invert the very scale it exists to fix.
+        cut = r.get("cutoff")
+        try:
+            cut = int(cut)
+        except (TypeError, ValueError):
+            cut = cutoff
+
         groups = as_groups(r)
 
         # An empty term list would build an empty query, leaving only the date
@@ -338,9 +350,9 @@ def verify(directions, cutoff=2015, min_term_papers=MIN_TERM_PAPERS, zones=True)
 
         q = build(groups)
         try:
-            pre = hits(f'{q} AND (FIRST_PDATE:[1800-01-01 TO {cutoff}-12-31]) AND SRC:MED')
+            pre = hits(f'{q} AND (FIRST_PDATE:[1800-01-01 TO {cut}-12-31]) AND SRC:MED')
             time.sleep(PAUSE)
-            post = hits(f'{q} AND (FIRST_PDATE:[{cutoff + 1}-01-01 TO 3000-12-31]) AND SRC:MED')
+            post = hits(f'{q} AND (FIRST_PDATE:[{cut + 1}-01-01 TO 3000-12-31]) AND SRC:MED')
             time.sleep(PAUSE)
         except Exception as e:
             bump("CHECK FAILED")
@@ -353,9 +365,12 @@ def verify(directions, cutoff=2015, min_term_papers=MIN_TERM_PAPERS, zones=True)
         v = ("ALREADY DONE" if pre >= SETTLED
              else ("PURSUED SINCE" if post >= SETTLED else "STILL OPEN"))
 
+        # The year this row was actually counted against, which is not always
+        # the batch's: a report that mixes years without saying so cannot be
+        # read six months later.
         row = {**r, "papers_before": pre, "papers_after": post,
                "verdict": v, "query": q, "term_papers": counts,
-               "groups": groups,
+               "groups": groups, "cutoff": cut,
                "terms_expanded": [group_variants(g)[:4] for g in groups]}
 
         # Only where the abstracts already said nobody made this the subject.
@@ -363,7 +378,7 @@ def verify(directions, cutoff=2015, min_term_papers=MIN_TERM_PAPERS, zones=True)
         if zones and v != "ALREADY DONE":
             fq = " AND ".join(anyfield(group_variants(g)) for g in groups)
             try:
-                met = hits(f"{fq} AND (FIRST_PDATE:[1800-01-01 TO {cutoff}-12-31]) AND {OA}")
+                met = hits(f"{fq} AND (FIRST_PDATE:[1800-01-01 TO {cut}-12-31]) AND {OA}")
                 time.sleep(PAUSE)
                 row["co_mentions_before"] = met
                 row["zone"] = "ADJACENT" if met >= MEET else "NEVER MEET"
@@ -384,6 +399,7 @@ def verify(directions, cutoff=2015, min_term_papers=MIN_TERM_PAPERS, zones=True)
         if x.get("zone"):
             zone_tally[x["zone"]] = zone_tally.get(x["zone"], 0) + 1
 
-    return {"cutoff": cutoff, "n": len(rows), "min_term_papers": min_term_papers,
+    return {"cutoff": cutoff, "cutoff_is_default_only": True,
+            "n": len(rows), "min_term_papers": min_term_papers,
             "meet": MEET if zones else None,
             "tally": tally, "zone_tally": zone_tally, "rows": rows}
