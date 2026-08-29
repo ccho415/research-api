@@ -33,7 +33,8 @@ n8n 用內網 `api.zeabur.internal` 呼叫 api，不經過公開網際網路。
 | **W4 去重** | ✅ 正常運作（`922e3e3d` 20 組、執行 123 對 `a1b7e106` 再 20 組，全部 `distinct`）。它**只記配對、不記誰活下來**，那一半已用 `/compute/dedup/resolve` 補上 |
 | **採集層** | ✅ 實跑通過，快取驗收見下 |
 | **W6 可行性分級（S7）** | ✅ 端到端跑通並修正四項（執行 151，8 個方向 57 秒 **$0.059**）。三個守門全過，但書另計 |
-| S8–S11 | ❌ 未建（新穎性驗證、唱反調、可行性複核、報告） |
+| **W7 新穎性驗證（S8）** | ✅ 端到端跑通（執行 155，1 個方向 7 分鐘 **$0.061**）。四個守門全過 |
+| S9–S11 | ❌ 未建（唱反調、報告、撞題排程） |
 | 四個審閱介面 👁①–④ | ❌ 完全未建，沒有任何前端 |
 | 第 0 階段（修 domain-profile） | ✅ **已做完，本文件先前記錯**。skill 是 `v2.0.0`，四個修正都在 |
 | 第 1 階段（16 項重驗） | ❌ 未做。PRD 寫「先驗證再蓋」，這一半仍是已知的偏離 |
@@ -80,6 +81,7 @@ Q2 強制第二包   neuro_18 就是死在這一條
 | `UobSYUAU2C4j38tY` | **W-ALERT 失敗推 LINE** | 已發布。W-BACKUP 與 W2 的 `errorWorkflow` 都指向它 |
 | `5hjjy6sjMPBJaHGg` | W-LINE 通知測試 | ✅ 已驗證通過（執行 47） |
 | `3kLQ9JvEdLBYnsWe` | **W-ADMIN research-api 診斷** | 表單觸發，下拉選任一 GET 端點。**這是從 Claude Code 呼叫 API 的唯一管道**（內網打不到），確認部署與讀回資料都靠它 |
+| `1PrxDrB7760V5vom` | **W7 新穎性驗證** | 13 節點。表單 `/form/w7-novelty`。十四輪、兩套以上術語，引用一律回頭比對實際檢索結果 |
 | `xKB9e0sepZPaPTYM` | **W6 可行性分級** | 12 節點。表單 `/form/w6-feasibility`。輸入是本機產出的欄位清單，原始資料永遠不會到這裡 |
 | `CqaYzcqjNNgI05AP` | **W5 錦標賽** | 20 節點。表單 `/form/w5-tournament`，`n8nUserAuth`。錯誤工作流指向 W-ALERT。執行 116 端到端通過 |
 | `NRe3eCGX4bEDegvo` | W1 領域框架判定 | 6 節點。表單 `/form/w1-frame`。**Sonnet 5**，回傳帶 `cost` |
@@ -221,6 +223,10 @@ GET  /compute/dataset?project_id=   資料清單
 POST /compute/profile/save          研究背景檔，逐版本存，舊版不覆寫
 GET  /compute/profile?project_id=   目前版本，沒有就明說沒有
 POST /compute/feasibility/save      A/B/C/D，B/C 沒去路會被拒
+POST /compute/novelty/search        批次跑檢索輪次，論文附在找到它的那一輪
+POST /compute/novelty/save          對抗式判決，證據撐不住的會被拒
+GET  /compute/novelty?project_id=   最新一次對抗式檢查
+GET  /compute/frame?section=A,B     範式包的指定段落（可多個，逗號分隔）
 GET  /compute/feasibility?project_id=  分級看板，分組但不重排
 GET  /compute/ideas/live            場上的方向，不含被合併掉的
 POST /compute/tournament/start
@@ -315,6 +321,54 @@ second_pack_forced true      pack_versions 齊全      confidence high
 2. **Anthropic 節點沒有 Gemini 那個 `jsonOutput` 開關。** 回覆是純文字，
    所以 W3 那套搶救碼（挖巢狀字串、讀第一個平衡物件、任意深度撿完整物件）
    照抄過來是必要的，不是防禦性多寫。
+
+### W7 新穎性驗證（S8）實跑通過（執行 155，2026-08-29）
+
+一個方向、14 輪檢索、7 分鐘、**$0.061**。四個守門全過，判 `adjacent`。
+
+#### 一個靜默失敗，以及它為什麼值得記
+
+第一次跑（執行 153）三個守門全過、產出漂亮的判決、五筆真實引用——
+**但整個判決是在沒有領域新穎性慣例、也沒有盲點清單的情況下做出來的。**
+
+原因：`/compute/frame?section=` 支援多個段落的那段程式碼**我寫了、編譯了、本機測了，
+但從來沒有 commit**。部署上的舊版把 `"Novelty conventions,What this pack cannot see,..."`
+當成單一標題去比對，一個都沒配到。
+
+`has_frame` 是 true（框架確實存在），所以連「沒有框架」那句但書都沒觸發。
+**跑動看起來完整，而讓它變好的東西不在場。**
+
+已加第四個守門「領域新穎性慣例有沒有真的送到判決」，以及一句但書：
+框架存在但沒有可用段落時，會寫進 `coverage_limits`。
+
+#### 修好之後的差別，看檢索行為就知道
+
+```
+              修正前          修正後
+術語體系        4 套            10 套
+最接近的論文     切線相關         2005 Medicare、2011 Stroke、2017 China case-crossover
+                             ——空污與出血性中風的奠基文獻
+```
+
+**第 12、13、14 輪的角度直接來自範式包的新穎性慣例**：
+environmental-health 那份寫著「genuine novelty: a critical window nobody has resolved,
+a susceptible subgroup with a mechanistic reason, a policy change that provides
+identification」——而修正後的計畫就出現了 critical window identification、
+susceptible subgroup mechanistic、policy natural experiment identification 三輪。
+
+那三輪分別命中 0、1、5 篇。**針對「這個領域認可的新穎路徑」去打，幾乎全空**，
+這比十四輪隨便打都有東西回來要有意義得多。
+
+#### 這一層的四個硬約束
+
+1. **預設立場是已經有人做過**，不是修辭。查不到的第一個解釋是查錯了。
+2. **角度不得重複**，寫入時會被拒——那是換了編號的同義句。
+3. **`scooped` / `incremental` 必須引用實際檢索到的論文**；
+   `no_prior_art` 必須帶 `coverage_limits`（資料庫 CHECK 強制）。
+4. **三輪空手且只用一套術語就宣稱新穎，直接拒絕。** 那是假新穎性宣稱最主要的產生方式。
+
+引用另外還會在工作流裡**回頭比對實際檢索結果**，對不上就丟掉並記進 coverage_limits。
+提示詞有叫模型不要捏造，但遵守不是控制手段，這個比對才是。
 
 ### W6 可行性分級（S7）實跑通過（執行 149，2026-08-29）
 
