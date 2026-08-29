@@ -371,7 +371,22 @@ def frame_save(body: FrameIn, x_api_key: Optional[str] = Header(None)):
 
 
 @app.get("/compute/frame")
-def frame_get(project_id: str, x_api_key: Optional[str] = Header(None)):
+def frame_get(project_id: str, section: Optional[str] = None,
+              x_api_key: Optional[str] = Header(None)):
+    """The domain frame, optionally with one named section of each pack.
+
+    `section=Tier B` returns what is freely obtainable in this field, which is
+    the one thing feasibility grading cannot work out for itself: in an
+    observational field Tier B means joining area-level public data, and in a
+    computational one it means public benchmarks while the real constraint is
+    GPU-hours. A grader given only the pack's name guesses, and guesses in the
+    direction of whatever field it saw last.
+
+    One section rather than the whole pack. The rest carries novelty conventions
+    and validity threats belonging to other steps, and adding them to a prompt
+    that was just told not to judge novelty is how a step drifts off its own
+    question.
+    """
     check_key(x_api_key)
     import db
     try:
@@ -380,6 +395,25 @@ def frame_get(project_id: str, x_api_key: Optional[str] = Header(None)):
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
     if not row:
         raise HTTPException(404, "no such project")
+
+    if section:
+        import packs
+        frame = row.get("domain_frame") or {}
+        keys = frame.get("pack_keys") or []
+        found = []
+        for k in keys:
+            got = packs.section(k, section)
+            if got:
+                found.append(got)
+        row["sections"] = found
+        # An empty list and a missing frame are different failures and the
+        # caller has to tell them apart: no frame means nobody routed this
+        # project, an empty list means the packs carry no such heading.
+        row["sections_note"] = (
+            "no domain frame for this project, so no pack could be consulted"
+            if not keys else
+            (f"no pack carries a section starting `{section}`" if not found
+             else None))
     return row
 
 

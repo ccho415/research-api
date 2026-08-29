@@ -98,3 +98,43 @@ def routing_rules():
     missing again.
     """
     return _read(ROUTING) if os.path.exists(ROUTING) else ""
+
+
+def section(key, heading):
+    """One named section of one pack, without the rest of it.
+
+    Feasibility needs the pack's Tier B list - what is freely obtainable in this
+    field - and nothing else it carries. Sending the whole pack would add its
+    novelty conventions and validity threats to a prompt that has just been told
+    in capitals not to judge novelty, which is how a step drifts off its own
+    question.
+
+    Matched on the heading's opening words rather than the whole line, because
+    the packs write `## Tier B - obtainable without new collection` and the
+    caller should not have to know the rest of that sentence.
+    """
+    kind, _, name = (key or "").partition(":")
+    folder = {"paradigm": PARADIGMS, "field": FIELDS}.get(kind)
+    if not folder:
+        return None
+    path = os.path.join(folder, name + ".md")
+    if not os.path.exists(path):
+        return None
+
+    want = heading.strip().lower()
+    out, taking = [], False
+    for line in _read(path).splitlines():
+        s = line.strip()
+        if s.startswith("## "):
+            if taking:
+                break
+            taking = s[3:].strip().lower().startswith(want)
+            if taking:
+                out.append(s[3:].strip())
+            continue
+        if taking:
+            out.append(line)
+    if not out:
+        return None
+    return {"key": key, "heading": out[0],
+            "text": "\n".join(out[1:]).strip()}
