@@ -129,10 +129,15 @@ def _match_paper(cur, cite):
     """
     if not isinstance(cite, dict):
         return None
-    for col in ("doi", "pmid"):
+    # DOIs are case-insensitive by specification and the sources disagree about
+    # case, so an exact match silently returns nothing for most real citations.
+    # The `cited` column keeps the citation either way; this only decides whether
+    # the row also points at the cached paper.
+    for col, sql in (("doi", "SELECT id FROM paper WHERE lower(doi) = lower(%s) LIMIT 1"),
+                     ("pmid", "SELECT id FROM paper WHERE pmid = %s LIMIT 1")):
         v = (cite.get(col) or "").strip()
         if v:
-            cur.execute(f"SELECT id FROM paper WHERE {col} = %s LIMIT 1", (v,))
+            cur.execute(sql, (v,))
             row = cur.fetchone()
             if row:
                 return row["id"]
