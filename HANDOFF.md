@@ -21,8 +21,8 @@ W1–W8 全部建好了。**接下來唯一該做的是第 1 項待辦：用一�
 順序：W1 → W2 → 採集 → W3 → W4 → W5 → W6 → W7 → W8。約 $3、約一小時。
 建議題目：使用者自己的「環境賀爾蒙 × 肺腺癌第 0 期」。
 
-**動手前先跑「待辦」第 0 項**——一次 `/admin/migrate` 呼叫，SQL 已經寫好提交，
-清掉驗證用的假辯論資料。不清的話 W8 會永遠跳過那個方向而且不說原因。
+（待辦第 0 項——清掉驗證用的假辯論資料——**已經在 2026-08-30 做完了**，
+可以直接開始跑鏈。）
 
 先讀這一份，再讀 `CONTEXT.md`（詞彙表）和 `docs/adr/`（四份決策紀錄）。
 完整規格在 `C:\Users\popo1\.claude\plans\n8n-prd-dreamy-teapot.md`——很長，
@@ -190,6 +190,11 @@ migrations/003_harvest_layer.sql         已執行（2026-08-28，22→24 表）
 回傳帶執行前後的表數，冪等地什麼都沒做和真的建了東西分得出來。
 
 用 **W-ADMIN** 呼叫（它現在能發 POST）。「DB工具」工作流沒開放 MCP 存取，用不了。
+
+**`applied: true` 不代表它改到了東西。** 回傳只說 SQL 跑完了、沒有丟例外；
+`RAISE NOTICE` 不會回傳出來，表數對資料清理也不會變。所以做完之後
+**一定要另外讀一次來確認**——011 那次就是靠 `/compute/debate` 回
+`n_rounds: 0` 才知道真的刪掉了，而不是靠 `applied: true`。
 
 ### API 端點
 
@@ -384,10 +389,13 @@ second_pack_forced true      pack_versions 齊全      confidence high
 | 漂移停之後想採用修訂版 | 400，拒絕。「它不是任何東西的改進版」 |
 | 已經停了還想再送一輪 | 400，「reopening it would append rounds after a recorded ending」 |
 
-**注意這組夾具留下的痕跡**：`0788a78a` 現在有兩筆 `debate_round`（第 1、2 輪）
-和一筆 objection，全部是人工造的假資料，而且該方向的辯論已被標成終止。
-清除用的 `migrations/011_remove_debate_fixture_rows.sql` **已寫好但尚未執行**——
-見待辦第 0 項。
+**這組夾具留下的痕跡已經清掉了**（2026-08-30，執行 170）。當時 `0788a78a` 上留下
+兩筆人工造的 `debate_round` 和一筆 objection，而且該方向的辯論被標成終止——
+留著的話 W8 會永遠跳過它，而且從輸出上看不出來原因是假資料而不是真的辯完了。
+
+`migrations/011_remove_debate_fixture_rows.sql` 刪掉它們（`objection` 隨 cascade）。
+**確認方式是另外讀一次 `/compute/debate` 拿到 `n_rounds: 0`，不是 `applied: true`**——
+後者只代表 SQL 跑完沒丟例外。
 
 #### 三個設計決定，都是為了擋一種「看起來完成了」的失效
 
@@ -953,16 +961,10 @@ Gemini 的配對         11 / 15
 
 **先前的第 1～3 項（Anthropic 憑證、建 W4、建 W1）都已完成，已從清單移除。**
 
-0. **先跑 `011_remove_debate_fixture_rows.sql`（SQL 寫好了，還沒執行）。**
-   一行事：W-ADMIN → `/admin/migrate` → POST →
-   `{"file":"011_remove_debate_fixture_rows.sql","expect_database":"research"}`
-
-   它刪掉驗證用的兩列假 `debate_round`（`objection` 會 cascade）。
-   **沒刪掉的後果不是髒資料而已**：`0788a78a` 的辯論被標成終止，W8 對它永遠
-   只會跳過，而且從輸出上看不出來原因是假資料而不是真的辯完了。
-
-   2026-08-30 那次工作階段沒能執行，因為 n8n MCP 連線斷了，而 W-ADMIN 是從
-   Claude Code 打內網 API 的唯一管道。SQL 已經提交、已經部署，跑一下就好。
+0. ~~跑 `011_remove_debate_fixture_rows.sql`~~ ✅ **已完成（2026-08-30，執行 170）。**
+   驗證用的兩列假 `debate_round` 已刪除，`objection` 隨 cascade 一起走。
+   確認方式不是 `applied: true` 而是另外讀一次 `/compute/debate`（執行 171），
+   回 `n_rounds: 0`。`0788a78a` 的辯論狀態回到未開始，W8 不會再無聲跳過它。
 
 0b. **W8 需要一個 A/B 級、而且跑過 W7 的方向才能真的打一場。**
    規則全部驗過了，但兩個模型還沒有交手過。最省的做法是併進第 1 項：
