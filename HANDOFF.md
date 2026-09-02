@@ -637,9 +637,64 @@ W6／W7／W8／W9／W5B 都是這樣接的。**只有 W4 是例外**——它先
 
 #### ⚠️ 還沒驗過，而且部署當時卡住了
 
-**程式碼推上去了（`2062ad0`），但 Zeabur 到 14:20 還沒部署完**——
-`/compute/chain/plan` 一直回 404，`/admin/config` 顯示 72 條路由（應該要 78）。
-推送後 17 分鐘還沒好，超過平常的 3–6 分鐘。**下次開機第一件事是確認部署狀態。**
+**程式碼推上去了（`35aa354`），但連續三次推送被 Zeabur 互相取消掉了**——
+本文件早就記過「快速連續推送前一次會被取消」，而這次連推三次正好踩滿。
+使用者手動按重新部署之後，Zeabur 開始建 `35aa354`（分支 `main`，狀態正確）。
+
+**一個判讀陷阱：建置中的時候，舊容器照常服務。** 所以「API 活得好好的但路由
+還是舊的」不是故障，是正常行為——不要因為 API 回得動就以為部署完了。
+
+#### 怎麼一句話判斷線上跑的是哪個 commit
+
+`/admin/config` 的 `build.n_routes` 就是答案，因為路由集合每個 commit 都不同：
+
+| n_routes | 對應 commit |
+|---|---|
+| 72 | `f54d88a`（以及 `b1e5ad0`、`8329a44`）— 預算護欄做完、**階段接續之前** |
+| **79** | `6511eed` / `2062ad0` / `35aa354` — 階段接續（多七條 `/compute/chain/*`）|
+
+（自己算：`git show <commit>:main.py` 抓 `@app.(get|post)("...")` 的相異路徑，
+再加 4——`/docs`、`/docs/oauth2-redirect`、`/openapi.json`、`/redoc` 是自動加的。）
+
+**實測回 72，所以線上是 `f54d88a`，三個 chain commit 一個都沒上。**
+
+#### 真正的原因：Dockerfile 有一步要連外網，而它連不到
+
+建置紀錄的結論：
+
+```
+#6 1032.3 curl: (56) Recv failure: Connection timed out
+#6 ERROR: process "/bin/sh -c set -eux; apt-get update; ... curl -fsSL
+          https://www.postgresql.org/media/keys/ACCC4CF8.asc ..."
+```
+
+抓 PGDG 簽章金鑰**卡了 1032 秒（17 分鐘）才逾時**。第一次推送那個「17 分鐘
+沒動靜」多半是同一個死法。
+
+**這個失敗特別難認，有兩層偽裝**：卡住的時候看起來只是建置慢；失敗之後舊容器
+繼續服務，所以 API 一直活著、只是路由是舊的。**兩層加起來就是「部署卡住」的
+外觀，而實際上是建置壞了。**
+
+修法不是重試，是把那一步拿掉。當初加 PGDG 是因為 base image 是 Debian 12
+（bookworm，預設 PostgreSQL 15），而 `pg_dump` 不能比伺服器舊。
+**現在 `python:3.13-slim` 已經是 Debian 13（trixie），內建就是 17**——
+建置紀錄裡的 `deb13u1` / `deb13u4` 就是證據。所以 PGDG repo、簽章金鑰、
+`curl`、`gnupg` 全部不需要了，直接 `apt-get install postgresql-client-17`。
+
+版本照樣釘 17，不用 `postgresql-client` 這個 metapackage：
+**以後 base image 換成預設更舊的版本時，要在這裡大聲失敗，不要安靜地裝一個
+讀不動伺服器的 pg_dump。**
+
+拿掉之後，Dockerfile 裡**沒有任何一步需要公開網際網路**（`pip install` 走
+PyPI，那條是通的）。
+
+已經排除的：GitHub 上東西是齊的（`origin/main` 有 `lib/chain.py` 與
+migration 017，分支 `main`）；`main.py` 與 `chain.py` 都通過語法檢查；
+**Dockerfile 沒有跑測試**，只有 `pip install` 和 `COPY . .`，所以新增的三個
+Python 檔不可能讓建置失敗。
+
+**下次開機第一件事：測 `n_routes`。是 79 就照下面五步驗；還是 72 就去看
+Zeabur 的部署狀態——「建置中」等就對了，「部署失敗」去看建置紀錄最後一行。**
 
 部署好之後要做的，按順序：
 
