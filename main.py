@@ -950,6 +950,90 @@ def novelty_list(project_id: Optional[str] = None,
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+@app.get("/compute/watch/list")
+def watch_list(project_id: str, limit: int = 20,
+               x_api_key: Optional[str] = Header(None)):
+    """Directions worth re-checking, with the queries that first checked them.
+
+    A direction is watchable only once W7 has run on it: that check supplies
+    both the queries this re-runs and the baseline it compares against. The
+    baseline also folds in what previous watches already reported, otherwise the
+    first new paper is reported as new every day for the rest of time.
+    """
+    check_key(x_api_key)
+    import collision
+    try:
+        return collision.watchlist(project_id, limit)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class WatchDiffIn(BaseModel):
+    known_keys: List[str] = []
+    rounds: List[Dict[str, Any]] = []
+
+
+@app.post("/compute/watch/diff")
+def watch_diff(body: WatchDiffIn, x_api_key: Optional[str] = Header(None)):
+    """Which papers in this re-run were not in the baseline. Free - no model.
+
+    Compared by identifier rather than by count: a count going up says the
+    search was noisier today, a new identifier says a paper exists now that did
+    not before, and only the second is worth waking anybody for.
+    """
+    check_key(x_api_key)
+    import collision
+    try:
+        fresh = collision.diff_against(body.known_keys, body.rounds)
+        return {"n_new": len(fresh), "new_papers": fresh,
+                "collision": bool(fresh)}
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class WatchSaveIn(BaseModel):
+    idea_id: str
+    rounds: List[Dict[str, Any]] = []
+    new_papers: Optional[List[Dict[str, Any]]] = None
+    verdict: Optional[str] = None
+    coverage_limits: Optional[str] = None
+    run_id: Optional[str] = None
+
+
+@app.post("/compute/watch/save")
+def watch_save(body: WatchSaveIn, x_api_key: Optional[str] = Header(None)):
+    """Record one day's watch, including the days nothing changed.
+
+    The quiet days are the evidence the watch is running: without them, a watch
+    that silently stopped a month ago looks exactly like a direction nobody has
+    scooped. `no_prior_art` is refused outright - re-running the queries the
+    original check already used cannot establish that nothing exists.
+    """
+    check_key(x_api_key)
+    import collision
+    try:
+        return collision.save_watch(body.idea_id, body.rounds, body.new_papers,
+                                    body.verdict, body.coverage_limits,
+                                    body.run_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/watch")
+def watch_get(idea_id: str, limit: int = 30,
+              x_api_key: Optional[str] = Header(None)):
+    check_key(x_api_key)
+    import collision
+    try:
+        return collision.watch_history(idea_id, limit)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.get("/compute/report/inputs")
 def report_inputs(idea_id: str, x_api_key: Optional[str] = Header(None)):
     """Everything the report writer needs, from five tables, in one call.
