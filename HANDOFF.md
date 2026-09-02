@@ -20,8 +20,10 @@ W-CHAIN `UJiYf5NJRM0uVXew` **已啟用**，每十分鐘掃一次待辦。
 剩下六段會自己接續——只會在**審閱點 ③ 和 ④** 停下來等你
 （`POST /compute/chain/resume` 放行）。
 
-**唯一還沒驗的是 n8n 那一半**：六個工作流「被鏈叫起來」的入口一次都沒實跑過。
-細節見「階段自動接續」那一節最後。
+**n8n 那一半也驗過了**（零成本，用預算 402 擋在模型之前），過程抓到三個真的
+問題，包括一個會讓 W4「去重 0 組然後回報成功」的 `run_id` 撞名——
+細節見「階段自動接續」那一節。**六個階段工作流現在都是已發布狀態**，
+它們的表單端點也因此在 production 生效了。
 
 W8（唱反調）、W9（報告）、W10（撞題）三個的**模型那一半都還沒實跑過**，
 而且卡在同一件事：這個專案沒有 A/B 級方向、只有一個方向跑過 W7。
@@ -679,12 +681,73 @@ psycopg2 會把 tuple 展開成 `IN` 清單，**psycopg3 不會**——它把整
 `grep` 過了，**其他 lib 檔本來就都用 `ANY(%s)`**，是 `chain.py` 一個人寫錯。
 以後在這個專案寫多值條件，一律 `= ANY(%s)`。
 
-#### ⚠️ 仍未驗的：n8n 那一半
+#### ✅ n8n 那一半也驗過了，而且抓到三個真的問題（2026-09-02，零成本）
 
-**API 這半驗完了，但六個工作流的鏈接線一次都沒實跑過。** 沒驗到的是：
-Execute Workflow Trigger 的 passthrough 到底把 `params` 放在哪一層
-（正規化節點同時讀 `j[k]` 和 `j.params[k]` 就是為了吃掉這個不確定性，
-但那是防禦，不是驗證）。第一次跑真題目的時候會知道。
+驗法：**把專案預算設成 $0.002**——剛好夠通過排隊時的粗檢查，但遠低於 W4 的
+$0.05 預估。於是正規化節點會執行（看得到它實際輸出什麼），
+下一個 `May We Afford This` 帶 `enforce=true` 回 402 把工作流擋掉，
+**模型一個都沒被呼叫**。
+
+**這個驗法是這一輪最值得複製的東西**：直接跑真題目的話，下面第三個問題會
+一路綠燈通過，沒有人會發現。
+
+##### 問題一：六個階段工作流當時沒發布
+
+`Start The Stage` 回 `Workflow is not active and cannot be executed`。
+**Execute Sub-workflow 在 production 執行裡叫不動未發布的工作流。**
+六個都發布了。
+
+##### 問題二：派工失敗是無聲的
+
+`Start The Stage` 設 `onError: continueRegularOutput`，所以問題一發生時
+**W-CHAIN 回報「成功」，而 `run` 停在 `running` 再也沒人碰**——階段沒發生，
+鏈默默斷掉，`chain/state` 看起來像「還在跑」。
+
+`onError` 不能拿掉：同一批認領到多筆時，一筆派工失敗不該連累其他筆。
+所以改成 `Which Ones Did Not Start` 把錯誤撿出來，回報
+`/compute/chain/advance` 加 `ok: false`，讓那一段被標成 `failed` 並寫下原因。
+
+##### 問題三：`run_id` 撞名（最危險的一個）
+
+**Execute Workflow Trigger 的 passthrough 把整個項目扁平送進去**，
+所以派工的記帳欄位跟階段的領域欄位並排。實測收到的形狀：
+
+```json
+{ "chain_run_id": "…", "project_id": "…", "stage": "dedup",
+  "label": "…", "workflow_id": "…",
+  "params": { "run_id": "…", "project_id": "…" } }
+```
+
+原本頂層那個叫 `run_id`，而它的意思是**鏈為這個階段建的記帳列**；
+`params.run_id` 才是**要處理的那次研究跑動**。正規化節點的 `pick()` 偏好頂層，
+所以挑到記帳列。
+
+後果：W4 拿它去查 `/compute/ideas?run_id=…`，**查到 0 筆、去重 0 組、
+回報成功**——綠燈、沒有錯誤、什麼都沒做。**W7 和 W9 更糟**：
+它們會把這個 id 寫進 `novelty_check` 和 `report`，存下錯誤的歸屬。
+
+三道修法：
+
+1. **源頭改名**：`Spread The Claims` 現在送 `chain_run_id`，衝突不存在了
+2. **六個正規化節點一律 `params` 優先**——`params` 是內容，頂層是信封。
+   規則六個一致，是為了擋住「以後有人往派工 payload 加欄位」這一類意外
+3. **W4／W5B／W7／W9 額外直接擋掉** `run_id === chain_run_id`。
+   這個錯誤的後果是看不見的，所以值得讓它「不可能發生」而不只是「已修好」
+
+修完重跑，正規化節點輸出 `run_id: SHAPE-PROBE-9F3A`（`params` 裡的值），確認。
+
+##### 順手修掉的：不是 uuid 的 id 會回 500
+
+探測用的假 `run_id` 讓 `/compute/run/budget` 回 **500 加一段裸的 Postgres
+`InvalidTextRepresentation`**。這兩個 id 都是人手貼進 n8n 表單的，
+所以格式錯誤是常態不是例外，而 **500 讀起來像「服務壞了」，事實是「那不是一個 id」**。
+`budget.project_of` 現在先驗 uuid 格式，回 400 並說明 run id 長什麼樣。
+
+##### 探測殘留
+
+都在 `ed3f8f68`（`budget guardrail probe 2026-09-02`）這個專案上，
+`run.error` 每一列都寫明是探測、沒有呼叫任何模型。
+**這個專案的預算刻意留在 $0.002**，這樣它永遠跑不動任何要花錢的階段。
 
 #### 部署當時卡住了（已解決，留著是因為它會再發生）
 

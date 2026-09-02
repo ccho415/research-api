@@ -29,7 +29,7 @@ carry a `run_id` at all, the other seven know only their project. `run_id` is
 still recorded on each spend as detail.
 """
 
-import psycopg
+import uuid
 
 from db import connect
 
@@ -108,6 +108,20 @@ def project_of(cur, project_id=None, run_id=None):
         return str(project_id)
     if not run_id:
         raise ValueError("need project_id or run_id")
+
+    # Both of these ids are typed by hand into n8n forms, so a malformed one is
+    # ordinary rather than exceptional. Without this check Postgres raises
+    # InvalidTextRepresentation, which surfaces as a 500 carrying a raw database
+    # error - and a 500 reads as "the service is broken" when the truth is "that
+    # is not an id". Seen for real: `run_id=SHAPE-PROBE-9F3A`.
+    try:
+        uuid.UUID(str(run_id))
+    except (ValueError, AttributeError, TypeError):
+        raise ValueError(
+            f"`{run_id}` is not a run id. A run id is a uuid, like "
+            "922e3e3d-ec97-436c-be37-c5a243028d9a - it is the value W2 or "
+            "/compute/chain/start returned, not a name.")
+
     cur.execute("SELECT project_id FROM run WHERE id = %s", (run_id,))
     row = cur.fetchone()
     if not row:
