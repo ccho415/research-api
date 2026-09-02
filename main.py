@@ -962,8 +962,8 @@ def novelty_list(project_id: Optional[str] = None,
 
 
 @app.get("/compute/run/budget")
-def run_budget(project_id: str, estimate: Optional[float] = None,
-               enforce: bool = False,
+def run_budget(project_id: Optional[str] = None, run_id: Optional[str] = None,
+               estimate: Optional[float] = None, enforce: bool = False,
                x_api_key: Optional[str] = Header(None)):
     """Where a project stands, and whether the next stage may start.
 
@@ -983,7 +983,7 @@ def run_budget(project_id: str, estimate: Optional[float] = None,
     check_key(x_api_key)
     import budget
     try:
-        out = budget.budget_status(project_id, estimate)
+        out = budget.budget_status(project_id, estimate, run_id)
         if enforce and not out["may_start"]:
             raise HTTPException(402, out["why"])
         return out
@@ -996,7 +996,7 @@ def run_budget(project_id: str, estimate: Optional[float] = None,
 
 
 class SpendIn(BaseModel):
-    project_id: str
+    project_id: Optional[str] = None
     run_id: Optional[str] = None
     stage: str
     model: str
@@ -1032,7 +1032,8 @@ def run_spend(body: SpendIn, x_api_key: Optional[str] = Header(None)):
 
 
 class SetBudgetIn(BaseModel):
-    project_id: str
+    project_id: Optional[str] = None
+    run_id: Optional[str] = None
     usd_budget: float
 
 
@@ -1042,7 +1043,7 @@ def run_set_budget(body: SetBudgetIn, x_api_key: Optional[str] = Header(None)):
     check_key(x_api_key)
     import budget
     try:
-        return budget.set_budget(body.project_id, body.usd_budget)
+        return budget.set_budget(body.project_id, body.usd_budget, body.run_id)
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:

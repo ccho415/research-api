@@ -97,7 +97,25 @@ def quote(model, input_tokens=0, output_tokens=0, cache_read_tokens=0,
             "batch_saves": round(live * (1 - BATCH_MULTIPLIER), 6)}
 
 
-def budget_status(project_id, estimate=None):
+def project_of(cur, project_id=None, run_id=None):
+    """Which project this is about, given whichever key the caller has.
+
+    W4 knows only a `run_id`; W1 and W6 know only a `project_id`. Resolving here
+    rather than adding a field to every form keeps the budget on the project -
+    where it belongs - without making the user paste an id they were never shown.
+    """
+    if project_id:
+        return str(project_id)
+    if not run_id:
+        raise ValueError("need project_id or run_id")
+    cur.execute("SELECT project_id FROM run WHERE id = %s", (run_id,))
+    row = cur.fetchone()
+    if not row:
+        raise ValueError(f"no run {run_id}")
+    return str(row["project_id"])
+
+
+def budget_status(project_id=None, estimate=None, run_id=None):
     """Where a project stands, and whether the next stage may start.
 
     `estimate` is what the caller expects the next stage to cost. Without it
@@ -105,6 +123,7 @@ def budget_status(project_id, estimate=None):
     out - which is the question that lets a $2.66 tournament start on $0.10.
     """
     with connect() as conn, conn.cursor() as cur:
+        project_id = project_of(cur, project_id, run_id)
         cur.execute(
             "SELECT id, topic, usd_budget, usd_spent FROM project "
             "WHERE id = %s", (project_id,))
@@ -149,9 +168,9 @@ def budget_status(project_id, estimate=None):
             "by_stage": by_stage}
 
 
-def record_spend(project_id, stage, model, input_tokens=0, output_tokens=0,
-                 cache_read_tokens=0, cache_write_tokens=0, batch=False,
-                 calls=1, run_id=None):
+def record_spend(project_id=None, stage=None, model=None, input_tokens=0,
+                 output_tokens=0, cache_read_tokens=0, cache_write_tokens=0,
+                 batch=False, calls=1, run_id=None):
     """Record what a stage actually spent and report whether that broke the budget.
 
     Called at the END of a stage with the numbers the workflow already measured
@@ -164,6 +183,7 @@ def record_spend(project_id, stage, model, input_tokens=0, output_tokens=0,
 
     with connect() as conn:
         with conn.cursor() as cur:
+            project_id = project_of(cur, project_id, run_id)
             cur.execute(
                 "INSERT INTO token_usage (project_id, run_id, stage, model,"
                 "  input_tokens, output_tokens, cache_read_tokens,"
@@ -195,13 +215,14 @@ def record_spend(project_id, stage, model, input_tokens=0, output_tokens=0,
                      "refused until usd_budget is raised.") if over else None}
 
 
-def set_budget(project_id, usd_budget):
+def set_budget(project_id=None, usd_budget=None, run_id=None):
     """Set or raise the cap on a project - one full pass of the pipeline."""
     b = float(usd_budget)
     if b < 0:
         raise ValueError("a budget cannot be negative")
     with connect() as conn:
         with conn.cursor() as cur:
+            project_id = project_of(cur, project_id, run_id)
             cur.execute(
                 "UPDATE project SET usd_budget = %s WHERE id = %s "
                 "RETURNING usd_budget, usd_spent", (b, project_id))
