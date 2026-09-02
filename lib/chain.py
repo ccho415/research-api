@@ -79,11 +79,16 @@ STAGE_PLAN = (
     Stage("report",      "W9 最終報告",   "FIWgMalCUagYln9M", 0.30, None, False),
 )
 
-STAGE_NAMES = tuple(s.name for s in STAGE_PLAN)
+# Lists, not tuples, and every query below says `= ANY(%s)` rather than
+# `IN %s`. psycopg2 expanded a tuple into an IN list; **psycopg3 does not** -
+# it sends the parameter as one value and Postgres answers
+# `syntax error at or near "$1"`. Caught by the first real call, because a
+# database-free test cannot see it.
+STAGE_NAMES = [s.name for s in STAGE_PLAN]
 
 # Statuses that mean "this stage is spoken for". Used by the unique index and
 # by the claim, and named once so the two cannot drift apart.
-ACTIVE = ("pending", "running")
+ACTIVE = ["pending", "running"]
 
 
 def stage_at(name):
@@ -200,7 +205,7 @@ def advance(project_id=None, stage=None, ok=True, error=None, params=None,
             cur.execute(
                 "UPDATE run SET status = %s, error = %s, finished_at = now() "
                 "WHERE id = (SELECT id FROM run WHERE project_id = %s "
-                "            AND stage = %s AND status IN %s "
+                "            AND stage = %s AND status = ANY(%s) "
                 "            ORDER BY started_at DESC NULLS LAST LIMIT 1) "
                 "RETURNING id",
                 (finished_status, error, project_id, stage, ACTIVE))
@@ -260,7 +265,7 @@ def claim_next(limit=5):
             cur.execute(
                 "UPDATE run SET status = 'running', started_at = now() "
                 "WHERE id IN (SELECT id FROM run WHERE status = 'pending' "
-                "             AND stage IN %s ORDER BY id LIMIT %s) "
+                "             AND stage = ANY(%s) ORDER BY id LIMIT %s) "
                 "RETURNING id, project_id, stage, params",
                 (STAGE_NAMES, int(limit)))
             rows = cur.fetchall()
@@ -282,7 +287,7 @@ def state(project_id):
         cur.execute(
             "SELECT DISTINCT ON (stage) stage, id, status, error, params,"
             "       started_at, finished_at "
-            "FROM run WHERE project_id = %s AND stage IN %s "
+            "FROM run WHERE project_id = %s AND stage = ANY(%s) "
             "ORDER BY stage, started_at DESC NULLS LAST",
             (project_id, STAGE_NAMES))
         seen = {r["stage"]: r for r in cur.fetchall()}
@@ -317,7 +322,7 @@ def resume(project_id, pause_after=False):
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT id, stage, status FROM run "
-                "WHERE project_id = %s AND stage IN %s "
+                "WHERE project_id = %s AND stage = ANY(%s) "
                 "  AND status IN ('awaiting_review','paused_budget') "
                 "ORDER BY finished_at DESC NULLS LAST, started_at DESC LIMIT 1",
                 (project_id, STAGE_NAMES))
@@ -405,7 +410,7 @@ def set_pause(project_id, stage, pause_after):
         with conn.cursor() as cur:
             cur.execute(
                 "UPDATE run SET pause_after = %s WHERE project_id = %s "
-                "AND stage = %s AND status IN %s RETURNING id",
+                "AND stage = %s AND status = ANY(%s) RETURNING id",
                 (bool(pause_after), project_id, stage, ACTIVE))
             rows = cur.fetchall()
         conn.commit()
