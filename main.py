@@ -120,7 +120,7 @@ def run_start(body: RunStartIn, x_api_key: Optional[str] = Header(None)):
         out = db.start_run(body.topic, body.domain, body.project_id, body.run_id)
         if body.usd_budget is not None:
             import budget
-            out["budget"] = budget.set_budget(out["run_id"], body.usd_budget)
+            out["budget"] = budget.set_budget(out["project_id"], body.usd_budget)
         return out
     except ValueError as e:
         raise HTTPException(400, str(e))
@@ -962,19 +962,22 @@ def novelty_list(project_id: Optional[str] = None,
 
 
 @app.get("/compute/run/budget")
-def run_budget(run_id: str, estimate: Optional[float] = None,
+def run_budget(project_id: str, estimate: Optional[float] = None,
                x_api_key: Optional[str] = Header(None)):
-    """Where a run stands, and whether the next stage may start.
+    """Where a project stands, and whether the next stage may start.
 
     Call this at the START of every stage with what that stage is expected to
     cost. Without an `estimate` this can only answer the weaker question -
     whether the money has already run out - and that is the question that lets a
     $2.66 tournament begin on $0.10 remaining.
+
+    Keyed on the project because the cap is for one full pass of the pipeline,
+    and all ten stages hang off one project. Only W5 and W5B even have a run_id.
     """
     check_key(x_api_key)
     import budget
     try:
-        return budget.budget_status(run_id, estimate)
+        return budget.budget_status(project_id, estimate)
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:
@@ -982,7 +985,8 @@ def run_budget(run_id: str, estimate: Optional[float] = None,
 
 
 class SpendIn(BaseModel):
-    run_id: str
+    project_id: str
+    run_id: Optional[str] = None
     stage: str
     model: str
     input_tokens: int = 0
@@ -1007,9 +1011,9 @@ def run_spend(body: SpendIn, x_api_key: Optional[str] = Header(None)):
     import budget
     try:
         return budget.record_spend(
-            body.run_id, body.stage, body.model, body.input_tokens,
+            body.project_id, body.stage, body.model, body.input_tokens,
             body.output_tokens, body.cache_read_tokens,
-            body.cache_write_tokens, body.batch, body.calls)
+            body.cache_write_tokens, body.batch, body.calls, body.run_id)
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:
@@ -1017,17 +1021,17 @@ def run_spend(body: SpendIn, x_api_key: Optional[str] = Header(None)):
 
 
 class SetBudgetIn(BaseModel):
-    run_id: str
+    project_id: str
     usd_budget: float
 
 
 @app.post("/compute/run/budget")
 def run_set_budget(body: SetBudgetIn, x_api_key: Optional[str] = Header(None)):
-    """Set or raise a run's cap. Raising it un-pauses a run the cap stopped."""
+    """Set or raise the cap on one full pass of the pipeline."""
     check_key(x_api_key)
     import budget
     try:
-        return budget.set_budget(body.run_id, body.usd_budget)
+        return budget.set_budget(body.project_id, body.usd_budget)
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:
