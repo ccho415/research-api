@@ -104,15 +104,26 @@ class RunStartIn(BaseModel):
     domain: Optional[str] = None
     project_id: Optional[str] = None
     run_id: Optional[str] = None
+    usd_budget: Optional[float] = None
 
 
 @app.post("/compute/run/start")
 def run_start(body: RunStartIn, x_api_key: Optional[str] = Header(None)):
-    """Create (or adopt) the project and run this search belongs to."""
+    """Create (or adopt) the project and run this search belongs to.
+
+    `usd_budget` caps the whole run. Without one nothing stops a runaway stage,
+    so the budget reply says so rather than staying quiet about it.
+    """
     check_key(x_api_key)
     import db
     try:
-        return db.start_run(body.topic, body.domain, body.project_id, body.run_id)
+        out = db.start_run(body.topic, body.domain, body.project_id, body.run_id)
+        if body.usd_budget is not None:
+            import budget
+            out["budget"] = budget.set_budget(out["run_id"], body.usd_budget)
+        return out
+    except ValueError as e:
+        raise HTTPException(400, str(e))
     except Exception as e:
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
@@ -944,6 +955,96 @@ def novelty_list(project_id: Optional[str] = None,
     import novelty
     try:
         return novelty.list_novelty(project_id, None, method)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/run/budget")
+def run_budget(run_id: str, estimate: Optional[float] = None,
+               x_api_key: Optional[str] = Header(None)):
+    """Where a run stands, and whether the next stage may start.
+
+    Call this at the START of every stage with what that stage is expected to
+    cost. Without an `estimate` this can only answer the weaker question -
+    whether the money has already run out - and that is the question that lets a
+    $2.66 tournament begin on $0.10 remaining.
+    """
+    check_key(x_api_key)
+    import budget
+    try:
+        return budget.budget_status(run_id, estimate)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class SpendIn(BaseModel):
+    run_id: str
+    stage: str
+    model: str
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_read_tokens: int = 0
+    batch: bool = False
+    calls: int = 1
+
+
+@app.post("/compute/run/spend")
+def run_spend(body: SpendIn, x_api_key: Optional[str] = Header(None)):
+    """Record what a stage spent, and report whether that broke the budget.
+
+    Prices live on the server, not in the workflows: ten copies of a price table
+    is ten copies that drift, and a drifted copy reports a wrong number without
+    erroring. A model with no known price is refused rather than recorded as
+    free - a run logging $0 for an unpriced model is indistinguishable from a
+    cheap one, and the guardrail would wave through exactly what it exists for.
+    """
+    check_key(x_api_key)
+    import budget
+    try:
+        return budget.record_spend(
+            body.run_id, body.stage, body.model, body.input_tokens,
+            body.output_tokens, body.cache_read_tokens, body.batch, body.calls)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class SetBudgetIn(BaseModel):
+    run_id: str
+    usd_budget: float
+
+
+@app.post("/compute/run/budget")
+def run_set_budget(body: SetBudgetIn, x_api_key: Optional[str] = Header(None)):
+    """Set or raise a run's cap. Raising it un-pauses a run the cap stopped."""
+    check_key(x_api_key)
+    import budget
+    try:
+        return budget.set_budget(body.run_id, body.usd_budget)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/run/quote")
+def run_quote(model: str, input_tokens: int = 0, output_tokens: int = 0,
+              cache_read_tokens: int = 0,
+              x_api_key: Optional[str] = Header(None)):
+    """What one call costs live, batched, and what batching would save.
+
+    Nothing is recorded. It exists so the batch and caching decisions get argued
+    from this deployment's own token counts rather than from an estimate.
+    """
+    check_key(x_api_key)
+    import budget
+    try:
+        return budget.quote(model, input_tokens, output_tokens, cache_read_tokens)
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:
