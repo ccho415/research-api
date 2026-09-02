@@ -53,24 +53,87 @@ SECTION_BRIEF = {
 }
 
 
-def _identify(cur, cite):
-    """Find the cached paper(s) a citation points at, by identifier only.
+def citable_set(cur, idea_id, project_id):
+    """Every paper an actual search returned for this idea, indexed by identifier.
+
+    Two sources, because the searches in this system write to two different
+    places and neither one alone is the answer:
+
+    `search_hit` holds what W2's literature layer found, joined back through the
+    run that found it.
+
+    The latest adversarial `novelty_check` holds what W7's fourteen rounds
+    returned - and those never reach the `paper` table at all, because
+    `ops.search_query` returns results without persisting them. Leaving that
+    source out was a real defect: W7 verified forty papers for this idea and
+    none of them were citable, so the report would have had nothing to cite and
+    every citation it did make would have been rejected as invented.
+
+    **This is the same set the writer is shown and the same set a citation is
+    checked against.** Those two being different sets is how a model gets
+    punished for citing exactly what it was given.
+    """
+    rows, seen = [], set()
+
+    def take(p, origin):
+        if not isinstance(p, dict):
+            return
+        title = str(p.get("title") or "").strip()
+        doi = str(p.get("doi") or "").strip()
+        pmid = str(p.get("pmid") or "").strip()
+        key = (doi.lower() or pmid or title.lower())[:200]
+        if not title or not key or key in seen:
+            return
+        seen.add(key)
+        row = {"title": title, "year": p.get("year"),
+               "venue": p.get("venue") or p.get("journal"),
+               "doi": doi or None, "pmid": pmid or None,
+               "citations": p.get("citations"), "found_by": origin}
+        row["links"] = _links(row)
+        rows.append(row)
+
+    cur.execute(
+        "SELECT rounds, closest_papers FROM novelty_check "
+        "WHERE idea_id = %s AND method = 'adversarial' "
+        "ORDER BY checked_at DESC LIMIT 1", (idea_id,))
+    nov = cur.fetchone()
+    if nov:
+        for p in nov["closest_papers"] or []:
+            take(p, "novelty check")
+        for r in ((nov["rounds"] or {}).get("rounds") or []):
+            for p in r.get("papers") or []:
+                take(p, "novelty check")
+
+    cur.execute(
+        "SELECT DISTINCT p.title, p.year, p.venue, p.doi, p.pmid, p.citations "
+        "FROM paper p "
+        "JOIN search_hit h ON h.paper_id = p.id "
+        "JOIN search_query q ON q.id = h.search_query_id "
+        "JOIN run ru ON ru.id = q.run_id "
+        "WHERE ru.project_id = %s "
+        "ORDER BY p.citations DESC NULLS LAST LIMIT 60", (project_id,))
+    for p in cur.fetchall():
+        take(dict(p), "literature search")
+
+    by_doi = {r["doi"].lower(): r for r in rows if r["doi"]}
+    by_pmid = {r["pmid"]: r for r in rows if r["pmid"]}
+    return rows, by_doi, by_pmid
+
+
+def _identify(cite, by_doi, by_pmid):
+    """Which entries a citation points at, by identifier only.
 
     Title matching is deliberately not attempted. A near-miss on a title
     attaches the citation to a different paper with a similar name, and a wrong
     citation is worse than a missing one because it reads as verified.
     """
     found = {}
-    for col, sql in (("doi", "SELECT id, title, year, venue, doi, pmid FROM paper "
-                             "WHERE lower(doi) = lower(%s) LIMIT 1"),
-                     ("pmid", "SELECT id, title, year, venue, doi, pmid FROM paper "
-                              "WHERE pmid = %s LIMIT 1")):
-        v = str(cite.get(col) or "").strip()
-        if v:
-            cur.execute(sql, (v,))
-            row = cur.fetchone()
-            if row:
-                found[col] = dict(row)
+    doi = str(cite.get("doi") or "").strip().lower()
+    pmid = str(cite.get("pmid") or "").strip()
+    if doi and doi in by_doi:
+        found["doi"] = by_doi[doi]
+    if pmid and pmid in by_pmid:
+        found["pmid"] = by_pmid[pmid]
     return found
 
 
@@ -86,7 +149,7 @@ def _links(row):
     return out
 
 
-def verify_citations(citations):
+def verify_citations(citations, idea_id, project_id):
     """Split citations into the ones that survive and the ones that do not.
 
     Three ways to fail, and each is reported with its reason rather than being
@@ -95,22 +158,24 @@ def verify_citations(citations):
     """
     kept, dropped = [], []
     with connect() as conn, conn.cursor() as cur:
+        _, by_doi, by_pmid = citable_set(cur, idea_id, project_id)
+
         for c in citations or []:
             if not isinstance(c, dict):
                 continue
-            found = _identify(cur, c)
+            found = _identify(c, by_doi, by_pmid)
 
             if not found:
                 dropped.append({
                     "cited": c,
-                    "why": "no paper with this DOI or PMID is in the cache, so "
-                           "no search ever returned it. Citing it would send a "
-                           "reader to something that may not exist."})
+                    "why": "no search for this direction returned a paper with "
+                           "this DOI or PMID. Citing it would send a reader to "
+                           "something that may not exist."})
                 continue
 
             # Both identifiers present and pointing at different papers: at
             # least one is wrong and nothing here can tell which.
-            if len(found) == 2 and found["doi"]["id"] != found["pmid"]["id"]:
+            if len(found) == 2 and found["doi"]["title"] != found["pmid"]["title"]:
                 dropped.append({
                     "cited": c,
                     "why": "the DOI and the PMID resolve to two different "
@@ -122,10 +187,9 @@ def verify_citations(citations):
 
             row = found.get("doi") or found.get("pmid")
             kept.append({
-                "paper_id": str(row["id"]),
                 "title": row["title"], "year": row["year"],
                 "venue": row["venue"], "doi": row["doi"], "pmid": row["pmid"],
-                "links": _links(row),
+                "links": row["links"], "found_by": row["found_by"],
                 "cross_validated": len(found) == 2,
                 "used_for": c.get("used_for") or c.get("claim") or None})
 
@@ -193,27 +257,10 @@ def report_inputs(idea_id):
             "FROM debate_round WHERE idea_id = %s", (idea_id,))
         debate = dict(cur.fetchone())
 
-        # The citable pool: every paper an actual search returned for this
-        # project. The writer cites from this and from nothing else.
-        #
-        # Reached through search_hit rather than by listing the paper table,
-        # because "in the cache" and "a search for this project returned it"
-        # are different sets, and only the second one can honestly be cited
-        # in this report.
-        cur.execute(
-            "SELECT DISTINCT p.id, p.title, p.year, p.venue, p.doi, p.pmid,"
-            "       p.citations FROM paper p "
-            "JOIN search_hit h ON h.paper_id = p.id "
-            "JOIN search_query q ON q.id = h.search_query_id "
-            "JOIN run ru ON ru.id = q.run_id "
-            "WHERE ru.project_id = %s "
-            "ORDER BY p.citations DESC NULLS LAST LIMIT 60", (d["project_id"],))
-        pool = []
-        for p in cur.fetchall():
-            row = dict(p)
-            row["id"] = str(row["id"])
-            row["links"] = _links(row)
-            pool.append(row)
+        # The citable pool - built by the same function that later checks the
+        # citations, so what the writer is shown and what survives verification
+        # cannot drift apart.
+        pool, _, _ = citable_set(cur, idea_id, d["project_id"])
 
     missing = []
     if not nov:
@@ -225,6 +272,10 @@ def report_inputs(idea_id):
     if not debate.get("n"):
         missing.append("no debate has been run - section 7 cannot list what "
                        "survived an argument that never happened")
+    if not pool:
+        missing.append("no search ever returned a paper for this direction, so "
+                       "there is nothing this report may cite. Sections 2 and 4 "
+                       "cannot be written - run W2 or W7 first")
 
     return {
         "idea": d,
@@ -269,7 +320,14 @@ def save_report(idea_id, sections, citations=None, run_id=None, model=None,
             "these sections are too short to be the paragraphs this report is "
             "for: " + ", ".join(thin))
 
-    kept, dropped = verify_citations(citations)
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute("SELECT project_id FROM idea WHERE id = %s", (idea_id,))
+        row = cur.fetchone()
+        if not row:
+            raise ValueError(f"no idea {idea_id}")
+        project_id = str(row["project_id"])
+
+    kept, dropped = verify_citations(citations, idea_id, project_id)
 
     with connect() as conn:
         with conn.cursor() as cur:
