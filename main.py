@@ -1307,8 +1307,9 @@ def debate_get(idea_id: str, x_api_key: Optional[str] = Header(None)):
 
 
 class ChainAdvanceIn(BaseModel):
-    project_id: str
     stage: str
+    project_id: Optional[str] = None
+    run_id: Optional[str] = None
     ok: bool = True
     error: Optional[str] = None
     params: Optional[dict] = None
@@ -1328,7 +1329,7 @@ def chain_advance(body: ChainAdvanceIn, x_api_key: Optional[str] = Header(None))
     import chain
     try:
         return chain.advance(body.project_id, body.stage, body.ok, body.error,
-                             body.params, body.pause_after)
+                             body.params, body.pause_after, body.run_id)
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:

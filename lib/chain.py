@@ -157,6 +157,13 @@ def _queue(cur, project_id, stage_name, params):
         status = "paused_budget"
         note = f"could not read the budget: {type(e).__name__}: {str(e)[:200]}"
 
+    # Every stage is told which project it is for, whatever else the previous
+    # stage handed forward. Without this a stage inherits `{}` and has no way
+    # to find its own work - and the failure looks like an empty result rather
+    # than a missing parameter.
+    params = dict(params or {})
+    params["project_id"] = str(project_id)
+
     s = stage_at(stage_name)
     nxt = successor(stage_name)
     cur.execute(
@@ -168,17 +175,24 @@ def _queue(cur, project_id, stage_name, params):
     return str(cur.fetchone()["id"]), status, note
 
 
-def advance(project_id, stage, ok=True, error=None, params=None, pause_after=None):
+def advance(project_id=None, stage=None, ok=True, error=None, params=None,
+            pause_after=None, run_id=None):
     """Record that `stage` finished for this project and queue what follows.
 
     Called by the stage workflow itself as its last act. The workflow does not
     decide what comes next and does not know the chain order - one place knows
     it, and that place is `STAGE_PLAN`.
+
+    `run_id` is accepted instead of `project_id` for the same reason the budget
+    endpoints accept it: W4's form asks for a run and nothing else, and making
+    every form carry a second id the user was never shown is how ids get pasted
+    wrong. Resolving it here costs one query.
     """
     finished_status, next_stage, reason = decide_next(stage, ok, pause_after)
 
     with connect() as conn:
         with conn.cursor() as cur:
+            project_id = budget.project_of(cur, project_id, run_id)
             # Close the run this stage was dispatched as, if there was one. A
             # stage started by hand from its own form has no row, so one is
             # written retroactively - otherwise a manually re-run stage would
