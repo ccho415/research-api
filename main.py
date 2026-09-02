@@ -988,6 +988,7 @@ class SpendIn(BaseModel):
     input_tokens: int = 0
     output_tokens: int = 0
     cache_read_tokens: int = 0
+    cache_write_tokens: int = 0
     batch: bool = False
     calls: int = 1
 
@@ -1007,7 +1008,8 @@ def run_spend(body: SpendIn, x_api_key: Optional[str] = Header(None)):
     try:
         return budget.record_spend(
             body.run_id, body.stage, body.model, body.input_tokens,
-            body.output_tokens, body.cache_read_tokens, body.batch, body.calls)
+            body.output_tokens, body.cache_read_tokens,
+            body.cache_write_tokens, body.batch, body.calls)
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:
@@ -1034,7 +1036,7 @@ def run_set_budget(body: SetBudgetIn, x_api_key: Optional[str] = Header(None)):
 
 @app.get("/compute/run/quote")
 def run_quote(model: str, input_tokens: int = 0, output_tokens: int = 0,
-              cache_read_tokens: int = 0,
+              cache_read_tokens: int = 0, cache_write_tokens: int = 0,
               x_api_key: Optional[str] = Header(None)):
     """What one call costs live, batched, and what batching would save.
 
@@ -1044,7 +1046,8 @@ def run_quote(model: str, input_tokens: int = 0, output_tokens: int = 0,
     check_key(x_api_key)
     import budget
     try:
-        return budget.quote(model, input_tokens, output_tokens, cache_read_tokens)
+        return budget.quote(model, input_tokens, output_tokens,
+                            cache_read_tokens, cache_write_tokens)
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:

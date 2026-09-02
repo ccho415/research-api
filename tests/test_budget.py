@@ -65,6 +65,22 @@ check("batch is half price",
 close("a cache read is a tenth of the input rate",
       budget.price("claude-sonnet-5", 0, 0, cache_read_tokens=1_000_000),
       0.2, 1e-9)
+close("a cache write costs MORE than plain input",
+      budget.price("claude-sonnet-5", 0, 0, cache_write_tokens=1_000_000),
+      2.5, 1e-9)
+
+print("\n-- the gap W5B's first batch exposed (execution 200) --")
+# The workflow reckoned $0.1387; the guardrail recorded $0.137379. The whole
+# difference was 1,055 cache-write tokens the guardrail did not model. A
+# guardrail that reports low is the one failure this file cannot have.
+w5b = budget.price("claude-sonnet-5", 8662, 25469,
+                   cache_read_tokens=13715, cache_write_tokens=1055, batch=True)
+close("the guardrail now matches the workflow's own reckoning", w5b, 0.1387, 0.0001)
+without = budget.price("claude-sonnet-5", 8662, 25469,
+                       cache_read_tokens=13715, batch=True)
+print(f"       with cache_write    ${w5b:.6f}")
+print(f"       without (the bug)   ${without:.6f}   under by ${w5b - without:.6f}")
+check("omitting cache_write undercounts", without < w5b, True)
 
 print("\n-- the quote helper --")
 q = budget.quote("claude-sonnet-5", 230_925, 219_917)

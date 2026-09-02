@@ -45,12 +45,18 @@ PRICES = {
 
 # A cache read is billed at roughly a tenth of the input rate.
 CACHE_READ_MULTIPLIER = 0.1
+# Writing to the cache costs MORE than plain input - about a quarter more.
+# Omitting this term was a real undercount: W5B's first batch wrote 1,055 tokens
+# to cache and the guardrail recorded $0.0013 less than the workflow's own
+# reckoning. Small here, systematic everywhere, and a guardrail whose number is
+# quietly low is the one thing this file cannot be.
+CACHE_WRITE_MULTIPLIER = 1.25
 # The Batch API runs the same request asynchronously at half price.
 BATCH_MULTIPLIER = 0.5
 
 
 def price(model, input_tokens=0, output_tokens=0, cache_read_tokens=0,
-          batch=False):
+          cache_write_tokens=0, batch=False):
     """What one call cost, in dollars. Refuses models it has no price for."""
     key = (model or "").strip()
     if key not in PRICES:
@@ -62,22 +68,26 @@ def price(model, input_tokens=0, output_tokens=0, cache_read_tokens=0,
     pin, pout = PRICES[key]
     usd = (int(input_tokens or 0) * pin / 1e6
            + int(output_tokens or 0) * pout / 1e6
-           + int(cache_read_tokens or 0) * pin * CACHE_READ_MULTIPLIER / 1e6)
+           + int(cache_read_tokens or 0) * pin * CACHE_READ_MULTIPLIER / 1e6
+           + int(cache_write_tokens or 0) * pin * CACHE_WRITE_MULTIPLIER / 1e6)
     if batch:
         usd *= BATCH_MULTIPLIER
     return round(usd, 6)
 
 
-def quote(model, input_tokens=0, output_tokens=0, cache_read_tokens=0):
+def quote(model, input_tokens=0, output_tokens=0, cache_read_tokens=0,
+          cache_write_tokens=0):
     """What the same call would cost under each option. Nothing is recorded.
 
     Exists so the batch and caching decisions can be argued from this
     deployment's own numbers rather than from a blog post.
     """
-    live = price(model, input_tokens, output_tokens, cache_read_tokens)
+    live = price(model, input_tokens, output_tokens, cache_read_tokens,
+                 cache_write_tokens)
     return {"model": model, "as_sent": live,
             "if_batched": price(model, input_tokens, output_tokens,
-                                cache_read_tokens, batch=True),
+                                cache_read_tokens, cache_write_tokens,
+                                batch=True),
             "batch_saves": round(live * (1 - BATCH_MULTIPLIER), 6)}
 
 
@@ -135,23 +145,27 @@ def budget_status(run_id, estimate=None):
 
 
 def record_spend(run_id, stage, model, input_tokens=0, output_tokens=0,
-                 cache_read_tokens=0, batch=False, calls=1):
+                 cache_read_tokens=0, cache_write_tokens=0, batch=False,
+                 calls=1):
     """Record what a stage actually spent and report whether that broke the budget.
 
     Called at the END of a stage with the numbers the workflow already measured
     for its own cost report - so the guardrail and the report can never disagree
     about what happened.
     """
-    usd = price(model, input_tokens, output_tokens, cache_read_tokens, batch)
+    usd = price(model, input_tokens, output_tokens, cache_read_tokens,
+                cache_write_tokens, batch)
 
     with connect() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO token_usage (run_id, stage, model, input_tokens,"
-                "  output_tokens, cache_read_tokens, batch, cost_usd) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+                "  output_tokens, cache_read_tokens, cache_write_tokens,"
+                "  batch, cost_usd) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (run_id, stage, model, int(input_tokens or 0),
                  int(output_tokens or 0), int(cache_read_tokens or 0),
+                 int(cache_write_tokens or 0),
                  bool(batch), usd))
             cur.execute(
                 "UPDATE run SET usd_spent = usd_spent + %s WHERE id = %s "
