@@ -375,6 +375,54 @@ second_pack_forced true      pack_versions 齊全      confidence high
    所以 W3 那套搶救碼（挖巢狀字串、讀第一個平衡物件、任意深度撿完整物件）
    照抄過來是必要的，不是防禦性多寫。
 
+### 預算護欄（2026-09-02）：PRD 三個貫穿機制之二，先前一行程式碼都沒有
+
+`run.token_budget` / `token_spent` / `token_usage` 從第一天就在 schema 裡，
+**但整份程式碼沒有任何一行碰過它們**。所以在此之前，這個系統沒有任何東西
+會攔住失控的花費——一個寫錯的迴圈可以一路燒到帳單上才被發現。
+
+migration 014 加了 `run.usd_budget` / `usd_spent`，以及 `token_usage` 的
+`stage` / `cache_read_tokens` / `batch`。
+
+#### 四個設計決定
+
+**單位是美元不是 token。** 不同模型每個 token 差五倍（Opus 5 輸出 $25／
+Haiku 4.5 $5），所以「還剩多少 token」回答不了唯一有意義的那個問題。
+token 數繼續記在 `token_usage` 供分析。
+
+**價目表只放在 `lib/budget.py`。** 十個工作流各帶一份副本，就是十份會走樣的
+副本，而**走樣的副本不會報錯，只會安靜地算錯**。工作流回報 token，伺服器算錢。
+
+**沒有價格的模型直接拒絕，不估也不記 0。** 一個對未定價模型記 $0 的跑動，
+看起來跟一個便宜的跑動一模一樣——護欄會放行它本來要擋的那件事。
+
+**檢查問的是「這個階段可不可以開始」，不是「是不是已經超支」。**
+後者會讓一個 $2.66 的錦標賽在只剩 $0.10 時照樣起跑。所以
+`GET /compute/run/budget?run_id=&estimate=2.66` 要帶預估值，塞不下就在
+**開始前**拒絕。檢查點在階段邊界，不在階段中間——在第 300 場砍斷錦標賽，
+你會付掉三分之二的錢換一個沒有意義的半套排名。
+
+#### 價目表釘在真實帳單上
+
+`tests/test_budget.py` 用執行 144 的實際數字（151 次呼叫、230,925 輸入、
+219,917 輸出、Sonnet 5）驗算，得到 **$2.66102**，實測是 $2.661。
+**一份「看起來合理」的價目表正是護欄失效的方式**，所以它被釘在一張真的帳單上。
+
+#### 端點
+
+| | |
+|---|---|
+| `GET /compute/run/budget?run_id=&estimate=` | 階段開始前問「可不可以跑」 |
+| `POST /compute/run/spend` | 階段結束後回報用量，回傳有沒有超支 |
+| `POST /compute/run/budget` | 設定或調高上限（調高會解除 `paused_budget`）|
+| `GET /compute/run/quote?model=&input_tokens=&output_tokens=` | 試算即時／批次價差，不寫入 |
+| `POST /compute/run/start` | 多了 `usd_budget` 參數 |
+
+超支 → `run.status = 'paused_budget'`。
+
+**⚠️ 工作流還沒接上去。** 端點都在，但 W1–W10 目前**沒有任何一個**會呼叫
+`/compute/run/budget` 或 `/compute/run/spend`。護欄建好了但還沒裝上。
+
 ### W10 撞題排程（S11）：已建，預設未啟用（2026-09-02）
 
 migration 013 已套用（新增 `method = 'collision_watch'`），四個端點都活著。
@@ -1088,6 +1136,14 @@ Gemini 的配對         11 / 15
 
 4. **第 1 階段：16 項 ScholarIdeas 重驗。** PRD 寫「先驗證再蓋」，這一半仍是已知的偏離。
    目前領域落差 0.489，要低於對照組的 0.344，且神經科學不得再輸給對照組。
+
+4b. **把預算護欄接到工作流上。** 端點都在、價目表釘過真實帳單，
+   但 **W1–W10 沒有任何一個會呼叫它**。要接兩處：
+   - 每個工作流**開頭**打 `GET /compute/run/budget?estimate=<該階段預估>`，
+     `may_start` 是 false 就不要跑
+   - 每個工作流**結尾**（守門節點已經算好 token 了）打 `POST /compute/run/spend`
+
+   W5 的預估用 `場次 × $0.0059`，場次公式是 `2 × [C(方向數,2) + 方向數 × 錨點數]`。
 
 5. ~~S8–S11 尚未建~~ ✅ **W6–W10 全部建好了（2026-08-29 至 09-02）。**
    PRD 的 S1–S11 對應的 W1–W10 現在都存在。**但 W8／W9／W10 三個的模型那一半
