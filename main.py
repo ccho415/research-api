@@ -963,6 +963,7 @@ def novelty_list(project_id: Optional[str] = None,
 
 @app.get("/compute/run/budget")
 def run_budget(project_id: str, estimate: Optional[float] = None,
+               enforce: bool = False,
                x_api_key: Optional[str] = Header(None)):
     """Where a project stands, and whether the next stage may start.
 
@@ -973,11 +974,21 @@ def run_budget(project_id: str, estimate: Optional[float] = None,
 
     Keyed on the project because the cap is for one full pass of the pipeline,
     and all ten stages hang off one project. Only W5 and W5B even have a run_id.
+
+    `enforce=true` turns a refusal into a 402 instead of a field in the reply.
+    That is what the workflows use: one node that simply fails, rather than a
+    node that answers plus a second node to notice the answer. A guard nobody
+    reads is not a guard, and an HTTP failure also reaches the alert workflow.
     """
     check_key(x_api_key)
     import budget
     try:
-        return budget.budget_status(project_id, estimate)
+        out = budget.budget_status(project_id, estimate)
+        if enforce and not out["may_start"]:
+            raise HTTPException(402, out["why"])
+        return out
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:
