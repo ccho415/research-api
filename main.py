@@ -950,6 +950,74 @@ def novelty_list(project_id: Optional[str] = None,
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+@app.get("/compute/report/inputs")
+def report_inputs(idea_id: str, x_api_key: Optional[str] = Header(None)):
+    """Everything the report writer needs, from five tables, in one call.
+
+    Assembled server-side because a report written from four of the five would
+    still come back with eight sections. The missing one would be written from
+    nothing and nothing in the output would say so - which is why
+    `missing_inputs` travels with the payload rather than being left for
+    whoever reads the report six months later to notice.
+    """
+    check_key(x_api_key)
+    import report
+    try:
+        return report.report_inputs(idea_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class ReportSaveIn(BaseModel):
+    idea_id: str
+    sections: Dict[str, Any]
+    citations: Optional[List[Dict[str, Any]]] = None
+    run_id: Optional[str] = None
+    model: Optional[str] = None
+    tier: Optional[str] = None
+    rank: Optional[int] = None
+
+
+@app.post("/compute/report/save")
+def report_save(body: ReportSaveIn, x_api_key: Optional[str] = Header(None)):
+    """Store one report, refusing the ones that read complete and are not.
+
+    Every citation is matched back to a paper a search actually returned; a DOI
+    and a PMID that resolve to different papers are both refused, because one
+    of them is wrong and nothing here can tell which. What gets removed is
+    recorded in `dropped` rather than silently omitted - a short reference list
+    with no explanation reads as concision.
+    """
+    check_key(x_api_key)
+    import report
+    try:
+        return report.save_report(body.idea_id, body.sections, body.citations,
+                                  body.run_id, body.model, body.tier, body.rank)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/report")
+def report_get(idea_id: Optional[str] = None, report_id: Optional[str] = None,
+               project_id: Optional[str] = None,
+               x_api_key: Optional[str] = Header(None)):
+    """One full report, or the list for a project in tournament order."""
+    check_key(x_api_key)
+    import report
+    try:
+        if project_id:
+            return report.list_reports(project_id)
+        return report.get_report(idea_id, report_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.get("/compute/debate/state")
 def debate_state(idea_id: str, x_api_key: Optional[str] = Header(None)):
     """Where the argument stands, plus the papers the critic is allowed to cite.
