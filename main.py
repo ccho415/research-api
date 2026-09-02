@@ -1306,6 +1306,135 @@ def debate_get(idea_id: str, x_api_key: Optional[str] = Header(None)):
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+class ChainAdvanceIn(BaseModel):
+    project_id: str
+    stage: str
+    ok: bool = True
+    error: Optional[str] = None
+    params: Optional[dict] = None
+    pause_after: Optional[bool] = None
+
+
+@app.post("/compute/chain/advance")
+def chain_advance(body: ChainAdvanceIn, x_api_key: Optional[str] = Header(None)):
+    """A stage reporting that it finished, and asking what follows.
+
+    The workflow does not decide the order and does not know it. One place
+    knows it - `lib/chain.py:STAGE_PLAN` - because an order duplicated across
+    six workflows is six copies that drift, and a drifted copy skips a stage
+    without ever erroring.
+    """
+    check_key(x_api_key)
+    import chain
+    try:
+        return chain.advance(body.project_id, body.stage, body.ok, body.error,
+                             body.params, body.pause_after)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.post("/compute/chain/claim")
+def chain_claim(limit: int = 5, x_api_key: Optional[str] = Header(None)):
+    """What the dispatcher should start now - and marks it taken, atomically.
+
+    POST rather than GET because it writes: reading the queue and claiming it
+    are one operation on purpose. Two dispatcher ticks a second apart would
+    otherwise both start the same stage, and the tournament costs $2.66 a go.
+    """
+    check_key(x_api_key)
+    import chain
+    try:
+        return chain.claim_next(limit)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/chain/state")
+def chain_state(project_id: str, x_api_key: Optional[str] = Header(None)):
+    """Every stage of the chain for this project, and where it is parked."""
+    check_key(x_api_key)
+    import chain
+    try:
+        return chain.state(project_id)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/chain/plan")
+def chain_plan(x_api_key: Optional[str] = Header(None)):
+    """The chain itself: order, workflow ids, and which stages stop for you."""
+    check_key(x_api_key)
+    import chain
+    return {"stages": [s.as_dict() for s in chain.STAGE_PLAN],
+            "not_in_the_chain": (
+                "W1, W2, harvest and W3 are started by hand. W2 stops "
+                "mid-workflow for you to confirm the search concepts, so "
+                "auto-advancing into it would leave an execution waiting "
+                "thirty minutes and then dying.")}
+
+
+class ChainStartIn(BaseModel):
+    project_id: str
+    stage: str = "dedup"
+    params: Optional[dict] = None
+
+
+@app.post("/compute/chain/start")
+def chain_start(body: ChainStartIn, x_api_key: Optional[str] = Header(None)):
+    """Put a project onto the chain, by default at its head (W4 去重)."""
+    check_key(x_api_key)
+    import chain
+    try:
+        return chain.start(body.project_id, body.stage, body.params)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class ChainResumeIn(BaseModel):
+    project_id: str
+
+
+@app.post("/compute/chain/resume")
+def chain_resume(body: ChainResumeIn, x_api_key: Optional[str] = Header(None)):
+    """Release a chain parked at a review point, or after a budget rise.
+
+    This is what the review interfaces will call once they exist. Until then
+    it is called by hand - clunky, but the alternative was running past the
+    review points without telling anyone.
+    """
+    check_key(x_api_key)
+    import chain
+    try:
+        return chain.resume(body.project_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+class ChainPauseIn(BaseModel):
+    project_id: str
+    stage: str
+    pause_after: bool = True
+
+
+@app.post("/compute/chain/pause")
+def chain_pause(body: ChainPauseIn, x_api_key: Optional[str] = Header(None)):
+    """Mark "stop here" on a stage before the chain reaches it."""
+    check_key(x_api_key)
+    import chain
+    try:
+        return chain.set_pause(body.project_id, body.stage, body.pause_after)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.post("/compute/tournament/start")
 def tournament_start(body: TournamentStartIn,
                      x_api_key: Optional[str] = Header(None)):
