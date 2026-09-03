@@ -105,6 +105,45 @@ print("\n-- the front half is deliberately absent --")
 for absent in ("lit_search", "harvest", "ideas", "domain_frame"):
     check(f"`{absent}` is not a chain stage", chain.stage_at(absent), None)
 
+
+print("\n-- only feasibility has a precondition, and it is the dataset --")
+
+
+class FakeCur:
+    """Answers the one SELECT missing_precondition makes."""
+
+    def __init__(self, has_dataset):
+        self.has_dataset = has_dataset
+        self.asked = None
+
+    def execute(self, sql, args=None):
+        self.asked = sql
+
+    def fetchone(self):
+        return {"?column?": 1} if self.has_dataset else None
+
+
+for stage in ("dedup", "tournament", "novelty", "debate", "report"):
+    cur = FakeCur(has_dataset=False)
+    check(f"`{stage}` has no precondition",
+          chain.missing_precondition(cur, stage, "p1"), None)
+    check(f"`{stage}` does not even query", cur.asked, None)
+
+cur = FakeCur(has_dataset=True)
+check("feasibility with a dataset is free to run",
+      chain.missing_precondition(cur, "feasibility", "p1"), None)
+check("it did look", "FROM dataset" in (cur.asked or ""), True)
+
+cur = FakeCur(has_dataset=False)
+blocked = chain.missing_precondition(cur, "feasibility", "p1")
+check("feasibility without a dataset is blocked", bool(blocked), True)
+# The message is the whole value of blocking here: somebody reads it in
+# chain/state days later with no memory of this conversation.
+check("it names the tool", "inventory.py" in blocked, True)
+check("it names the template", "inventory_template.csv" in blocked, True)
+check("it says how to continue", "chain/resume" in blocked, True)
+check("it says what else is stuck", "W7" in blocked and "W9" in blocked, True)
+
 print()
 if fails:
     print(f"{len(fails)} FAILED")

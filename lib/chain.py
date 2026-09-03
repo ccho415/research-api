@@ -146,21 +146,64 @@ def decide_next(stage, ok=True, pause_after=None):
     return "done", nxt.name, f"{s.label} finished; {nxt.label} is queued."
 
 
-def _queue(cur, project_id, stage_name, params):
-    """Create the next run row, parked if the project is out of money.
+def missing_precondition(cur, stage_name, project_id):
+    """What this stage needs that the project does not have yet, or None.
 
-    The coarse question only. The precise one - can *this* stage afford to
-    start - is asked by the stage's own first node, which knows the field size.
+    Dispatching a stage that is certain to fail is worse than not dispatching
+    it. Observed on the first real chain: W5B finished, the chain queued
+    feasibility, the dispatcher started W6, and W6 threw 0.3 seconds later
+    because the project had no dataset inventory. That left a run stuck at
+    `running`, a red execution, and an alert - none of which is news, because
+    the condition was knowable before anything was started.
+
+    Checked here rather than declared on a form. A form field is answered once,
+    at the beginning, about a state that changes later; this reads the state at
+    the moment the decision is actually made.
+    """
+    if stage_name != "feasibility":
+        return None
+    cur.execute("SELECT 1 FROM dataset WHERE project_id = %s LIMIT 1",
+                (project_id,))
+    if cur.fetchone():
+        return None
+    return ("W6 grades every direction against the data that exists, and this "
+            "project has no field inventory, so there is nothing to grade "
+            "against. Run `python tools/inventory.py <dir>` locally and POST "
+            "/compute/dataset/save, or fill in tools/inventory_template.csv if "
+            "the data is not tidy yet. Then POST /compute/chain/resume. "
+            "Nothing downstream can run either: W7, W8 and W9 all pick their "
+            "directions from this stage's graded board.")
+
+
+def _queue(cur, project_id, stage_name, params):
+    """Create the next run row, parked if the project cannot start it yet.
+
+    Two reasons to park rather than queue: the money has run out, or the stage
+    needs something the project does not have. Both are known here, and finding
+    out later costs a failed execution and a stranded run row.
+
+    The coarse budget question only. The precise one - can *this* stage afford
+    to start - is asked by the stage's own first node, which knows the field
+    size.
     """
     status, note = "pending", None
-    try:
-        b = budget.budget_status(project_id=project_id)
-        if not b["may_start"]:
-            status, note = "paused_budget", b["why"]
-    except Exception as e:                              # noqa: BLE001
-        # A budget lookup that errors must not silently queue the stage anyway.
-        status = "paused_budget"
-        note = f"could not read the budget: {type(e).__name__}: {str(e)[:200]}"
+
+    blocked = missing_precondition(cur, stage_name, project_id)
+    if blocked:
+        # awaiting_review rather than paused_budget: this is waiting for a
+        # person to supply something, which is what that status means, and
+        # /compute/chain/resume already knows how to release it.
+        status, note = "awaiting_review", blocked
+
+    if status == "pending":
+        try:
+            b = budget.budget_status(project_id=project_id)
+            if not b["may_start"]:
+                status, note = "paused_budget", b["why"]
+        except Exception as e:                          # noqa: BLE001
+            # A budget lookup that errors must not silently queue the stage.
+            status = "paused_budget"
+            note = f"could not read the budget: {type(e).__name__}: {str(e)[:200]}"
 
     # Every stage is told which project it is for, whatever else the previous
     # stage handed forward. Without this a stage inherits `{}` and has no way
@@ -321,7 +364,7 @@ def resume(project_id, pause_after=False):
     with connect() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id, stage, status FROM run "
+                "SELECT id, stage, status, finished_at FROM run "
                 "WHERE project_id = %s AND stage = ANY(%s) "
                 "  AND status IN ('awaiting_review','paused_budget') "
                 "ORDER BY finished_at DESC NULLS LAST, started_at DESC LIMIT 1",
@@ -332,6 +375,26 @@ def resume(project_id, pause_after=False):
                         "reason": ("nothing is parked for this project. Either "
                                    "the chain never stopped, or it already "
                                    "resumed - check GET /compute/chain/state.")}
+
+            # Two rows can wear `awaiting_review` and they mean opposite things.
+            # One is a stage that ran, finished, and stopped at its review point.
+            # The other was created parked because a precondition was missing and
+            # has never run at all. Treating the second like the first would mark
+            # the stage done and queue its successor - skipping it entirely,
+            # silently, which is the exact failure the precondition check exists
+            # to prevent. `finished_at` is what tells them apart.
+            if row["status"] == "awaiting_review" and row["finished_at"] is None:
+                still = missing_precondition(cur, row["stage"], project_id)
+                if still:
+                    return {"project_id": str(project_id), "resumed": False,
+                            "stage": row["stage"], "reason": still}
+                cur.execute("UPDATE run SET status = 'pending' WHERE id = %s",
+                            (row["id"],))
+                conn.commit()
+                return {"project_id": str(project_id), "resumed": True,
+                        "stage": row["stage"],
+                        "reason": (f"{row['stage']} was waiting on something "
+                                   "that is now present; it is queued.")}
 
             if row["status"] == "paused_budget":
                 # This row IS the next stage - it was created parked, never
