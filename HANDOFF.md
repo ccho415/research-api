@@ -69,7 +69,36 @@ W6 沒有欄位清單會直接 throw，而 **W7/W8/W9 都從 W6 的分級看板�
 三個選項：把 `tournament` 標成 `pause_after` 讓鏈乾淨地停在 W5B ／
 用公開資料集 ／ 用使用者自己的資料。
 
-#### 使用者提出的需求（2026-09-02，尚未實作）
+#### ✅ 已實作（2026-09-03）：W-DATA、provenance、鏈的前置條件
+
+**W-DATA 資料清單上傳 `aAKjoUwsNypEJHto`**（已發布，`/form/w-data-inventory`）。
+一張表單：專案 id、上傳 `inventory.json` 或填好的範本 CSV、選 pack。
+存完會順手打 `/compute/chain/resume` 把卡住的鏈放行。
+
+**刻意做成獨立工作流而不是塞進 W2**：資料清單通常不是開始文獻檢索時就備好的
+（第一次跑胰臟癌就是這樣），而且之後會想用量測版取代描述版，那需要能再上傳一次。
+W2 只加了一段說明和連結。
+
+`tools/inventory_template.csv` **一列是一個欄位，不是一個病人**。
+範本長得像資料表的話，遲早有人把真的病歷填進去然後上傳。
+
+#### 鏈自己檢查前置條件（這條消掉了一整類失敗）
+
+`chain.missing_precondition` 在建立 run 列**之前**檢查。`feasibility` 需要
+資料清單，沒有就標成 `awaiting_review` 並寫清楚要做什麼。
+
+實際踩過才加的：W5B 跑完 → 鏈排 feasibility → 派工啟動 W6 → **0.3 秒後中斷**，
+留下一列卡在 `running`、一次紅色執行、一則告警。**三樣都不是新聞**，
+那個條件在派工之前就知道了。
+
+**為什麼不是表單欄位**：表單在一開始問一次，問的是一個之後會改變的狀態。
+
+**`resume` 裡有個陷阱**：兩種列都叫 `awaiting_review` 而意思相反——
+一種是跑完停在審閱點，另一種是前置條件不足、**根本沒跑過**。
+照舊邏輯處理第二種會把階段標成 done 並排下一段，**等於安靜地跳過 W6**。
+用 `finished_at` 分辨（沒跑過的是 NULL），而且 `resume` 會重新檢查條件。
+
+#### 使用者提出的需求（2026-09-02，已於 09-03 實作）
 
 > 有時候我會使用公開資料集（這種情形希望你自動幫我去網路上準備好資料清單），
 > 有時候我是用自己的資料（這種情形希望能讓我上傳我的資料清單，格式不限，
@@ -99,14 +128,26 @@ Bash 工具跑在本機，所以：下載 cBioPortal 打包檔 → 解壓 → `i
 分兩種：有實際資料檔就跑 `inventory.py`（目前只吃 csv，xlsx 要加）；
 只有欄位說明就產出 inventory 但 **`missing_rate` / `n_unique` / `range` 必須留 null**。
 
-#### 建議加的東西：`provenance`
+#### `provenance: measured | documented`（已實作）
 
-inventory 現在**沒有欄位記錄「這份是量出來的還是抄來的」**。
-建議加 `provenance: measured | documented`，並讓 W6 在 `documented` 時
-把警語寫進**每一列**——跟現有的 `has_profile` / `has_frame` 完全一樣的做法。
+`inventory.py` 的輸出分兩類，而 W6 大量依賴右邊那一類：
 
-理由一樣：**半年後看分級看板的人只會看到那一列**，警語寫在別的地方等於沒寫。
-小改動，不需要動 API（`inventory.py` 加一個欄位、W6 的 `Collect The Tiers` 加一條 caveat）。
+| 查得到的 | **只能量出來的** |
+|---|---|
+| 欄名、型別、可連結的鍵 | `missing_rate`、`n_unique`、`min`/`max`、`levels`、**列的結構** |
+
+三道防線：
+
+1. **`save_dataset` 拒絕** `documented` 清單帶那五個欄位——出現就代表是編的，
+   或是量測版被標錯了
+2. **W6 明確告訴裁判**手上是哪一種，並要求 `documented` 時不得假設變項完整
+3. **警語寫進每一列的 `power_note`**，跟 `has_profile` / `has_frame` 同一個機制。
+   半年後看板子的人只會看到那一列
+
+外加一道守門：**`documented` 清單不得出現 A 級**。A 級的定義是「這週就能開始
+分析」，而沒有人查證過變項是否有值的時候，那是一個穿著量測外衣的猜測。
+
+`tests/test_dataset_provenance.py` 離線釘住，22 項。
 
 ---
 
