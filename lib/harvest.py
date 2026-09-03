@@ -102,17 +102,57 @@ def resolve_pmcid(pmid=None, doi=None):
     return (rows[0].get("pmcid") if rows else None) or None
 
 
+# Section headings that mean "here is what we did not settle". Matched loosely
+# on purpose: the previous pattern wanted a <title> reading exactly Discussion or
+# Conclusions, so a paper titling its section `Results and Discussion`,
+# `General Discussion`, `DISCUSSION` or `4. Discussion` yielded nothing at all
+# while its full text sat in memory. Losing a paper we already fetched is worse
+# than losing one we cannot reach.
+DISCUSSION_TITLE = re.compile(
+    r"<title>[^<]*\b(discussion|conclusion|concluding|"
+    r"future (work|direction)|limitations?)\b[^<]*</title>", re.I)
+
+# Some journals carry no <title> at all and mark the section with an attribute.
+DISCUSSION_ATTR = re.compile(
+    r'<sec[^>]*sec-type="[^"]*(discussion|conclusion)[^"]*"[^>]*>', re.I)
+
+
+def _strip(xml_fragment):
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", xml_fragment)).strip()
+
+
 def discussion_xml(pmcid):
-    """The Discussion or Conclusions text, or None if there is no full text."""
+    """The Discussion or Conclusions text, or None if there is no full text.
+
+    Two limits used to live here that were ours rather than the literature's: a
+    hard 20,000-character floor on the XML, and a <title> pattern that only
+    matched two exact words. Both silently discarded papers whose full text had
+    already been fetched, which is the expensive half of this job.
+    """
     xml = _get(f"{EPMC}/{pmcid}/fullTextXML", text=True)
-    if not xml or len(xml) < 20000:
+    if not xml:
         return None
+    # A record with no <body> is an abstract-only stub, which is the thing the
+    # old length floor was really trying to catch. Checking for the body says
+    # that directly instead of guessing at it with a byte count - a short but
+    # real full text now survives.
+    if "<body" not in xml.lower():
+        return None
+
     parts = []
-    for m in re.finditer(r"<title>\s*(Discussion|Conclusions?|"
-                         r"Discussion and Conclusions?)\s*</title>(.*?)(?=<sec |</body)",
-                         xml, re.S | re.I):
-        parts.append(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", m.group(2))))
-    return " ".join(parts) or None
+    for m in DISCUSSION_TITLE.finditer(xml):
+        tail = xml[m.end():]
+        stop = re.search(r"<sec[ >]|</body", tail)
+        parts.append(_strip(tail[:stop.start()] if stop else tail))
+
+    if not parts:
+        for m in DISCUSSION_ATTR.finditer(xml):
+            tail = xml[m.end():]
+            stop = re.search(r"</sec>", tail)
+            parts.append(_strip(tail[:stop.start()] if stop else tail))
+
+    text = " ".join(p for p in parts if p)
+    return text or None
 
 
 def gap_sentences(text):
@@ -160,7 +200,8 @@ def rank_title_concepts(papers):
     return sorted(found.values(), key=lambda e: -e["n_papers"])
 
 
-def run_harvest(harvest_id, project_id=None, source_run_id=None, max_papers=200):
+def run_harvest(harvest_id, project_id=None, source_run_id=None, max_papers=200,
+                refetch_missing=False):
     """Do the work and record it. Called in the background, never awaited.
 
     Written to survive being interrupted: every fetched section is committed as
@@ -180,17 +221,33 @@ def run_harvest(harvest_id, project_id=None, source_run_id=None, max_papers=200)
         concepts_ranked = rank_title_concepts(papers)
 
         cached = db.cached_sections([p["id"] for p in papers])
+        if refetch_missing:
+            # A cached NULL means "looked, and there was no retrievable
+            # Discussion" - which was partly a statement about the extractor
+            # rather than about the paper. When that extractor changes, those
+            # NULLs are stale answers, and keeping them would hide the fix
+            # behind the cache that was meant to make the fix cheap.
+            #
+            # Only the NULLs are dropped. Text already fetched is still text.
+            cached = {k: v for k, v in cached.items() if v}
         gaps = []
         n_fulltext = 0
         n_resolved = 0
         n_unidentified = 0
+        # The two ways a paper with an identifier still yields nothing. They were
+        # one number, and that number could not say whether the fix was to look
+        # somewhere else for open access or to stop discarding text we already
+        # had. Those are entirely different pieces of work.
+        n_no_pmcid = 0
+        n_pmcid_no_discussion = 0
+        n_from_abstract = 0
 
         for p in papers:
             pid = p["id"]
+            pmcid = p.get("pmcid")
             if pid in cached:
                 text = cached[pid]          # may be None: known to have no full text
             else:
-                pmcid = p.get("pmcid")
                 looked = bool(pmcid)
                 if not pmcid and (p.get("pmid") or p.get("doi")):
                     looked = True
@@ -202,6 +259,8 @@ def run_harvest(harvest_id, project_id=None, source_run_id=None, max_papers=200)
                         pmcid = None
                     if pmcid:
                         db.save_pmcid(pid, pmcid)
+                    else:
+                        n_no_pmcid += 1
                 text = None
                 if pmcid:
                     try:
@@ -209,6 +268,8 @@ def run_harvest(harvest_id, project_id=None, source_run_id=None, max_papers=200)
                         time.sleep(PAUSE)
                     except Exception:
                         text = None
+                    if not text:
+                        n_pmcid_no_discussion += 1
                 # Only cache the answer when a lookup actually happened. A null
                 # means "looked, and this paper has no retrievable Discussion",
                 # which stops the next harvest paying again. Writing it for a
@@ -220,11 +281,31 @@ def run_harvest(harvest_id, project_id=None, source_run_id=None, max_papers=200)
                 else:
                     n_unidentified += 1
 
+            where = "discussion"
+            if text:
+                n_fulltext += 1
+            else:
+                # Falling back to the abstract, which is already in the cache and
+                # costs nothing to read. Most of this corpus has no open full
+                # text - that is a property of clinical publishing, not of any
+                # API - so without this the majority of papers contribute
+                # nothing at all.
+                #
+                # Tagged rather than mixed in. An abstract's closing "further
+                # studies are warranted" is far more often ritual than a
+                # Discussion's, and whoever reads these next has to be able to
+                # weigh them differently. Silently blending the two would make
+                # the harvest look twice as productive and be worse.
+                text = p.get("abstract")
+                where = "abstract"
+                if text:
+                    n_from_abstract += 1
+
             if not text:
                 continue
-            n_fulltext += 1
             for g in gap_sentences(text):
-                gaps.append({**g, "pmid": p.get("pmid"), "pmcid": p.get("pmcid"),
+                gaps.append({**g, "found_in": where,
+                             "pmid": p.get("pmid"), "pmcid": pmcid,
                              "doi": p.get("doi"), "year": p.get("year"),
                              "title": p.get("title")})
 
@@ -234,11 +315,21 @@ def run_harvest(harvest_id, project_id=None, source_run_id=None, max_papers=200)
             "source": {"project_id": project_id, "source_run_id": source_run_id,
                        "n_papers": len(papers)},
         }
-        # Counted so a harvest that found nothing says which nothing it was:
-        # no identifiers to look up, or identifiers that led to no open access.
-        result["lookup"] = {"n_resolved": n_resolved,
-                            "n_without_identifier": n_unidentified,
-                            "n_with_fulltext": n_fulltext}
+        # Counted so a harvest that found little says which little it was, and
+        # so the next person knows which of two unrelated fixes is worth doing:
+        # look elsewhere for open access, or stop discarding text already held.
+        result["lookup"] = {
+            "n_resolved": n_resolved,
+            "n_without_identifier": n_unidentified,
+            "n_with_fulltext": n_fulltext,
+            "n_no_open_access": n_no_pmcid,
+            "n_fulltext_but_no_discussion": n_pmcid_no_discussion,
+            "n_fell_back_to_abstract": n_from_abstract,
+        }
+        result["gaps_by_source"] = {
+            "discussion": sum(1 for g in gaps if g.get("found_in") == "discussion"),
+            "abstract": sum(1 for g in gaps if g.get("found_in") == "abstract"),
+        }
         db.finish_harvest(harvest_id, result=result, counts={
             "n_papers": len(papers), "n_with_fulltext": n_fulltext,
             "n_gap_sentences": len(gaps), "n_concepts": len(concepts_ranked)})

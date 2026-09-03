@@ -516,6 +516,10 @@ class HarvestStartIn(BaseModel):
     project_id: Optional[str] = None
     source_run_id: Optional[str] = None
     max_papers: int = 200
+    # Set this after changing how full text is extracted. A cached NULL says
+    # "looked, nothing retrievable", which was partly a claim about the
+    # extractor - so a better extractor never runs unless the NULLs are ignored.
+    refetch_missing: bool = False
 
 
 @app.post("/compute/harvest/start")
@@ -542,7 +546,8 @@ def harvest_start(body: HarvestStartIn, background: BackgroundTasks,
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
     background.add_task(harvest.run_harvest, started["harvest_id"],
-                        body.project_id, body.source_run_id, body.max_papers)
+                        body.project_id, body.source_run_id, body.max_papers,
+                        body.refetch_missing)
     return {**started, "status": "running",
             "poll": f"/compute/harvest/{started['harvest_id']}"}
 

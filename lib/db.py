@@ -709,7 +709,11 @@ def papers_for(project_id=None, source_run_id=None, limit=300):
 
     with connect() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT DISTINCT p.id, p.pmid, p.pmcid, p.doi, p.title, p.year "
+            # `abstract` is here because most of this corpus has no open full
+            # text, and the harvest falls back to mining the abstract for the
+            # papers that do not. It is already stored, so this costs one column.
+            "SELECT DISTINCT p.id, p.pmid, p.pmcid, p.doi, p.title, p.year, "
+            "       p.abstract "
             "FROM paper p "
             "JOIN search_hit h ON h.paper_id = p.id "
             "JOIN search_query q ON q.id = h.search_query_id "
