@@ -238,22 +238,41 @@ def advance(project_id=None, stage=None, ok=True, error=None, params=None,
             # stage started by hand from its own form has no row, so one is
             # written retroactively - otherwise a manually re-run stage would
             # leave a hole in the chain's history and look like it never ran.
+            # What this stage wants to hand forward is kept on its own row, not
+            # only passed along. When the chain parks at a review point there is
+            # no next stage to queue yet, so without this the handoff is dropped
+            # on the floor and `resume` - which runs minutes or days later -
+            # queues the next stage knowing only the project id.
+            #
+            # That is not a small loss. W6 works out which tiers are worth
+            # looking at and passes `tiers`; lose it and W7 falls back to its
+            # default A,B, which on a project with no data selects almost
+            # nothing. The chain would carry on looking healthy while quietly
+            # skipping ten of eleven directions.
+            handoff = Jsonb(dict(params or {})) if params else None
+
             cur.execute(
-                "UPDATE run SET status = %s, error = %s, finished_at = now() "
+                "UPDATE run SET status = %s, error = %s, finished_at = now(),"
+                "               params = COALESCE(params,'{}'::jsonb)"
+                "                        || jsonb_build_object('handoff',"
+                "                               COALESCE(%s,'null'::jsonb)) "
                 "WHERE id = (SELECT id FROM run WHERE project_id = %s "
                 "            AND stage = %s AND status = ANY(%s) "
                 "            ORDER BY started_at DESC NULLS LAST LIMIT 1) "
                 "RETURNING id",
-                (finished_status, error, project_id, stage, ACTIVE))
+                (finished_status, error, handoff, project_id, stage, ACTIVE))
             row = cur.fetchone()
             if row:
                 finished_run = str(row["id"])
             else:
                 cur.execute(
-                    "INSERT INTO run (project_id, stage, status, error,"
+                    "INSERT INTO run (project_id, stage, status, error, params,"
                     "                 started_at, finished_at) "
-                    "VALUES (%s,%s,%s,%s, now(), now()) RETURNING id",
-                    (project_id, stage, finished_status, error))
+                    "VALUES (%s,%s,%s,%s,"
+                    "        jsonb_build_object('handoff',"
+                    "            COALESCE(%s,'null'::jsonb)), now(), now()) "
+                    "RETURNING id",
+                    (project_id, stage, finished_status, error, handoff))
                 finished_run = str(cur.fetchone()["id"])
 
             queued_id, queued_status, note = (None, None, None)
@@ -391,7 +410,7 @@ def resume(project_id, pause_after=False):
     with connect() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id, stage, status, finished_at FROM run "
+                "SELECT id, stage, status, finished_at, params FROM run "
                 "WHERE project_id = %s AND stage = ANY(%s) "
                 "  AND status IN ('awaiting_review','paused_budget') "
                 "ORDER BY finished_at DESC NULLS LAST, started_at DESC LIMIT 1",
@@ -449,9 +468,20 @@ def resume(project_id, pause_after=False):
                 return {"project_id": str(project_id), "resumed": True,
                         "stage": row["stage"], "next_stage": None,
                         "reason": "that was the last stage; the chain is complete."}
+            # What the finished stage asked to hand forward, kept on its row by
+            # `advance` for exactly this moment. Releasing a review point is the
+            # one transition where the handoff has to survive a gap of minutes
+            # or days, and passing only the project id here silently undid the
+            # work the stage did to decide what the next one should look at.
+            handoff = ((row.get("params") or {}).get("handoff")) or {}
+            if not isinstance(handoff, dict):
+                handoff = {}
+            forward = dict(handoff)
+            forward["project_id"] = str(project_id)
+
             try:
                 queued_id, queued_status, note = _queue(
-                    cur, project_id, nxt.name, {"project_id": str(project_id)})
+                    cur, project_id, nxt.name, forward)
             except psycopg.errors.UniqueViolation:
                 conn.rollback()
                 return {"project_id": str(project_id), "resumed": False,
@@ -461,7 +491,12 @@ def resume(project_id, pause_after=False):
     return {"project_id": str(project_id), "resumed": True,
             "stage": row["stage"], "next_stage": nxt.name,
             "next_label": nxt.label, "queued_run": queued_id,
-            "queued_status": queued_status, "note": note}
+            "queued_status": queued_status, "note": note,
+            # Reported so that a handoff going missing is visible here rather
+            # than only in the next stage's behaviour, where it looks like the
+            # stage found nothing rather than like it was told nothing.
+            "carried_forward": {k: v for k, v in forward.items()
+                                if k != "project_id"} or None}
 
 
 def start(project_id, stage="dedup", params=None):
