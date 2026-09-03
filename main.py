@@ -1422,6 +1422,32 @@ def chain_resume(body: ChainResumeIn, x_api_key: Optional[str] = Header(None)):
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+class ChainStopIn(BaseModel):
+    project_id: str
+    reason: Optional[str] = None
+
+
+@app.post("/compute/chain/stop")
+def chain_stop(body: ChainStopIn, x_api_key: Optional[str] = Header(None)):
+    """End a chain deliberately, so it stops looking like one that got stuck.
+
+    A project with no data can never pass feasibility, and W7, W8 and W9 all
+    pick their directions from that stage's graded board - so the honest end of
+    such a chain is the tournament ranking, which is a real result rather than
+    a failure. Left alone it would sit at `awaiting_review`, which is exactly
+    what a chain waiting on a person also looks like, and those two states call
+    for opposite actions.
+    """
+    check_key(x_api_key)
+    import chain
+    try:
+        return chain.stop(body.project_id, body.reason)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 class ChainPauseIn(BaseModel):
     project_id: str
     stage: str

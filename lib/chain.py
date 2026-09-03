@@ -354,6 +354,40 @@ def state(project_id):
                      "not been started") if parked is None else None}
 
 
+def stop(project_id, reason=None):
+    """End a chain on purpose, so it stops looking like one that got stuck.
+
+    A project with no data can never pass `feasibility`, and everything after it
+    reads that stage's graded board - so the honest end of such a chain is the
+    tournament ranking. Without this the run sits at `awaiting_review` for ever,
+    which is the same thing a chain waiting on a person looks like. Somebody
+    reading the board in three months cannot tell "nobody got round to it" from
+    "this was the end, deliberately", and those call for opposite actions.
+
+    Whatever is parked or queued is closed as `stopped`; finished stages are
+    left alone, because they did happen.
+    """
+    why = (reason or "").strip() or "stopped by hand"
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE run SET status = 'stopped', finished_at = now(),"
+                "               error = %s "
+                "WHERE project_id = %s AND stage = ANY(%s) "
+                "  AND status IN ('pending','running','awaiting_review',"
+                "                 'paused_budget') "
+                "RETURNING stage",
+                (f"chain stopped: {why}", project_id, STAGE_NAMES))
+            closed = [r["stage"] for r in cur.fetchall()]
+        conn.commit()
+
+    return {"project_id": str(project_id), "stopped": True,
+            "closed_stages": closed, "reason": why,
+            "note": ("nothing further will be dispatched for this project. "
+                     "POST /compute/chain/start to begin again from any stage "
+                     "once whatever was missing is in place.")}
+
+
 def resume(project_id, pause_after=False):
     """Unpark a chain that stopped at a review point or ran out of money.
 

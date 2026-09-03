@@ -1,4 +1,4 @@
-file,column,dtype,personal,joins_on,description
+﻿file,column,dtype,personal,joins_on,description
 clinical.csv,patient_id,string,yes,,每位病人的識別碼；用來跟變異表串接
 clinical.csv,os_months,number,no,,從診斷到死亡或最後追蹤的月數
 clinical.csv,vital_status,category,no,,存活狀態：alive / dead
