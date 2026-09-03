@@ -149,30 +149,23 @@ def decide_next(stage, ok=True, pause_after=None):
 def missing_precondition(cur, stage_name, project_id):
     """What this stage needs that the project does not have yet, or None.
 
-    Dispatching a stage that is certain to fail is worse than not dispatching
-    it. Observed on the first real chain: W5B finished, the chain queued
-    feasibility, the dispatcher started W6, and W6 threw 0.3 seconds later
-    because the project had no dataset inventory. That left a run stuck at
-    `running`, a red execution, and an alert - none of which is news, because
-    the condition was knowable before anything was started.
+    Nothing blocks on a missing dataset any more. W6 used to throw when a
+    project had no field inventory, so the chain refused to dispatch it; W6 now
+    switches question instead - from "can this be done with what you have" to
+    "what would it take to do this at all" - which is the more useful answer for
+    somebody who has not collected anything yet, because it says what to go and
+    get. Blocking here would take that away.
 
-    Checked here rather than declared on a form. A form field is answered once,
-    at the beginning, about a state that changes later; this reads the state at
-    the moment the decision is actually made.
+    Kept as the place stage preconditions go. It exists because dispatching a
+    stage that is certain to fail is worse than not dispatching it: the first
+    real chain queued feasibility, started W6, and W6 threw 0.3 seconds later,
+    leaving a run stuck at `running`, a red execution and an alert - none of it
+    news, because the condition was knowable beforehand. The next stage that
+    genuinely cannot start without something belongs here rather than in a form
+    field, because a form is answered once at the beginning about a state that
+    changes later.
     """
-    if stage_name != "feasibility":
-        return None
-    cur.execute("SELECT 1 FROM dataset WHERE project_id = %s LIMIT 1",
-                (project_id,))
-    if cur.fetchone():
-        return None
-    return ("W6 grades every direction against the data that exists, and this "
-            "project has no field inventory, so there is nothing to grade "
-            "against. Run `python tools/inventory.py <dir>` locally and POST "
-            "/compute/dataset/save, or fill in tools/inventory_template.csv if "
-            "the data is not tidy yet. Then POST /compute/chain/resume. "
-            "Nothing downstream can run either: W7, W8 and W9 all pick their "
-            "directions from this stage's graded board.")
+    return None
 
 
 def _queue(cur, project_id, stage_name, params):
