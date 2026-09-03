@@ -1,0 +1,11 @@
+file,column,dtype,personal,joins_on,description
+clinical.csv,patient_id,string,yes,,每位病人的識別碼；用來跟變異表串接
+clinical.csv,os_months,number,no,,從診斷到死亡或最後追蹤的月數
+clinical.csv,vital_status,category,no,,存活狀態：alive / dead
+clinical.csv,stage,category,no,,診斷時分期
+clinical.csv,regimen,category,no,,一線治療方案
+clinical.csv,surgery_date,date,yes,,手術日期
+variants.tsv,Tumor_Sample_Barcode,string,yes,clinical.csv:patient_id,對應到臨床表的檢體識別碼
+variants.tsv,Hugo_Symbol,string,no,,基因符號，例如 KRAS
+variants.tsv,Variant_Classification,category,no,,變異類型，例如 Missense_Mutation
+variants.tsv,HGVSp_Short,string,no,,蛋白質層次的變異寫法，例如 p.G12D

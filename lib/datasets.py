@@ -19,6 +19,23 @@ from db import connect
 TIERS = ("A", "B", "C", "D")
 
 
+# Where an inventory's numbers came from. `measured` means tools/inventory.py
+# read the file and counted; `documented` means a person described their data
+# without it being profiled.
+#
+# The distinction exists because W6 leans hard on the measured fields - it is
+# told to judge structure separately from variables and to name row counts in
+# its power note - and a described inventory has none of them. Without a marker
+# the two are indistinguishable downstream, and a tier A produced from a guess
+# reads exactly like one produced from a measurement.
+PROVENANCE = ("measured", "documented")
+
+# Per-column facts that can only come from reading the data. A documented
+# inventory that carries them is either a guess wearing a measurement's clothes
+# or a profiled inventory mislabelled; both are worth refusing over.
+MEASURED_ONLY = ("missing_rate", "n_unique", "levels", "min", "max")
+
+
 def save_dataset(project_id, inventory, filename=None, pack=None):
     """Store a field inventory. Refuses anything carrying rows.
 
@@ -35,6 +52,14 @@ def save_dataset(project_id, inventory, filename=None, pack=None):
                 f"inventory carries a `{banned}` key, which is where raw rows "
                 "would be. Upload what tools/inventory.py produced, unedited.")
 
+    # Absent means measured: every inventory written before this field existed
+    # came out of the local profiler.
+    provenance = str(inventory.get("provenance") or "measured").strip().lower()
+    if provenance not in PROVENANCE:
+        raise ValueError(f"provenance must be one of {list(PROVENANCE)}, "
+                         f"not `{provenance}`")
+    inventory["provenance"] = provenance
+
     files = inventory.get("files") or []
     pii = []
     for f in files:
@@ -50,6 +75,16 @@ def save_dataset(project_id, inventory, filename=None, pack=None):
                     f"column `{c.get('name')}` is flagged personal but still "
                     "carries levels or a range. Re-run tools/inventory.py "
                     "rather than editing its output.")
+            if provenance == "documented":
+                carried = [k for k in MEASURED_ONLY if c.get(k) is not None]
+                if carried:
+                    raise ValueError(
+                        f"column `{c.get('name')}` is in a `documented` "
+                        f"inventory but carries {carried}, which can only come "
+                        "from reading the data. Either run tools/inventory.py "
+                        "and upload that as `measured`, or drop those fields - "
+                        "an honest gap is worth more here than a filled-in "
+                        "guess, because the grader cannot tell them apart.")
 
     with connect() as conn:
         with conn.cursor() as cur:
@@ -67,6 +102,16 @@ def save_dataset(project_id, inventory, filename=None, pack=None):
             "n_files": len(files),
             "n_columns": sum(len(f.get("columns") or []) for f in files),
             "n_personal_columns": len(pii),
+            "provenance": provenance,
+            # Said out loud on the way in as well as on the way out. Somebody
+            # uploading a described inventory should be told, at that moment,
+            # that every tier built on it will carry the caveat - not discover
+            # it later from a report.
+            "note": None if provenance == "measured" else
+                    ("stored as `documented`: nobody profiled this data, so "
+                     "missing rates, distinct counts and ranges are unknown. "
+                     "Every feasibility tier built on it will say so. Run "
+                     "tools/inventory.py and upload that to replace it."),
             "profiled_at": row["profiled_at"].isoformat()}
 
 
