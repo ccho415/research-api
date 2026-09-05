@@ -400,12 +400,20 @@ def stop(project_id, reason=None):
                      "once whatever was missing is in place.")}
 
 
-def resume(project_id, pause_after=False):
+def resume(project_id, pause_after=False, params=None):
     """Unpark a chain that stopped at a review point or ran out of money.
 
     This is what the review interfaces will call once they exist. Until then it
     is called by hand - which is clunky, but it is honest: the alternative was
     running past the review points without telling anyone.
+
+    `params` overrides what the finished stage handed forward. A review point is
+    exactly where somebody learns something that should change the next stage:
+    you read the graded board and only then know how many directions are worth
+    verifying, or how many debate rounds the remaining budget will take. Without
+    this the only way to adjust was to bypass `resume` entirely with a fresh
+    `start`, which leaves the reviewed stage parked for ever and makes
+    `chain/state` say the chain is waiting when it has already moved on.
     """
     with connect() as conn:
         with conn.cursor() as cur:
@@ -477,6 +485,12 @@ def resume(project_id, pause_after=False):
             if not isinstance(handoff, dict):
                 handoff = {}
             forward = dict(handoff)
+            # Merged over the handoff rather than replacing it: the reviewer is
+            # changing one or two things they just learned about, not restating
+            # everything the finished stage worked out. Passing `{"max_ideas":3}`
+            # must not silently drop the `tiers` W6 spent a model call deciding.
+            forward.update({k: v for k, v in (params or {}).items()
+                            if v is not None})
             forward["project_id"] = str(project_id)
 
             try:

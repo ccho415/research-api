@@ -1402,6 +1402,11 @@ def chain_start(body: ChainStartIn, x_api_key: Optional[str] = Header(None)):
 
 class ChainResumeIn(BaseModel):
     project_id: str
+    # Merged over what the reviewed stage handed forward. A review point is
+    # where somebody learns the thing that should change the next stage - how
+    # many directions are worth verifying, how many debate rounds the budget
+    # will take - so it is the one place adjusting parameters is most needed.
+    params: Optional[dict] = None
 
 
 @app.post("/compute/chain/resume")
@@ -1415,7 +1420,7 @@ def chain_resume(body: ChainResumeIn, x_api_key: Optional[str] = Header(None)):
     check_key(x_api_key)
     import chain
     try:
-        return chain.resume(body.project_id)
+        return chain.resume(body.project_id, params=body.params)
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:
