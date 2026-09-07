@@ -197,8 +197,15 @@ def project_progress(project_id):
                      "n_with_fulltext": int(hv["n_with_fulltext"] or 0),
                      "n_gap_sentences": int(hv["n_gap_sentences"] or 0)}
                     if hv else {}),
-        "frame": ({"q1": frame.get("q1"), "q2": frame.get("q2"),
-                   "q3": frame.get("q3"),
+        # The three routing answers live under `routing` and are long prose -
+        # the wrong thing for a one-line row. What that row wants is the
+        # decision itself, which reads as "observational + measurement +
+        # clinical". `second_pack_forced` is kept because a frame that was
+        # forced to load a second paradigm pack is the interesting case: Q2
+        # found something else that also has to hold.
+        "frame": ({"paradigms": frame.get("paradigms") or [],
+                   "field": frame.get("field"),
+                   "confidence": frame.get("confidence"),
                    "second_pack_forced": frame.get("second_pack_forced")}
                   if isinstance(frame, dict) else {}),
         "ideas": {"n_ideas": n_ideas},

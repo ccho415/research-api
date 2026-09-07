@@ -42,7 +42,9 @@ def check(name, got, want):
 FULL_DETAIL = {
     "literature": {"n_queries": 10, "n_papers": 200},
     "harvest": {"n_papers": 200, "n_with_fulltext": 69, "n_gap_sentences": 112},
-    "frame": {"q1": "computational", "q2": "observational"},
+    "frame": {"paradigms": ["observational", "measurement"],
+              "field": "clinical", "confidence": "high",
+              "second_pack_forced": True},
     "ideas": {"n_ideas": 15},
     "dedup": {"n_pairs": 20, "n_duplicates": 0, "n_overridden_by_hand": 0},
     "tournament": {"tournament_id": "t1", "n_matches": 283, "n_undecided": 3,
@@ -103,6 +105,17 @@ r = {s["key"]: s for s in progress.build_steps(
                                  "finished_at": None}}, True, "done")}
 check("done is carried through", r["dedup"]["status"], "done")
 check("running is carried through", r["tournament"]["status"], "running")
+
+print("\n-- the frame row carries the decision, not the reasoning --")
+# The three routing answers are long prose nested under `routing`; the row
+# wants the decision, which reads as "observational + measurement + clinical".
+check("paradigms", by_key["frame"]["detail"]["paradigms"],
+      ["observational", "measurement"])
+check("field", by_key["frame"]["detail"]["field"], "clinical")
+check("a forced second pack is visible",
+      by_key["frame"]["detail"]["second_pack_forced"], True)
+check("no q1/q2/q3 prose on the row",
+      "q1" in by_key["frame"]["detail"], False)
 
 print("\n-- the numbers travel with their denominators --")
 check("full text keeps both",
