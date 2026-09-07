@@ -73,9 +73,11 @@ state, parked = db._chain_state_of(run(dedup=DONE,
 check("state", state, "awaiting_you")
 check("keeps the raw status", parked["status"], "paused_budget")
 
-print("\n-- when two stages are parked the earlier one in the chain wins --")
+print("\n-- when two stages look parked, the live one is the LAST of them --")
+# Reaching the debate at all means feasibility was released, so the earlier
+# park is a leftover row rather than a second thing waiting on the user.
 _, p = db._chain_state_of(run(feasibility=PARK, debate=PARK))
-check("feasibility comes before debate", p["stage"], "feasibility")
+check("debate, not feasibility", p["stage"], "debate")
 
 print("\n-- moving beats everything that is only information --")
 check("pending counts as running",
@@ -101,9 +103,30 @@ check("stopped is not failed",
       db._chain_state_of(run(tournament=("stopped", None)))[0] == "failed",
       False)
 
-print("\n-- a park is never hidden behind a stage that also moved --")
-check("parked wins over a done stage",
+print("\n-- a park is not hidden by a stage that ran BEFORE it --")
+check("parked wins over an earlier done stage",
       db._chain_state_of(run(dedup=DONE, feasibility=PARK))[0], "awaiting_you")
+
+# The live database really is in this shape. That project was advanced with
+# chain/start, which queues the next stage without touching the parked row, so
+# the park at feasibility outlived the whole rest of the chain. Reading the
+# park alone would keep a finished project on the "waiting for you" list for
+# ever, and that list is only worth opening if everything on it is real.
+print("\n-- a park with activity AFTER it is history, not a job --")
+finished = run(dedup=DONE, tournament=DONE, feasibility=PARK,
+               novelty=DONE, debate=("running", None), report=DONE)
+state, parked = db._chain_state_of(finished)
+check("not awaiting_you", state == "awaiting_you", False)
+check("nothing is offered as parked", parked, None)
+check("the stale running row is what it falls through to", state, "running")
+
+print("\n-- but a park with nothing after it still counts --")
+check("still awaiting_you",
+      db._chain_state_of(run(dedup=DONE, tournament=DONE,
+                             feasibility=PARK))[0], "awaiting_you")
+check("later stage merely queued also clears the park",
+      db._chain_state_of(run(feasibility=PARK,
+                             novelty=("pending", None)))[0], "running")
 
 print()
 if fails:

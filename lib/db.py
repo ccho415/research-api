@@ -841,10 +841,16 @@ def _chain_state_of(stages):
 
     Precedence matters and is not arbitrary. Parked comes first because it is
     the only state that is waiting on the person reading the list - everything
-    else is information, that one is a job. `running` and parked cannot both be
-    true in practice: `resume` flips the parked row itself to `pending` rather
-    than leaving it behind, so a released chain stops looking parked the moment
-    it moves.
+    else is information, that one is a job.
+
+    **But a park with activity after it is history, not a job.** `resume`
+    flips the parked row itself to `pending`, so in theory a released chain
+    stops looking parked the moment it moves. In practice the live database
+    has a project parked at feasibility whose novelty, debate and report all
+    ran afterwards: that chain was advanced with `chain/start`, which queues
+    the next stage without ever touching the parked row. Trusting the park
+    alone would put a finished project on the "waiting for you" list forever,
+    and that list is only worth reading if everything on it is real.
 
     `stopped` is deliberately not `failed`. A chain somebody ended on purpose
     and a chain that broke need different reactions, and collapsing them makes
@@ -855,9 +861,12 @@ def _chain_state_of(stages):
     if not stages:
         return "not_started", None
 
-    for s in chain.STAGE_PLAN:
+    order = [s.name for s in chain.STAGE_PLAN]
+    for i, s in enumerate(chain.STAGE_PLAN):
         r = stages.get(s.name)
         if r and r["status"] in ("awaiting_review", "paused_budget"):
+            if any(stages.get(n) for n in order[i + 1:]):
+                continue
             return "awaiting_you", {
                 "stage": s.name, "label": s.label, "review_point": s.review,
                 "status": r["status"],
