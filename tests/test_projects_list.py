@@ -73,10 +73,11 @@ state, parked = db._chain_state_of(run(dedup=DONE,
 check("state", state, "awaiting_you")
 check("keeps the raw status", parked["status"], "paused_budget")
 
-print("\n-- when two stages look parked, the live one is the LAST of them --")
+print("\n-- when two stages look parked, the live one is the LATER of them --")
 # Reaching the debate at all means feasibility was released, so the earlier
 # park is a leftover row rather than a second thing waiting on the user.
-_, p = db._chain_state_of(run(feasibility=PARK, debate=PARK))
+_, p = db._chain_state_of(run(feasibility=("awaiting_review", "2026-09-03T13:31:39"),
+                              debate=("awaiting_review", "2026-09-07T13:35:45")))
 check("debate, not feasibility", p["stage"], "debate")
 
 print("\n-- moving beats everything that is only information --")
@@ -112,13 +113,30 @@ check("parked wins over an earlier done stage",
 # the park at feasibility outlived the whole rest of the chain. Reading the
 # park alone would keep a finished project on the "waiting for you" list for
 # ever, and that list is only worth opening if everything on it is real.
-print("\n-- a park with activity AFTER it is history, not a job --")
-finished = run(dedup=DONE, tournament=DONE, feasibility=PARK,
-               novelty=DONE, debate=("running", None), report=DONE)
+print("\n-- a park with activity AFTER IT IN TIME is history, not a job --")
+finished = run(dedup=DONE, tournament=DONE,
+               feasibility=("awaiting_review", "2026-09-03T13:31:39"),
+               novelty=("done", "2026-09-05T10:45:18"),
+               debate=("running", None),
+               report=("done", "2026-09-05T11:11:59"))
 state, parked = db._chain_state_of(finished)
 check("not awaiting_you", state == "awaiting_you", False)
 check("nothing is offered as parked", parked, None)
 check("the stale running row is what it falls through to", state, "running")
+
+# The half-hour-old version of this rule went by position alone and got this
+# backwards on a real run: a debate parked today was dismissed because a
+# report row sits after it in the chain - a report written two days earlier.
+print("\n-- a LATER stage that finished EARLIER does not stale a park --")
+reparked = run(dedup=DONE, tournament=DONE,
+               feasibility=("stopped", "2026-09-07T13:31:12"),
+               novelty=("done", "2026-09-05T10:45:18"),
+               debate=("awaiting_review", "2026-09-07T13:35:45"),
+               report=("done", "2026-09-05T11:11:59"))
+state, parked = db._chain_state_of(reparked)
+check("awaiting_you", state, "awaiting_you")
+check("and it is the debate", parked["stage"], "debate")
+check("named as review ④", parked["review_point"], "④")
 
 print("\n-- but a park with nothing after it still counts --")
 check("still awaiting_you",

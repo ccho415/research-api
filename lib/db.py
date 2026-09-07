@@ -833,6 +833,47 @@ def get_harvest(harvest_id=None, project_id=None, include_result=True):
     return d
 
 
+def list_health_metrics(project_id=None, run_id=None):
+    """The measured health numbers, which until now nothing could read back.
+
+    They were being written from the first week - reuse rate, within-run
+    overlap, the tournament's order-flip rate - and there was no way to get
+    them out again. A number that is recorded and never readable is a number
+    that gets quietly recomputed somewhere else, differently.
+
+    Grouped by metric with the newest first, because what a reader wants is
+    "what is the flip rate now, and was it always that" rather than a flat
+    log of every insert.
+    """
+    where, args = [], []
+    if run_id:
+        where.append("h.run_id = %s")
+        args.append(run_id)
+    if project_id:
+        where.append("r.project_id = %s")
+        args.append(project_id)
+    if not where:
+        raise ValueError("need project_id or run_id")
+
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT h.metric, h.value, h.recorded_at, h.run_id, r.stage "
+            "FROM health_metric h LEFT JOIN run r ON r.id = h.run_id "
+            "WHERE " + " AND ".join(where) + " "
+            "ORDER BY h.metric, h.recorded_at DESC", args)
+        by_metric = {}
+        for r in cur.fetchall():
+            by_metric.setdefault(r["metric"], []).append({
+                "value": None if r["value"] is None else float(r["value"]),
+                "stage": r["stage"],
+                "run_id": None if r["run_id"] is None else str(r["run_id"]),
+                "recorded_at": r["recorded_at"].isoformat()})
+
+    return {"n_metrics": len(by_metric),
+            "latest": {k: v[0]["value"] for k, v in by_metric.items()},
+            "metrics": by_metric}
+
+
 def _chain_state_of(stages):
     """Where one project's chain stands, from its latest run per stage.
 
@@ -843,14 +884,21 @@ def _chain_state_of(stages):
     the only state that is waiting on the person reading the list - everything
     else is information, that one is a job.
 
-    **But a park with activity after it is history, not a job.** `resume`
-    flips the parked row itself to `pending`, so in theory a released chain
-    stops looking parked the moment it moves. In practice the live database
-    has a project parked at feasibility whose novelty, debate and report all
-    ran afterwards: that chain was advanced with `chain/start`, which queues
-    the next stage without ever touching the parked row. Trusting the park
-    alone would put a finished project on the "waiting for you" list forever,
-    and that list is only worth reading if everything on it is real.
+    **But a park with LATER activity after it is history, not a job.**
+    `resume` flips the parked row itself to `pending`, so in theory a released
+    chain stops looking parked the moment it moves. In practice the live
+    database had a project parked at feasibility whose novelty, debate and
+    report all ran afterwards: that chain was advanced with `chain/start`,
+    which queues the next stage without ever touching the parked row. Trusting
+    the park alone would put a finished project on the "waiting for you" list
+    forever, and that list is only worth reading if everything on it is real.
+
+    **Later means later in time, not merely further down the chain.** Judging
+    it by position alone was wrong, and a real run proved it within the hour:
+    a re-run debate parked at review ④ was dismissed as stale because a report
+    row sat after it in the chain - a report written two days *earlier*. The
+    system said `done` while it was in fact waiting for a person, which is
+    this function's own failure mode pointing the other way.
 
     `stopped` is deliberately not `failed`. A chain somebody ended on purpose
     and a chain that broke need different reactions, and collapsing them makes
@@ -862,10 +910,29 @@ def _chain_state_of(stages):
         return "not_started", None
 
     order = [s.name for s in chain.STAGE_PLAN]
+
+    def moved_on_after(i, parked_at):
+        """Did a stage further down the chain do anything after this park?"""
+        for n in order[i + 1:]:
+            later = stages.get(n)
+            if not later:
+                continue
+            # Queued or running is current by definition: it cannot have
+            # started before a park that is still holding the chain up.
+            if later["status"] in ("pending", "running"):
+                return True
+            f = later.get("finished_at")
+            # No timestamp on one side leaves the two unorderable. Treated as
+            # later, which is the old behaviour, and keeps rows written before
+            # finished_at was set reliably from resurrecting as false alarms.
+            if f and (not parked_at or f > parked_at):
+                return True
+        return False
+
     for i, s in enumerate(chain.STAGE_PLAN):
         r = stages.get(s.name)
         if r and r["status"] in ("awaiting_review", "paused_budget"):
-            if any(stages.get(n) for n in order[i + 1:]):
+            if moved_on_after(i, r.get("finished_at")):
                 continue
             return "awaiting_you", {
                 "stage": s.name, "label": s.label, "review_point": s.review,

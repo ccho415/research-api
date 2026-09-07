@@ -502,4 +502,57 @@ def get_debate(idea_id):
             if rid in by_id:
                 by_id[rid]["objections"].append(d)
 
-    return {"idea_id": str(idea_id), "n_rounds": len(rounds), "rounds": rounds}
+    # The thresholds travel with the transcript. A screen showing "drift 0.62"
+    # has to show what it is being compared against, and the alternative was
+    # the frontend hard-coding 0.5 - a second copy of a policy number that
+    # does not error when it drifts from this one, it just quietly disagrees.
+    return {"idea_id": str(idea_id), "n_rounds": len(rounds), "rounds": rounds,
+            "drift_max": DRIFT_MAX, "max_rounds": MAX_ROUNDS}
+
+
+def list_debates(project_id):
+    """Every direction in this project that was actually debated.
+
+    The transcript endpoint takes one idea at a time, which left the screen
+    with no way to know how many tabs to open. Worse, it left it unable to
+    show the one thing the review point exists to expose: a direction that was
+    selected and then never argued with. W8's own gate catches that at run
+    time, but the gate output lives in an execution log and the screen does
+    not read execution logs.
+
+    Ordered by tournament rank, like every other list of directions here, so
+    the tabs are in the same order as the board the reader just came from.
+    """
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT i.id AS idea_id, i.code, i.title,"
+            "       count(d.id) AS n_rounds,"
+            "       max(d.round_no) AS last_round,"
+            "       bool_or(d.terminated) AS terminated,"
+            "       (SELECT r2.drift_from_original FROM debate_round r2"
+            "         WHERE r2.idea_id = i.id"
+            "         ORDER BY r2.round_no DESC LIMIT 1) AS drift,"
+            "       (SELECT r3.n_objections_open FROM debate_round r3"
+            "         WHERE r3.idea_id = i.id"
+            "         ORDER BY r3.round_no DESC LIMIT 1) AS n_objections_open,"
+            "       (SELECT r4.termination_reason FROM debate_round r4"
+            "         WHERE r4.idea_id = i.id"
+            "         ORDER BY r4.round_no DESC LIMIT 1) AS termination_reason,"
+            "       (SELECT rk.rank FROM ranking rk"
+            "          JOIN tournament t ON t.id = rk.tournament_id"
+            "         WHERE rk.idea_id = i.id AND t.project_id = i.project_id"
+            "         ORDER BY t.created_at DESC LIMIT 1) AS rank "
+            "FROM idea i JOIN debate_round d ON d.idea_id = i.id "
+            "WHERE i.project_id = %s "
+            "GROUP BY i.id, i.code, i.title "
+            "ORDER BY rank NULLS LAST, i.code", (project_id,))
+        rows = []
+        for r in cur.fetchall():
+            d = dict(r)
+            d["idea_id"] = str(d["idea_id"])
+            d["drift"] = None if d["drift"] is None else float(d["drift"])
+            rows.append(d)
+
+    return {"project_id": str(project_id), "n_debated": len(rows),
+            "drift_max": DRIFT_MAX, "max_rounds": MAX_ROUNDS,
+            "debates": rows}

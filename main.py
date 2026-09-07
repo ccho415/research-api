@@ -11,7 +11,7 @@ import tempfile
 from typing import Any, Dict, List, Optional
 
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
 
@@ -1237,6 +1237,76 @@ def report_get(idea_id: Optional[str] = None, report_id: Optional[str] = None,
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+@app.get("/compute/report/export")
+def report_export(report_id: Optional[str] = None, idea_id: Optional[str] = None,
+                  format: str = "markdown",
+                  x_api_key: Optional[str] = Header(None)):
+    """The report as a file. `format` is `markdown` or `pdf`.
+
+    A report that can only be read inside the tool it was made in is one
+    nobody circulates, and circulating it is the point.
+
+    The caveats and the acquisition list travel with it. They are the two
+    things most likely to be lost when a report is copied elsewhere, and the
+    two that decide how much of it to believe: eight sections without "what
+    this does not cover" read as finished work rather than partial work.
+    """
+    check_key(x_api_key)
+    import exporting
+    import report as report_lib
+    try:
+        got = report_lib.get_report(idea_id, report_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    rep = got.get("report")
+    if not rep:
+        raise HTTPException(404, "no such report")
+
+    stem = "report-" + str(rep.get("id") or "")[:8]
+    fmt = (format or "markdown").strip().lower()
+    if fmt in ("md", "markdown"):
+        return Response(
+            content=exporting.to_markdown(rep),
+            media_type="text/markdown; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{stem}.md"'})
+    if fmt == "pdf":
+        try:
+            data = exporting.to_pdf(rep)
+        except RuntimeError as e:
+            raise HTTPException(501, str(e))
+        return Response(
+            content=data, media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{stem}.pdf"'})
+    raise HTTPException(400, "format must be `markdown` or `pdf`")
+
+
+@app.get("/compute/dataset/template")
+def dataset_template(x_api_key: Optional[str] = Header(None)):
+    """The field-inventory template, as the CSV people actually fill in.
+
+    Served with a UTF-8 BOM because without one Excel opens the Chinese header
+    row as mojibake, and a template that looks broken on opening does not get
+    filled in.
+
+    One row is one column of your data, never one patient. The shape is the
+    safeguard: a template that looked like a data table would eventually have
+    real records typed into it and uploaded.
+    """
+    check_key(x_api_key)
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "tools", "inventory_template.csv")
+    if not os.path.exists(path):
+        raise HTTPException(404, "the template is missing from this build")
+    with open(path, "rb") as fh:
+        raw = fh.read()
+    if not raw.startswith(b"\xef\xbb\xbf"):
+        raw = b"\xef\xbb\xbf" + raw
+    return Response(
+        content=raw, media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition":
+                 'attachment; filename="inventory_template.csv"'})
+
+
 @app.get("/compute/debate/state")
 def debate_state(idea_id: str, x_api_key: Optional[str] = Header(None)):
     """Where the argument stands, plus the papers the critic is allowed to cite.
@@ -1309,11 +1379,27 @@ def debate_adopt(body: DebateAdoptIn, x_api_key: Optional[str] = Header(None)):
 
 
 @app.get("/compute/debate")
-def debate_get(idea_id: str, x_api_key: Optional[str] = Header(None)):
-    """The whole transcript, every objection under the round that raised it."""
+def debate_get(idea_id: Optional[str] = None, project_id: Optional[str] = None,
+               x_api_key: Optional[str] = Header(None)):
+    """One transcript, or the list of every direction this project debated.
+
+    The list form exists because the review screen needs to know how many
+    directions there are before it can ask for any of them, and because a
+    direction that was selected and never argued with is exactly what that
+    review point is there to expose.
+
+    Both forms carry `drift_max` and `max_rounds`. A screen showing a drift
+    score has to show what it is measured against, and the alternative was a
+    second copy of the threshold living in the frontend - a copy that does not
+    error when it drifts from this one, it just quietly disagrees.
+    """
     check_key(x_api_key)
     import debate
     try:
+        if project_id:
+            return debate.list_debates(project_id)
+        if not idea_id:
+            raise ValueError("need idea_id or project_id")
         return debate.get_debate(idea_id)
     except ValueError as e:
         raise HTTPException(400, str(e))
@@ -1374,6 +1460,27 @@ def chain_state(project_id: str, x_api_key: Optional[str] = Header(None)):
     import chain
     try:
         return chain.state(project_id)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/health")
+def health_metrics(project_id: Optional[str] = None,
+                   run_id: Optional[str] = None,
+                   x_api_key: Optional[str] = Header(None)):
+    """The measured health numbers - reuse rate, overlap, order-flip rate.
+
+    They have been written since the first week and nothing could read them
+    back, so the tournament's flip rate could not be shown next to the ranking
+    it qualifies. A number recorded and never readable is one that gets
+    quietly recomputed elsewhere, differently.
+    """
+    check_key(x_api_key)
+    import db
+    try:
+        return db.list_health_metrics(project_id, run_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
     except Exception as e:
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 

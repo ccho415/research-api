@@ -267,11 +267,31 @@ def get_tournament(tournament_id):
                     "WHERE fr.tournament_id = %s GROUP BY fr.reason", (tournament_id,))
         removed = {r["reason"]: r["n"] for r in cur.fetchall()}
 
+        # The health numbers this tournament recorded, so the flip rate can be
+        # shown beside the standings it qualifies rather than sitting in a
+        # table nothing reads. A ranking without its flip rate looks equally
+        # authoritative whether the judging discriminated or not.
+        health = {}
+        if t["run_id"]:
+            cur.execute(
+                "SELECT DISTINCT ON (metric) metric, value FROM health_metric "
+                "WHERE run_id = %s ORDER BY metric, recorded_at DESC",
+                (t["run_id"],))
+            health = {r["metric"]: (None if r["value"] is None
+                                    else float(r["value"]))
+                      for r in cur.fetchall()}
+
     return {"tournament_id": str(t["id"]), "project_id": str(t["project_id"]),
             "run_id": None if t["run_id"] is None else str(t["run_id"]),
             "criteria": t["criteria"], "k_factor": float(t["k_factor"]),
             "created_at": t["created_at"].isoformat(),
             "n_matches": m["n"], "n_judged": m["judged"],
+            # Stated rather than left as n_matches - n_judged. An undecided
+            # match is one the judge returned no winner for; scoring skips it
+            # rather than guessing, so this count is the only thing that says
+            # how much of the field was actually judged.
+            "n_undecided": (m["n"] or 0) - (m["judged"] or 0),
+            "health": health,
             "removed_before_start": removed,
             "standings": standings}
 

@@ -2,3 +2,9 @@ fastapi>=0.110
 uvicorn[standard]>=0.27
 pydantic>=2.0
 psycopg[binary]>=3.1
+# Report export to PDF. Pure-wheel, no system libraries - which matters on a
+# deployment whose last build broke fetching an apt repository. Its built-in
+# CID fonts draw Traditional Chinese without shipping a .ttf, so the download
+# is not a page of black boxes. lib/exporting.py imports it lazily, so a build
+# without it still serves Markdown and refuses PDF with a readable message.
+reportlab>=4.0
