@@ -1378,6 +1378,31 @@ def chain_state(project_id: str, x_api_key: Optional[str] = Header(None)):
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+@app.get("/compute/progress")
+def project_progress(project_id: str, x_api_key: Optional[str] = Header(None)):
+    """Every step of a project - the four before the chain and the chain's six.
+
+    One call, because the screen it feeds shows all ten and `chain/state` knows
+    only the six and, for those, only a status. It also carries the spend, the
+    parked stage and the latest tournament id, so a waiting screen needs no
+    second request.
+
+    Two things are deliberately absent. There is no progress *within* a stage:
+    a stage runs inside n8n and reports once at the end, so any fraction would
+    be invented. There is no remaining-time estimate: nothing here has measured
+    one. `eta_note` says so in words rather than showing a number that moves
+    and means nothing.
+    """
+    check_key(x_api_key)
+    import progress
+    try:
+        return progress.project_progress(project_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.get("/compute/chain/plan")
 def chain_plan(x_api_key: Optional[str] = Header(None)):
     """The chain itself: order, workflow ids, and which stages stop for you."""
