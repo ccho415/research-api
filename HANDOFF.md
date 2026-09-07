@@ -168,6 +168,25 @@ PROBE 白 → 文件層級問題（存檔後重開或另開新 .pen）；PROBE �
 `tests/test_report_caveats.py` 離線釘住 31 項，含三個退化情況
 （沒採集／沒分級／沒辯論要降級成量得到的項目，不是產生垃圾或消失）。
 
+#### ✅ 三件都上線並在生產環境驗證過了（2026-09-07）
+
+部署完成的判斷：`/admin/config` 的 `n_routes` **80 → 81**，
+`/compute/progress` 出現在路由清單裡。**用它判斷部署，不要看時鐘。**
+
+| 驗證 | 結果 |
+|---|---|
+| migration 018 | `applied: true`，表數 26→26（正常，ALTER 不是 CREATE）|
+| **另外讀回來確認** | `/compute/report?report_id=...` 回傳的最後三個鍵是 `"caveats": null, "acquisition": null, "novelty_verdict": null`——**鍵存在就代表欄位存在**，值是 null 因為那份報告是 09-05 寫的 |
+| `/compute/projects` | `usd_budget` / `usd_spent` / `usd_remaining` / `chain_state` / `parked` / `n_stages_done` 全部有，外層 `n_awaiting_you: 0` |
+| `/compute/progress` | 十列齊全，實測數字：文獻 16 查詢／248 篇、採集 200/69/112、方向 15、去重 20 組 0 重複、錦標賽 286 場**3 場未判決**、分級 `{A:0,B:1,C:10,D:0}`、新穎性 `{adjacent:1, incremental:3, scooped:2}`、辯論 1 方向 1 輪 2 未解決、報告 2 份 |
+| 過期暫停的修正 | 胰臟癌專案回 `chain_state: "running"`、`parked: null`。**修正前這會誤報成「等你放行」** |
+
+**實跑抓到一個離線測試看不到的錯誤**：`frame` 那一列的 `q1/q2/q3` 全是 null，
+因為那三個路由答案巢狀在 `domain_frame.routing` 底下。而且就算讀對了也不該放
+——那是三段一兩百字的推理散文，而那一列只有一行。改成
+`paradigms` / `field` / `confidence`，讀起來剛好是
+「observational + measurement + clinical」。已修並重新部署（commit `c9e96cc`）。
+
 #### ⚠️ 部署順序跟直覺相反：先部署，再套 migration
 
 `/admin/migrate` **是從容器裡的 `migrations/` 讀檔的**（`main.py` 的
