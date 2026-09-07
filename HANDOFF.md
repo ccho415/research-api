@@ -262,9 +262,25 @@ report      done
 
 **這是離線測試看不到的那一類缺陷**：規則本身自洽，錯的是它對真實資料的假設。
 
-**還有兩列髒資料沒清**（`feasibility` 的 `awaiting_review`、
-`debate` 的 `running`）。新規則會讓它們不再誤報，但要真的清掉的話用
-`POST /compute/chain/stop`——**要先問使用者**，那會動到生產資料。
+**✅ 那兩列已經清掉了（2026-09-07，使用者同意）。**
+`POST /compute/chain/stop` 回 `closed_stages: ["feasibility","debate"]`，
+只動那兩列，其他四段 `done` 的沒碰。
+
+**清掉的理由寫在那兩列的 `error` 欄裡**，三個月後回頭看得出來這是
+被刻意結束的，不是沒人管。
+
+**驗證過報告完全沒受影響**：還是 2 份，`368c9d4d` 依然 8 個引用 0 個被擋下。
+`stop()` 只 `UPDATE run SET status='stopped'`，不刪任何東西，
+也不碰 `report` / `idea` / `feasibility` / `novelty_check` / `debate_round`。
+
+**專案狀態變成 `done` 而不是 `stopped`**——因為 `report` 那段是 `done`，
+而判定順序裡「最後一段完成」排在「有東西被停掉」前面。這是對的：
+**這條鏈確實走到終點並產出報告**，被停的是它中途繞過去的兩列。
+
+**副作用（正面的）**：`debate` 解除封鎖了。migration 017 的唯一索引
+（`status IN ('pending','running')` 時同一專案同一階段只能有一列）
+本來擋著這個專案重跑辯論——而 **W8 攤平巢狀迴圈的修正到現在還沒實跑驗證過**，
+那個驗證正好需要重跑辯論。現在可以做了。
 
 **三件全部做完了。剩下四個小的（G4、G6、G7、G9）與兩個缺的端點
 （報告匯出、範本下載）。**
