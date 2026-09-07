@@ -833,17 +833,78 @@ def get_harvest(harvest_id=None, project_id=None, include_result=True):
     return d
 
 
+def _chain_state_of(stages):
+    """Where one project's chain stands, from its latest run per stage.
+
+    `stages` is {stage_name: {"status": ..., "finished_at": ...}} holding only
+    the most recent run of each chain stage.
+
+    Precedence matters and is not arbitrary. Parked comes first because it is
+    the only state that is waiting on the person reading the list - everything
+    else is information, that one is a job. `running` and parked cannot both be
+    true in practice: `resume` flips the parked row itself to `pending` rather
+    than leaving it behind, so a released chain stops looking parked the moment
+    it moves.
+
+    `stopped` is deliberately not `failed`. A chain somebody ended on purpose
+    and a chain that broke need different reactions, and collapsing them makes
+    the second one invisible among the first.
+    """
+    import chain
+
+    if not stages:
+        return "not_started", None
+
+    for s in chain.STAGE_PLAN:
+        r = stages.get(s.name)
+        if r and r["status"] in ("awaiting_review", "paused_budget"):
+            return "awaiting_you", {
+                "stage": s.name, "label": s.label, "review_point": s.review,
+                "status": r["status"],
+                # Two rows carry `awaiting_review` and mean opposite things: one
+                # finished and parked at a review point, the other never ran
+                # because a precondition was missing. `resume` already tells
+                # them apart by `finished_at` and so must anything that offers
+                # the user a button - "press release" and "go upload your data"
+                # are not the same request.
+                "awaiting": ("review" if r["finished_at"] else "precondition")}
+
+    vals = [r["status"] for r in stages.values()]
+    if any(v in ("pending", "running") for v in vals):
+        return "running", None
+    if stages.get("report", {}).get("status") == "done":
+        return "done", None
+    if "failed" in vals:
+        return "failed", None
+    if "stopped" in vals:
+        return "stopped", None
+    return "idle", None
+
+
 def list_projects(limit=50):
-    """Projects with enough counts to tell them apart.
+    """Projects with enough counts to tell them apart, and their chain state.
 
     Needed before anything can be pointed at a project: ids are uuids, and
     picking the right one from a list of uuids is not something a person or a
     workflow should be asked to do from memory. The counts are what make the
     row identifiable - which project has the literature, which has the ideas.
+
+    Spend and chain state are joined in rather than left to the caller. The
+    screen this feeds exists mainly to answer "which of these is waiting for
+    me", and answering it per row meant one `/compute/chain/state` call per
+    project - an N+1 that grows with the list. Both facts are one query each.
+
+    `project.status` is NOT the same field as `chain_state` and the two are
+    kept apart on purpose: the first is the project's own lifecycle flag, the
+    second is where the six-stage chain stopped. Merging them would produce a
+    single column that is sometimes one and sometimes the other.
     """
+    import chain
+
     with connect() as conn, conn.cursor() as cur:
         cur.execute(
             "SELECT p.id, p.title, p.topic, p.status, p.created_at,"
+            "  p.usd_budget, p.usd_spent,"
             "  (SELECT count(*) FROM run r WHERE r.project_id = p.id) AS n_runs,"
             "  (SELECT count(DISTINCT h.paper_id) FROM search_query q"
             "     JOIN search_hit h ON h.search_query_id = q.id"
@@ -857,8 +918,36 @@ def list_projects(limit=50):
             d["id"] = str(d["id"])
             if d.get("created_at") is not None:
                 d["created_at"] = d["created_at"].isoformat()
+            budget = None if d["usd_budget"] is None else float(d["usd_budget"])
+            spent = float(d["usd_spent"] or 0)
+            d["usd_budget"] = budget
+            d["usd_spent"] = round(spent, 6)
+            d["usd_remaining"] = None if budget is None else round(budget - spent, 6)
             rows.append(d)
-    return {"n": len(rows), "projects": rows}
+
+        # One query for every listed project rather than one per project.
+        latest = {}
+        if rows:
+            cur.execute(
+                "SELECT DISTINCT ON (project_id, stage)"
+                "       project_id, stage, status, finished_at "
+                "FROM run WHERE project_id = ANY(%s) AND stage = ANY(%s) "
+                "ORDER BY project_id, stage, started_at DESC NULLS LAST",
+                ([d["id"] for d in rows], chain.STAGE_NAMES))
+            for r in cur.fetchall():
+                latest.setdefault(str(r["project_id"]), {})[r["stage"]] = {
+                    "status": r["status"], "finished_at": r["finished_at"]}
+
+    for d in rows:
+        stages = latest.get(d["id"], {})
+        d["chain_state"], d["parked"] = _chain_state_of(stages)
+        d["n_stages_done"] = sum(1 for v in stages.values()
+                                 if v["status"] == "done")
+        d["n_stages"] = len(chain.STAGE_NAMES)
+
+    return {"n": len(rows), "projects": rows,
+            "n_awaiting_you": sum(1 for d in rows
+                                  if d["chain_state"] == "awaiting_you")}
 
 
 def list_runs(project_id, limit=50):

@@ -435,11 +435,21 @@ def frame_get(project_id: str, section: Optional[str] = None,
 
 @app.get("/compute/projects")
 def projects_list(limit: int = 50, x_api_key: Optional[str] = Header(None)):
-    """Projects with the counts that tell them apart.
+    """Projects with the counts that tell them apart, their spend and their state.
 
     Nothing could be pointed at a project before this: the ids are uuids, and
     choosing between uuids from memory is not a thing to ask of a person or a
     workflow. The counts are what make a row identifiable.
+
+    `chain_state` is one of `not_started` / `running` / `awaiting_you` / `done`
+    / `failed` / `stopped` / `idle`, and `parked` names the stage and review
+    point when the chain is waiting on the reader. Both are here rather than
+    left to the caller because the list screen exists mainly to answer "which
+    of these is waiting for me", and answering it per row meant one
+    `/compute/chain/state` call per project.
+
+    `chain_state` is NOT `project.status`; that field is the project's own
+    lifecycle flag and is returned separately on purpose.
     """
     check_key(x_api_key)
     import db
