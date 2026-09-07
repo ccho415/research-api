@@ -168,7 +168,21 @@ PROBE 白 → 文件層級問題（存檔後重開或另開新 .pen）；PROBE �
 `tests/test_report_caveats.py` 離線釘住 31 項，含三個退化情況
 （沒採集／沒分級／沒辯論要降級成量得到的項目，不是產生垃圾或消失）。
 
-#### 🔴 這兩件都還沒上線
+#### ⚠️ 部署順序跟直覺相反：先部署，再套 migration
+
+`/admin/migrate` **是從容器裡的 `migrations/` 讀檔的**（`main.py` 的
+`os.path.join(dirname(__file__), "migrations", name)`），
+所以**還沒部署的 migration 檔案根本不存在**，套不了。
+
+正確順序是 **push → 等建置 → 套 migration**。
+
+中間有個空窗：新程式會 `INSERT` 三個還不存在的欄位，**但只有 W9 存報告時
+才會踩到**。所以部署前要先確認**沒有任何階段是 `pending`**——
+W-CHAIN 只派 `pending` 的列，沒有就不會有東西去叫 W9。
+
+2026-09-07 部署前查過：唯一活躍的專案沒有 `pending`，安全。
+
+#### 🔴 這一段是舊的紀錄（當時以為要先套 migration）
 
 1. **程式沒有 commit、沒有 push**——`research-api` 是 git repo，
    改動在 `lib/db.py`、`lib/report.py`、`main.py` 加三個新檔
@@ -200,6 +214,38 @@ PROBE 白 → 文件層級問題（存檔後重開或另開新 .pen）；PROBE �
 規則抽成純函式 `progress.build_steps`，`tests/test_progress.py` 釘住 30 項，
 **其中一項是檢查那些欄位不存在**（`eta` / `percent` / `progress` /
 `fraction` 這類欄名一個都不准出現）。八個測試檔全過。
+
+#### 🔴 線上資料推翻了一個前提：過期的暫停（2026-09-07）
+
+**部署前查線上狀態時發現的，離線測試看不到。**
+
+胰臟癌專案 `88bb63ee` 的 `chain/state` 是這樣：
+
+```
+dedup       done
+tournament  done
+feasibility awaiting_review   ← 停在 ③
+novelty     done              ← 但後面全跑完了
+debate      running           ← 而且這一列從 09-05 就沒關過
+report      done
+```
+
+那一輪是用 `chain/start` 往下推的（HANDOFF 前面記過），
+而 **`chain/start` 只排下一段，不會碰被暫停的那一列**。
+
+`_chain_state_of` 原本假設 parked 與 running 互斥（理由是 `resume` 會把
+暫停那列自己翻成 pending）。**這個前提在真實資料上不成立**——
+照原規則，一個已經產出報告的專案會永遠留在「等你放行」清單上，
+而那張清單只有在上面每一列都是真的時候才值得打開。
+
+**規則改成：暫停的後面只要有任何一段有紀錄，那個暫停就是歷史。**
+兩段都看起來暫停時，活的是後面那一個。
+
+**這是離線測試看不到的那一類缺陷**：規則本身自洽，錯的是它對真實資料的假設。
+
+**還有兩列髒資料沒清**（`feasibility` 的 `awaiting_review`、
+`debate` 的 `running`）。新規則會讓它們不再誤報，但要真的清掉的話用
+`POST /compute/chain/stop`——**要先問使用者**，那會動到生產資料。
 
 **三件全部做完了。剩下四個小的（G4、G6、G7、G9）與兩個缺的端點
 （報告匯出、範本下載）。**
