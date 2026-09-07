@@ -204,9 +204,36 @@ debate → report），畫面上那十列裡的 **W2 / 採集 / W1 / W3 都不�
 | # | 缺什麼 | 影響 | 建議 |
 |---|---|---|---|
 | G8 | **新穎性判決不在 `report` 表** | ⑤ 頂部的判決藥丸要另外打 `/compute/ideas` 或 `/compute/novelty` | 可接受，多一次呼叫；或跟 G1 一起抄寫進報告 |
-| G9 | **`health_metric` 沒有讀取端點** | ③ 證據區的**順序翻轉率**畫不出來（`get_tournament` 沒回傳它） | 加 `GET /compute/health?run_id=` |
-| G10 | **未判決對局數沒回傳** | ③ 證據區寫「3 場未判決、不猜」——`get_tournament` 沒有這個數字 | 併進 `get_tournament` |
+| ✅ G9 | **`health_metric` 沒有讀取端點** | 已加 `GET /compute/health?project_id=&run_id=`。**但見下方 G13** | 2026-09-07 完成 |
+| ✅ G10 | **未判決對局數沒回傳** | `get_tournament` 現在明講 `n_undecided`（實測 286 場 / 283 判決 / **3 未判決**） | 2026-09-07 完成 |
 | G11 | **沒有「該專案最新一場錦標賽」的端點** | 前端拿不到 `tournament_id` 就打不了 `/compute/tournament/{id}` | 併進 G5 的 `/compute/progress`，或加 `?project_id=` |
+
+---
+
+## 🔴 新發現：G13 — 順序翻轉率根本沒有被存下來（2026-09-07）
+
+**`GET /compute/health` 做好之後，實測揭露的。** 那個專案的 `health_metric`
+裡只有三個指標，而且全部來自 W2：
+
+```
+paper_reuse_rate 0.0521 / query_repeat_rate 0 / within_run_overlap 0.3469
+（stage 全部是 lit_search）
+```
+
+**沒有 `order_flip_rate`。** 錦標賽的翻轉率是在 W5B 的守門裡算出來的，
+只出現在 n8n 的執行紀錄裡，**從來沒有寫進資料庫**。
+
+所以畫面 ③ 證據區的「順序翻轉率 18.6%」**仍然沒有來源**——
+G9 補的是讀的那一半，寫的那一半不存在。
+
+**這跟報告警語（G1）是同一類問題**：算出來了、看過一次、然後消失。
+執行紀錄會過期，而那個數字是判斷「這份名次有沒有鑑別力」的唯一依據。
+
+**修法**：W5B 算完之後打一個端點把它寫進 `health_metric`
+（`order_flip_rate`，附 `run_id`）。要動 W5B 的工作流。
+
+**在那之前，③ 的翻轉率欄位必須從設計上拿掉或標成「尚未量測」**——
+不要留一個永遠填不滿的欄位，那正是本文件第一段在講的錯誤。
 
 ---
 

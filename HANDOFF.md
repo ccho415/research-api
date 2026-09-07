@@ -168,7 +168,63 @@ PROBE 白 → 文件層級問題（存檔後重開或另開新 .pen）；PROBE �
 `tests/test_report_caveats.py` 離線釘住 31 項，含三個退化情況
 （沒採集／沒分級／沒辯論要降級成量得到的項目，不是產生垃圾或消失）。
 
-#### 🔴 開機第一件事：`d2a2e2e` 這個建置沒有生效（2026-09-07）
+#### ✅ 缺口全部收完並在生產環境驗過（2026-09-07）
+
+**84 個路由**（80 → 81 → 84）。實測結果：
+
+| 端點 | 實測 |
+|---|---|
+| `/compute/debate?project_id=` | `n_debated: 3`，三個方向名次 2/4/6，帶 `drift_max: 0.5` 與 `max_rounds: 10`（G6+G7）|
+| `/compute/tournament/{id}` | `n_matches: 286 / n_judged: 283 / **n_undecided: 3**`（G10）|
+| `/compute/health?project_id=` | 三個指標，見下方 🔴（G9）|
+| `/compute/report/export?format=markdown` | `text/markdown`，`filename="report-368c9d4d.md"`，八節齊全 |
+| `/compute/dataset/template` | 已上線（`main.py` 讀 `tools/inventory_template.csv` 加 BOM）|
+
+**W8 的修正也被獨立佐證**：`/compute/debate?project_id=` 回傳三個**不同的**
+方向、各一輪。修正前是一個方向一輪、另外兩個被靜音跳過而守門全過。
+
+**兩條路徑還沒在真實資料上跑過**：`caveats` / `acquisition` 的自動填入
+——`368c9d4d` 是 09-05 寫的，那三欄都是 null，所以匯出裡**沒有**
+「這份沒有涵蓋什麼」。那是正確行為（測試釘住「沒有警語不要長出空區塊」），
+但要驗證自動填入得**產一份新報告**。
+
+#### 🔴 新發現：順序翻轉率根本沒被存下來
+
+`GET /compute/health` 做好之後才看見的。`health_metric` 裡只有三個指標，
+全部來自 W2（`paper_reuse_rate` / `query_repeat_rate` / `within_run_overlap`）。
+**沒有 `order_flip_rate`**——它在 W5B 的守門裡算出來，只活在 n8n 的執行紀錄裡。
+
+所以畫面 ③ 的「順序翻轉率 18.6%」**仍然沒有來源**。G9 補的是讀的那一半，
+寫的那一半不存在。**跟報告警語是同一類問題：算出來、看過一次、然後消失。**
+
+修法要動 W5B（算完之後把它寫進 `health_metric`）。在那之前，
+**③ 的翻轉率欄位要從設計上拿掉或標成「尚未量測」**。
+
+#### ⚠️ Zeabur 的第三種失敗形態：建置成功但卡在拉映像檔
+
+`d2a2e2e` 推上去之後 20 分鐘沒生效。**建置紀錄是 `DONE build completed`**，
+pip 也裝完了——所以不是建置失敗。**運作紀錄只有一行**：
+
+```
+Pod/... - Pulling: Pulling image "registry-oci.zeabur.cloud/..."
+```
+
+然後就停在那裡。**容器從來沒啟動，Python 一行都沒跑過**，所以沒有 traceback。
+
+**而且它會卡住後續的部署**：服務頁面同時出現「建置中 15m」「啟動中 37m」
+「運作中」三個部署，狀態顯示 `1/2`。**卡住的那個佔著位置，新的排在後面**。
+
+**處置：在服務頁面把卡住的那個部署取消掉，再重新部署。** 之後就正常了
+（`Pulling` → `Successfully pulled` → `Container started` 三行都出現）。
+
+**三種失敗形態長得都不一樣，診斷順序是**：
+`/admin/config` 路由數沒變 → 看**建置紀錄**（失敗？）→ 沒失敗就看**運作紀錄**
+（卡在 Pulling？還是 Python traceback？）→ 都不是才懷疑自己的程式。
+
+**我這次連續猜錯兩次**（先怪 reportlab 裝不起來、再怪 import 崩潰），
+兩次都是因為沒有先去看紀錄就推論。
+
+#### 🔴 這一段是舊的紀錄：`d2a2e2e` 當時沒有生效
 
 推上去 13 分鐘後 `/admin/config` 還是 **81 個路由**（應該 **84**），
 `/compute/dataset/template` 回 **404**。前兩次建置分別是 3.5 和 5 分鐘。
