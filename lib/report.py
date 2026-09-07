@@ -297,9 +297,136 @@ def report_inputs(idea_id):
     }
 
 
+def build_acquisition(cur, idea_id):
+    """What still has to be obtained, copied from the grading rather than retold.
+
+    The report already has a feasibility section, and the model writes it. This
+    is the same content taken straight from `feasibility`, and both are kept
+    because they fail differently: prose omits an item and reads fine without
+    it, a copied list cannot omit anything because nothing restates it.
+
+    Copied and not referenced, for the reason `tier` and `rank` are copied onto
+    the report: the grading can be re-run, and a report that silently starts
+    describing a later grading is describing something that was never true at
+    the moment it was written.
+    """
+    cur.execute(
+        "SELECT tier, missing, route_to_tier_a, assessed_at "
+        "FROM feasibility WHERE idea_id = %s "
+        "ORDER BY assessed_at DESC LIMIT 1", (idea_id,))
+    row = cur.fetchone()
+    if not row:
+        return None
+    missing = row["missing"]
+    if isinstance(missing, str):
+        missing = [missing]
+    return {
+        "tier": row["tier"],
+        "missing": list(missing or []),
+        "route": row["route_to_tier_a"],
+        "assessed_at": row["assessed_at"].isoformat(),
+        "note": "這一份是報告產出當下從分級抄寫下來的，不經模型。"
+                "模型寫在可行性那節的散文會漏，這一份不會——"
+                "兩份不一致時以這一份為準。",
+    }
+
+
+def build_caveats(cur, idea_id, project_id):
+    """What this run did not cover, measured rather than recalled.
+
+    Computed here and never accepted from the caller, for the same reason the
+    debate's termination is: the caller is holding a model's account of its own
+    limits, and that is the one question the model should not be answering.
+
+    Three of the four are about the run and one is about this direction. That
+    mixture is correct - a reader deciding how much to believe a report needs
+    to know both that the debate stopped after one round and that a third of
+    the literature was never read.
+    """
+    out = {}
+
+    cur.execute(
+        "SELECT n_papers, n_with_fulltext, n_gap_sentences FROM harvest "
+        "WHERE project_id = %s AND status = 'done' "
+        "ORDER BY started_at DESC LIMIT 1", (project_id,))
+    h = cur.fetchone()
+    if h:
+        n, full = int(h["n_papers"] or 0), int(h["n_with_fulltext"] or 0)
+        out["fulltext"] = {
+            "n_with_fulltext": full, "n_papers": n,
+            "n_gap_sentences": int(h["n_gap_sentences"] or 0),
+            "note": f"全文只拿到 {n} 篇裡的 {full} 篇，其餘只有摘要。"
+                    "缺口句只存在 Discussion，摘要沒有——"
+                    f"所以那 {n - full} 篇對想點子那一步是靜音的。"}
+
+    # The denominator is the graded pool, not every idea ever generated: that
+    # is the set novelty verification could have been spent on. Naming both
+    # numbers rather than a percentage, because a bare percentage hides which
+    # of the two moved.
+    cur.execute(
+        "SELECT count(*) AS graded,"
+        "       count(*) FILTER (WHERE nc.idea_id IS NULL) AS unverified "
+        "FROM (SELECT DISTINCT f2.idea_id FROM feasibility f2"
+        "        JOIN idea i2 ON i2.id = f2.idea_id"
+        "       WHERE i2.project_id = %s) f "
+        "LEFT JOIN (SELECT DISTINCT idea_id FROM novelty_check"
+        "            WHERE method = 'adversarial') nc"
+        "       ON nc.idea_id = f.idea_id", (project_id,))
+    nv = cur.fetchone()
+    if nv and int(nv["graded"] or 0):
+        out["novelty_unverified"] = {
+            "n_unverified": int(nv["unverified"] or 0),
+            "n_graded": int(nv["graded"] or 0),
+            "note": "未驗證不等於新穎。這些方向沒有跑過對抗式新穎性檢查，"
+                    "也沒有參加排序。"}
+
+    # Named, not counted. A report quietly not written for a direction looks
+    # exactly like a direction that never existed, and that is the difference
+    # this entry is here to make visible.
+    cur.execute(
+        "SELECT i.code, i.title FROM idea i WHERE i.project_id = %s AND ("
+        "  SELECT n.verdict FROM novelty_check n WHERE n.idea_id = i.id"
+        "    AND n.method = 'adversarial'"
+        "  ORDER BY n.checked_at DESC LIMIT 1) = 'scooped' "
+        "ORDER BY i.code", (project_id,))
+    scooped = [{"code": r["code"], "title": r["title"]} for r in cur.fetchall()]
+    out["excluded_as_already_done"] = {
+        "n": len(scooped), "directions": scooped,
+        "note": "這些方向被判定已經有人做過，所以沒有寫報告。"
+                "安靜地少寫一份，在輸出上跟「這個方向不存在」長得一模一樣，"
+                "所以在這裡點名。"}
+
+    cur.execute(
+        "SELECT round_no, drift_from_original, n_objections_open,"
+        "       terminated, termination_reason FROM debate_round "
+        "WHERE idea_id = %s ORDER BY round_no DESC LIMIT 1", (idea_id,))
+    d = cur.fetchone()
+    if d:
+        out["debate"] = {
+            "n_rounds": int(d["round_no"] or 0),
+            "drift_from_original": (None if d["drift_from_original"] is None
+                                    else float(d["drift_from_original"])),
+            "n_objections_open": int(d["n_objections_open"] or 0),
+            "terminated": bool(d["terminated"]),
+            "termination_reason": d["termination_reason"],
+            "note": "終止是系統從紀錄算出來的，不是模型自稱打完了——"
+                    "輪數少不代表沒認真跑。"}
+    else:
+        out["debate"] = {"n_rounds": 0, "note": "這個方向沒有經過辯論。"}
+
+    return out
+
+
 def save_report(idea_id, sections, citations=None, run_id=None, model=None,
                 tier=None, rank=None):
-    """Store one report, refusing the ones that read complete and are not."""
+    """Store one report, refusing the ones that read complete and are not.
+
+    `caveats` and `acquisition` are measured here rather than taken as
+    arguments. They are the two things a writer is worst placed to supply -
+    what it left out, and what it still needs - and W9's own gate already
+    computed them into an n8n execution output that nothing persisted. A
+    report outlives an execution log, so the report carries them.
+    """
     if not isinstance(sections, dict):
         raise ValueError("sections must be an object keyed by section name")
 
@@ -331,23 +458,45 @@ def save_report(idea_id, sections, citations=None, run_id=None, model=None,
 
     with connect() as conn:
         with conn.cursor() as cur:
+            acquisition = build_acquisition(cur, idea_id)
+            caveats = build_caveats(cur, idea_id, project_id)
+            # Copied for the reason `tier` and `rank` are copied: the novelty
+            # section was written from one particular check, and that check can
+            # be re-run. A referenced verdict would quietly start disagreeing
+            # with the prose beside it, and nothing would raise.
+            cur.execute(
+                "SELECT verdict FROM novelty_check WHERE idea_id = %s "
+                "AND method = 'adversarial' ORDER BY checked_at DESC LIMIT 1",
+                (idea_id,))
+            nv = cur.fetchone()
+            novelty_verdict = nv["verdict"] if nv else None
             cur.execute(
                 "INSERT INTO report (idea_id, run_id, sections, citations,"
-                "                    dropped, tier, rank, model) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, created_at",
+                "                    dropped, tier, rank, model,"
+                "                    caveats, acquisition, novelty_verdict) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+                "RETURNING id, created_at",
                 (idea_id, run_id,
                  psycopg.types.json.Jsonb({k: str(sections[k]).strip()
                                            for k in SECTIONS}),
                  psycopg.types.json.Jsonb(kept),
                  psycopg.types.json.Jsonb(dropped) if dropped else None,
-                 tier, rank, model))
+                 tier, rank, model,
+                 psycopg.types.json.Jsonb(caveats) if caveats else None,
+                 psycopg.types.json.Jsonb(acquisition) if acquisition else None,
+                 novelty_verdict))
             row = cur.fetchone()
         conn.commit()
 
+    # Returned as well as stored so the workflow's own log shows what was
+    # recorded. A caveat block that only exists in the database is one nobody
+    # notices went missing.
     return {"report_id": str(row["id"]), "idea_id": str(idea_id),
             "n_citations": len(kept), "n_dropped": len(dropped),
             "dropped": dropped or None,
             "cross_validated": len([c for c in kept if c["cross_validated"]]),
+            "caveats": caveats, "acquisition": acquisition,
+            "novelty_verdict": novelty_verdict,
             "created_at": row["created_at"].isoformat()}
 
 
