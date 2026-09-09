@@ -3,6 +3,199 @@
 **寫給：接手這個專案的任何一個新的 Claude Code 工作階段。**
 最後更新：2026-09-09（**批次 2「進度回報」做完並部署；W5B 的守門結果第一次存得下來**）
 
+## ✅ 2026-09-10 那一整天：檢索詞、期刊、PubMed 繞道
+
+八個 commit（`a1763c8` → `3f8aa82`）。按因果順序，不是時間順序。
+
+### 1. 檢索詞被默默砍成三個（`f0d0a08` 之前那一串）
+
+前端讓人加到第四個概念，而 **W-START 和 W2 兩處都有 `slice(0, 3)`**。
+第四個被丟掉、檢索照跑、每一個畫面都顯示一份看起來完整的結果。改成
+**上限 5 且超過就擋下來說清楚**——「請你選要留哪幾個」跟「你以為都查了」
+是兩種處境，只有前者救得回來。
+
+### 2. 確認頁的「在不在 MeSH」跟實際檢索答案不一致（`a1763c8`）
+
+兩套不同的解析：確認頁走本機字典，實際檢索走 NLM 線上 API。字典的正規化把
+標點換成**空格**，所以 `Dual Anti-Platelet Therapy` 永遠碰不到使用者打的
+`dual antiplatelet therapy`——**確認頁說「不在 MeSH」，而實際上查得到**。
+人正是看那個標籤在決定要刪哪些詞。加了把標點整個拿掉的次要索引。
+
+**順帶更正一個我寫錯的文案**：`safety` 是 D012449、`association` 是 D001244，
+**兩個都在 MeSH 裡**。真正的陷阱不是「不在」，是 `association` 在 MeSH 裡的
+語意類型是 `Mental Process`——**心理聯想，不是統計關聯**。對得到反而更危險。
+
+### 3. 文獻年份範圍，預設最近五年（`cadda4c`）
+
+首頁可調，前端算成**絕對年份**再送（存相對值半年後讀回來會是另一個意思）。
+**只限縮 W2**。W7 與 verify 一律看全部年份——限縮的話一個 2010 年就發表過的
+方向會被判成新的。**發想要新、查證要全，兩者需求相反。**
+
+語料餘裕量過：200 篇 → 112 句缺口句，而 W3 只吃 60 句，有兩倍空間。
+
+### 4. 頂刊優先——放在採集，不是放在搜尋（`0b8641e`）
+
+使用者想「優先檢索頂刊」。理由的前半對（頂刊比較發新方向），但**這個系統吃的
+是 Discussion 裡作者自述的缺口句，而那些句子不集中在頂刊**——NEJM 的討論
+關掉一個問題，開放問題累積在專科文獻裡。而「重複做相同題目」已經被
+`verify` 機械擋掉了（`papers_before >= 3` → ALREADY DONE）。
+
+所以優先權放在**真正有名額的那一步：採集**。`papers_for` 排序改成
+`venue_tier > year > citations`。**是優先不是過濾**，沒有期刊名的論文得 0 分，
+落回年份與引用數，不會被推到任何東西後面。
+
+`lib/journals.py` 兩層：`GENERAL`（跨疾病，不隨題目改）＋ `BY_DOMAIN`
+（隨 `search_query.domain` 自動換）。比對用族名，子期刊自動涵蓋。
+
+### 5. Europe PMC 的期刊名一直存在另一個欄位（`e26e299`）
+
+`s_europepmc` 讀 `journalTitle`，而實際在 `journalInfo.journal.title`。
+實測三組不相干檢索各 50 筆：**`journalTitle` 0/150，`journalInfo` 149/150**。
+
+**所以資料庫裡每一篇 Europe PMC 的論文，`venue` 都是空字串，從第一次跑就是。**
+而這也讓上面第 4 項在實際語料上完全不作用。修好後 25/25 有期刊名。
+
+同一天發現的第二個同形狀缺陷：**`paper.mesh` 從來沒被寫入過**（`924fa54`）。
+schema 第一版就有這個欄位，`s_pubmed` 也一直在填，而 `_upsert_paper` 的欄位
+清單裡根本沒有它。改成從 Europe PMC 的 `meshHeadingList` 讀並真的寫進去。
+
+### 6. 概念展開的候選：階層優先，字串比對排後面（`cb8e9a3`）
+
+`vocab_mesh` 回的是**標籤包含這個字**的比對結果，而程式把 `entries[1:]` 當
+候選並標成 `relation: "sibling"`。**它們不是 sibling。** `stroke` 這樣撈到
+**`Stroke Volume`（心搏量）、`Heat Stroke`（中暑）、NINDS（一個機構）**。
+
+真實階層是 Ischemic / Hemorrhagic Stroke / Brain Infarction / Cerebrovascular
+Disorders。**順序反了。** 改成階層優先後，實測切題的查詢從 4/9 變 6/9，
+查心搏量的查詢從 3 個變 0 個。
+
+剩下的 `Basic Reproduction Number` 是 **MeSH 自己把它歸在 Morbidity 底下**，
+不是這裡的缺陷。要濾掉需要題目層次的語意判斷，沒有。**別去「修」它。**
+
+### 7. PubMed 繞道（`19b347f` / `762e2fc` / `32b160b` / `3f8aa82`）
+
+見下一節，那是今天最大的一塊。
+
+---
+
+## 🔬 PubMed：伺服器連不到，改由使用者的機器代跑（2026-09-10）
+
+### 事實
+
+NCBI 封了部署主機的出口 IP `43.133.34.49`（騰訊雲共用位址），**封鎖擋在配額
+前面，所以 API key 解不開**。而它從使用者自己的機器**正常回應**。
+
+**實測同一個臨床題目：PubMed 與 Europe PMC 各回 25 篇，只有 1 篇重疊。**
+論文母體重疊，差的是相關性排序，所以各自的前 25 名幾乎是兩批不同的東西。
+**伺服器拿不到的那一半是大部分的語料，不是零頭。**
+
+**這不是繞過封鎖**：請求從使用者自己的連線發出，用他自己的速率，那本來就是
+E-utilities 預期的用法。伺服器完全不碰 PubMed。NCBI 給 eutils 送的是
+`Access-Control-Allow-Origin: *`——那個標頭的存在就是允許網頁直接呼叫。
+
+### 三個收集器，同一套後端
+
+| 收集器 | 什麼時候 | 用途 |
+|---|---|---|
+| 瀏覽器（`runPubmedPass`） | 按下執行的當下，跟 W2 同時 | 快車道，分頁開著才有效 |
+| `tools/pubmed_local.py` | 手動 | 事後補跑舊專案 |
+| **`tools/pubmed_worker.py`** | **Windows 排程，每 5 分鐘** | **正式的那一個** |
+
+**收集器只當信差**：不決定查什麼、不解析論文。查詢字串由
+`/compute/search/pubmed-plan` 算好，原始 XML 送回
+`/compute/search/pubmed-ingest` 由 `parse_pubmed_xml` 解析。
+**JavaScript 裡刻意沒有第二份 PubMed XML 解析邏輯**——那種東西一個月內就會
+走鐘，而且沒人會發現，因為解析錯的論文看起來跟正確的一模一樣。
+
+為此把 `s_pubmed` 切成 `pubmed_term()` + `parse_pubmed_xml()`：抓取有 IP 問題，
+解析沒有。
+
+### 為什麼是排程 worker 而不是瀏覽器
+
+使用者要「切換頁面或關頁面都不影響」。瀏覽器做不到——關掉分頁 JS 就死了，
+而**即使只是切到別的分頁，瀏覽器也會把計時器降到約每分鐘一次**，三十秒的
+補查變成半小時。
+
+「W7 開始跑時才開排程」也做不到，**方向是反的**：伺服器不能主動連進使用者
+家裡的電腦。所有連線只能從使用者的機器往外。
+
+實測資源（63.4 GB / 24 核）：**排程模式平常 0 MB 常駐，每次醒來 105–120 ms**。
+常駐模式 18.9 MB、睡著時 CPU 4 秒內完全沒動。
+
+### `novelty` 階段現在預設會停 ← 重要
+
+原本 W7 跑完直接接 W8，**中間沒有停頓，所以補查再快也趕不上**——論文進不了
+辯論的引用池，而那正是它們最有價值的去處（批判者只能引用真實檢索回來的論文）。
+
+前端在按送出時標記行不通：`set_pause` **只更新已存在且在執行中的列**，
+而那時候 novelty 那一列還沒建立。所以改成 `pause_by_default=True`。
+
+停下來的訊息特別寫過，會說在等 PubMed 補查、補完自動放行、不想等就自己按。
+原本會顯示 `a pause set on this stage`，那會讓人去找一個自己從沒設過的開關。
+
+**worker 只在伺服器回報 `parked_after_novelty` 且真的有補查工作時才放行。**
+一個看到暫停就放行的 worker，是一個會把鏈推過審閱點的 worker。
+
+**worker 沒跑也不會壞**：鏈停在 `awaiting_review`，跟審閱點 ③ ④ 同一種狀態，
+進度頁會顯示、放行按鈕有效。代價是少一層交叉檢查，不是卡死的流程。
+
+### 合併與矛盾偵測
+
+W7 的十四輪查詢有存進 `novelty_check.rounds`，所以可以事後重問並按
+DOI/PMID/標題聯集進原本那一輪。**刻意不動 `closest_papers`**——那是模型挑出的
+「最接近的」，偷偷養大會把一個判斷變成一堆。`debate._evidence_pool` 本來就同時
+讀兩者，所以引用池照樣變大。
+
+**判定不重算。** `save_novelty` 從來不是從輪次算出判定的——它收下模型的話，
+只拒絕證據撐不起來的。所以只確立一件機械可證的事：
+
+> `no_prior_art` 是有界的否定，界線是「這些檢索什麼都沒找到」。一個原本空白、
+> 現在用同樣的字問一個第一次搆不到的資料庫而找到論文的輪次，**就是界線失效**。
+
+其他判定只回報篇數。
+
+### 明天要設的排程工作
+
+```powershell
+$py  = (Get-Command python).Source
+$job = "D:\n8n_Claude\research-api\tools\pubmed_worker.py"
+
+$act = New-ScheduledTaskAction -Execute $py -Argument "`"$job`"" `
+        -WorkingDirectory "D:\n8n_Claude\research-api"
+$trg = New-ScheduledTaskTrigger -Once -At (Get-Date) `
+        -RepetitionInterval (New-TimeSpan -Minutes 5)
+$set = New-ScheduledTaskSettingsSet -StartWhenAvailable `
+        -DontStopIfGoingOnBatteries -AllowStartIfOnBatteries `
+        -ExecutionTimeLimit (New-TimeSpan -Minutes 30)
+
+Register-ScheduledTask -TaskName "PubMed 補查 worker" `
+  -Action $act -Trigger $trg -Settings $set -Description `
+  "研究系統的 PubMed 那一半。NCBI 封了 Zeabur 的 IP，這台沒有。"
+```
+
+**先手動試一次確認沒問題**（`--dry-run` 什麼都不寫）：
+
+```powershell
+cd D:\n8n_Claude\research-api
+python tools\pubmed_worker.py --dry-run
+```
+
+環境變數 `RESEARCH_FRONTEND_KEY` 必須設在**使用者層級**（排程工作讀得到）。
+`NCBI_API_KEY` 可選——沒設是每秒 3 次上限，而 worker 節流後本來就在限制內。
+
+> ⚠️ 排程工作跑的是**當下磁碟上的程式碼**，不是部署版。改了 `tools/` 底下的
+> 東西會立刻生效，不需要等 Zeabur。但它打的 API 是線上的。
+
+### 還沒解決的
+
+**W7 的十四輪本身仍然是 Europe PMC + OpenAlex 跑的**，PubMed 是事後補上去的。
+要即時就得讓 NCBI 解封——**寄 info@ncbi.nlm.nih.gov，附 IP `43.133.34.49`**，
+說明用途、頻率（已有 `sleep(0.34)` 節流）、會申請 API key。那個 IP 是共用的，
+很可能是別的租戶造成的。解封之後 W7/W8 直接就有 PubMed，**一行程式碼都不用改**，
+而且是即時的、不需要使用者的機器開著。
+
+---
+
 ## ✅ 2026-09-09 完成：批次 2 — 進度回報
 
 會做這件事，是因為 W5B 在 Anthropic 的批次佇列裡卡了 **3 小時 40 分**，
@@ -184,21 +377,42 @@ W3 的切點只用在 `verify.verify`：把命中數切成 `papers_before`（≤
 前端那條一律明確帶當年。使用者 2026-09-10 表示不再用表單，所以不發布。
 **看到 W3 的 versionId ≠ activeVersionId 不用再查一次，就是這一筆。**
 
-## ⏭️ 明天第一件事
+## ⏭️ 明天第一件事（2026-09-10 深夜實測的現況）
 
 測試專案 `82ffbcec-20fc-4377-b1a1-01f5dff6061f`
-（雙抗血小板藥物 · 已花 $0.0394 / $2.00）**停在 W4 之前，方向 15 個都在**。
-缺陷已修好，續跑只要一行：
+（雙抗血小板藥物）**停在審閱點 ③（W6 可行性分級），等你勾選要放行的方向**。
 
 ```
-POST /compute/chain/start
-{ "project_id": "82ffbcec-20fc-4377-b1a1-01f5dff6061f",
-  "stage": "dedup",
-  "params": { "run_id": "8c17853c-0ae6-4519-b241-8eabda0e183a" } }
+done             W2 文獻層 / 缺口挖掘 / W1 領域框架 / W3 想點子 / W4 去重 / W5B 錦標賽
+awaiting_review  W6 可行性分級   ← 在這裡
+not started      W7 新穎性 / W8 唱反調 / W9 最終報告
 ```
 
-`run_id` 是**方向所屬的那個 run**，不是文獻檢索那個——理由見下面。
-`chain/start` 刻意沒有放進前端白名單（它會花錢），要用 n8n 或 curl 打。
+### 🔴 先處理預算，不然放行到一半會被擋
+
+```
+已花 $1.272562 / 上限 $2.00      剩 $0.727438
+剩下三階段的估計：W7 $0.25 + W8 $0.50 + W9 $0.30 = $1.05
+```
+
+**剩的錢不夠跑完。** 預算護欄會在中途擋下來——多半是 W8 之前，因為
+`budget-check-runs-before-selection`：估價在挑選之前跑。所以放行前先把
+`usd_budget` 調高（$3 就夠），否則會停在一個你以為只是慢的地方。
+
+### 放行之後會發生什麼（跟以前不一樣）
+
+W7 跑完**不會**直接接 W8 了——`novelty` 階段現在 `pause_by_default=True`。
+鏈會停下來等 PubMed 補查，訊息會說清楚在等什麼。這是刻意的，理由見
+「2026-09-10 那一整天」那一節。
+
+**所以明天的驗證順序是：**
+
+1. 調高預算
+2. 設好 Windows 排程工作（指令在下面那一節）
+3. 在審閱點 ③ 勾選方向、放行
+4. 等 W7 跑完 → 鏈停在 PubMed 補查
+5. worker 醒來 → 補查十四輪 → 合併 → 自動放行給 W8
+6. 確認辯論的引用池裡真的有 PubMed 來的論文
 
 > **先讀完這一份再動手。** 上一個工作階段沒讀，結果重新踩了一次「thinking token
 > 算在 maxOutputTokens 裡」——那條在本文件的環境備忘裡本來就寫著。
@@ -215,51 +429,40 @@ W-CHAIN `UJiYf5NJRM0uVXew` **已啟用**，每十分鐘掃一次待辦。
 
 ---
 
-## 🔴 開機第一件事：LINE 掛了，整個系統目前是靜音的
+## 🟡 LINE 告警：這一段的舊診斷是錯的（2026-09-10 更正）
 
-**W-LINE 通知測試（`5hjjy6sjMPBJaHGg`）的判決**：
+**這一節以前寫著「開機第一件事：LINE 掛了，`Bearer ` 前綴掉了」。那個診斷沒有
+根據，而且跟已驗證的紀錄矛盾。**
+
+已驗證的事實（工作流「W-LINE 通知測試」`5hjjy6sjMPBJaHGg`，執行 47）：
 
 ```
-token_ok: false   bot_name: null   push_status: 401
-verdict: "TOKEN BAD - the credential is wrong.
-          Check the Value field starts with \"Bearer \" and a space."
+2026-08-28  三項全通：token 對、User ID 對、好友已加，手機實際收到訊息
+            先前 401 的真正成因是【拿 basic ID 當 User ID 用】
 ```
 
-兩個端點（`/v2/bot/info` 與 `/v2/bot/message/push`）都回 401，LINE 說的是
-**`Authorization header required`**——代表它**根本沒收到合法的標頭**，
-不是收到一個過期的 token。
-
-**要修的地方**：n8n → Credentials → **LINE Messaging API**
-（`dAytbkY0WTl24Yjm`，型別 `httpHeaderAuth`）
-
-| 欄位 | 應該是 |
+| 東西 | 值 |
 |---|---|
-| Name | `Authorization` |
-| Value | `Bearer ` ＋ channel access token（**`Bearer` 後面有一個空格**）|
+| 推播對象 User ID | `U864c59ad2a48d6bb3c329395da5f0717` |
+| 憑證 | `LINE Messaging API`　`dAytbkY0WTl24Yjm` |
+| 機器人 | `Ho Chi-Chang`，basic ID `@669kqxvy`（**不是 User ID**）|
+| `/v2/bot/info` 回的 `userId` | `Ub0ff7c128aa1fea7a4d6325392ab2300` ← **機器人自己的**，不是收訊對象 |
 
-最常見的錯法就是 Value 只貼了 token、少了前綴——症狀正好是
-「header required」而不是「invalid token」。
+**現在到底通不通，沒有人測過。** 要知道只有一條路：跑一次 W-LINE 通知測試。
+沒有在 2026-09-10 深夜跑，因為那會在使用者睡覺時推播到手機。
 
-**為什麼這件事排第一**：**W-ALERT 失敗告警走的是同一把憑證。**
-所以現在任何工作流在 production 失敗，你都不會收到通知；W10 就算抓到
-「被搶先」也推不出去。**這比單一功能壞掉嚴重，因為它讓其他所有失敗
-都變得看不見**——正是這個專案一直在防的那種「少掉的那一半在輸出上看不出來」。
+```
+n8n → W-LINE 通知測試 5hjjy6sjMPBJaHGg → 手動執行
+```
 
-08-30 憑證外洩處理時 W-LINE 測試（執行 47）是通過的，所以是**那之後才壞的**，
-或者換憑證時 `Bearer ` 前綴掉了而當時沒重測。
+**為什麼值得早點測**：W-ALERT 失敗告警（`UobSYUAU2C4j38tY`）走同一把憑證，
+所以它壞掉的時候，**其他所有失敗都會變得看不見**。而
+`errorWorkflow` 只對 production 執行生效，手動測試不觸發——測告警一定要靠排程
+真的跑一次。
 
-> **🔴 修之前先讀這一段。** 建 `W-START` 時 n8n **自動把這把 LINE 憑證綁到了
-> webhook 的入站驗證上**（它是唯一一把 `httpHeaderAuth`）。所以現在
-> 「前端要送什麼標頭才進得來」跟「LINE 要收什麼標頭」是同一個值——
-> **你一改 LINE 的 Value，前端的鑰匙就跟著變**。
-> 正確做法：另外建一把 `httpHeaderAuth` 叫 `Frontend Webhook Token`
-> （Name 自訂如 `X-Frontend-Key`，Value 隨機字串），
-> 換到 `W-START` 的 `Frontend Calls` 節點上，**再去改 LINE 那把**。
-
-**修好之後**：重跑 W-LINE 測試確認，然後補跑一次 W10——今天那次的花費
-因為執行中斷沒被記錄（見下）。
-
----
+**已經不需要做的事**：這一節以前叫人「另外建一把 `Frontend Webhook Token`」。
+**已經建好了**（`Kh0DkIvuT0Yh1oZJ`，Header 名 `X-Frontend-Key`），W-START 與
+W-API 兩條 webhook 都綁它，跟 LINE 那把已經分開。2026-09-10 使用者換過一次值。
 
 ## 🔧 前端接線第一天（2026-09-08）
 
@@ -3179,6 +3382,12 @@ Gemini 的配對         11 / 15
 ---
 
 ## 待辦（依阻塞程度排序，2026-08-29 重寫）
+
+> ⚠️ **這一節是 2026-08-29 寫的，之後沒有整段重寫過。** 逐項的 ✅ 是可信的，
+> 但「還沒做」的項目要自己再確認一次——尤其 0a 的 Google Drive OAuth 重建，
+> 沒有人在 09-10 驗證過它現在是什麼狀態。0b（W8 需要一個跑過 W7 的 A/B 級方向）
+> 明天就會滿足：`82ffbcec` 停在審閱點 ③，放行後就會走到那裡。（2026-09-10 註）
+
 
 **先前的第 1～3 項（Anthropic 憑證、建 W4、建 W1）都已完成，已從清單移除。**
 
