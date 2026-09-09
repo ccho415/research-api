@@ -657,6 +657,7 @@ async function screenConcepts(){
   if(!st){ location.hash='#/'; return; }
 
   const listBox=el('div',{class:'stack'});
+  const invBox=el('div',{});
   const addRow=el('div',{style:'display:flex;gap:10px;margin-top:18px;flex-wrap:wrap'},
     el('button',{class:'pill ghost',onclick:()=>{ st.concepts.push(''); paint(); }},'加一個概念'),
     el('button',{class:'pill ghost',onclick:verify},'重新檢查'),
@@ -674,9 +675,35 @@ async function screenConcepts(){
       listBox, addRow,
       el('p',{class:'hint',style:'margin-top:18px'},
         '按「確認並開始檢索」之後才會建立專案、開始花錢。之後就改不動了。'))),
+    shell(el('section',{},invBox)),
     footer());
 
-  paint(); verify();
+  paint(); verify(); paintInv();
+
+  // The inventory belongs here, not on the grading screen. W6 grades against
+  // the columns you hold, and by the time the grading screen exists W6 has
+  // already run - so this is the last screen where supplying it still changes
+  // the answer.
+  function paintInv(){
+    invBox.innerHTML='';
+    const s=readStagedInv();
+    invBox.append(sechead('04','你的資料清單（選填）',
+      s?(countCols(s.inventory)+' 個欄位，跟專案一起送出'):'還沒有'));
+    if(s){
+      const doc=s.inventory&&s.inventory.provenance==='documented';
+      invBox.append(el('div',{class:'card flat'},
+        el('div',{style:'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px'},
+          el('span',{class:'chip '+(doc?'calm':'ok')},doc?'documented 未經量測':'measured 量出來的'),
+          el('span',{class:'meta'},(s.inventory.files||[]).length+' 個檔案'),
+          el('span',{class:'meta'},countCols(s.inventory)+' 個欄位')),
+        el('p',{class:'note',style:'margin-bottom:12px'},
+          '這份清單還沒送出去，只存在這個瀏覽器分頁裡。'
+          +'按「確認並開始檢索」時會跟專案一起送出，W6 分級就吃得到。'),
+        el('button',{class:'pill ghost',onclick:()=>{ clearStagedInv(); paintInv(); }},'清掉，重新選一份')));
+      return;
+    }
+    invBox.append(uploadPanel(null,paintInv,'stage'));
+  }
 
   function paint(){
     listBox.innerHTML='';
@@ -731,9 +758,16 @@ async function screenConcepts(){
       busy('建立專案並開始檢索…');
       const d=await startCall({mode:'search',topic:st.topic,domain:st.domain,
         limit:st.limit,usd_budget:st.usd_budget,concepts});
+      // Sent the moment the project exists, so W6 has it long before it runs.
+      // A project that started is worth saying so even if this leg failed, and
+      // the two need different fixes - so they are reported separately.
+      const inv=d.project_id?await flushStagedInv(d.project_id):null;
       unbusy();
       sessionStorage.removeItem('rd_propose');
-      toast('開始跑了。'+(d.project_id?('專案 '+String(d.project_id).slice(0,8)):'')+'　你可以關掉這一頁。',0);
+      toast('開始跑了。'+(d.project_id?('專案 '+String(d.project_id).slice(0,8)):'')
+        +(inv===true?'　資料清單也一起存好了。':'')
+        +(inv===false?'　但資料清單沒存進去——到進度頁再傳一次，W6 跑到之前都還來得及。':'')
+        +'　你可以關掉這一頁。',0);
       if(d.project_id) location.hash='#/p/'+d.project_id+'/progress'; else location.hash='#/';
     }catch(e){ unbusy(); fail(e); }
   }
@@ -752,6 +786,11 @@ async function screenProgress(pid){
     shell(el('section',{},box)),
     footer());
   let first=true;
+  // Read once rather than on every poll: an inventory only changes when the
+  // person on this screen uploads one, and that path refreshes it itself.
+  let ds=null;
+  const reloadDs=async()=>{ try{ ds=await call('dataset',{query:{project_id:pid}}); }catch(e){ ds=null; } };
+  await reloadDs();
   async function tick(){
     try{
       if(first) busy('讀進度…');
@@ -765,6 +804,7 @@ async function screenProgress(pid){
         spendLine(d.spend),
         stepList(d.steps||[],pid,tick),
         runningHint(d),
+        invSection(d,ds,pid,async()=>{ await reloadDs(); tick(); }),
         d.eta_note?el('p',{class:'note',style:'margin-top:18px'},d.eta_note):null,
         el('p',{class:'meta',style:'margin-top:14px'},
           '更新於 '+new Date().toLocaleTimeString('zh-TW',{hour12:false})+'　·　每 20 秒自動重讀'),
@@ -779,6 +819,47 @@ async function screenProgress(pid){
   }
   await tick();
   if(!POLL) POLL=setInterval(tick,20000);
+}
+// The second chance to supply an inventory, and the only screen that can say
+// whether there is still time. The chain takes 30-60 minutes and nobody has
+// their column list ready at minute zero; W6 is several stages down, so for most
+// of that window the answer is yes.
+function invSection(d,ds,pid,onChange){
+  const steps=d.steps||[];
+  const fe=steps.find(s=>s.key==='feasibility');
+  const graded=fe&&(fe.status==='done'||fe.status==='awaiting_review'||fe.status==='failed');
+  const grading=fe&&fe.status==='running';
+  const n=(ds&&ds.n)||0;
+  const wrap=el('div',{style:'margin-top:30px'});
+
+  if(graded){
+    // Past the point where it helps. Said plainly and once, with the place the
+    // grades actually are - not repeated as a warning on every poll.
+    wrap.append(el('div',{class:'card flat'},
+      el('p',{class:'eyebrow',style:'margin-bottom:8px'},'INVENTORY'),
+      el('p',{class:'note'}, n
+        ? ('W6 已經用你上傳的 '+n+' 份清單判過分級了。')
+        : ('W6 已經判完分級了，而當時沒有資料清單——所以它判的是'
+           +'「要做到需要什麼」，不會出現 A 級。要改成用你手上的欄位判，得重跑 W6。')),
+      el('button',{class:'pill ghost',style:'margin-top:14px',
+        onclick:()=>location.hash='#/p/'+pid+'/tiers'},'去看分級')));
+    return wrap;
+  }
+
+  wrap.append(sechead('02','你的資料清單',n?(n+' 份'):'還沒有'));
+  if(n){
+    wrap.append(el('p',{class:'note'},
+      '已經有 '+n+' 份清單，W6 分級的時候會用它。要換成量測過的版本，'
+      +'在下面再傳一次就會覆蓋。'));
+  }else{
+    wrap.append(el('p',{class:'note'},
+      grading
+        ? 'W6 正在分級——現在傳來不及進到這一次的結果。'
+        : '還沒有資料清單。W6 還沒跑到，現在傳還來得及：'
+          +'分級問的是「你手上有沒有這些欄位」，沒有清單就答不出來，所有方向都會落在 C 級。'));
+  }
+  if(!grading) wrap.append(uploadPanel(pid,onChange,'before'));
+  return wrap;
 }
 // The four steps before the chain only write their row when they finish, so a
 // step that is running right now reads as `not started` - the same words a step
@@ -1195,7 +1276,43 @@ function buildInventory(raw){
 }
 function countCols(inv){ return (inv.files||[]).reduce((a,f)=>a+((f.columns||[]).length),0); }
 
-function uploadPanel(pid,onDone){
+/* --- the inventory, and when it is worth anything -------------------------
+   W6 grades each direction against the columns you actually hold, so the
+   inventory has to exist *before* W6 runs. It used to be offered only on the
+   grading screen, which is where the chain parks **after** W6 has already
+   graded - so the one screen that asked for it was the one screen where
+   supplying it changed nothing.
+
+   The same panel now appears at three points in the run, and it must say
+   something different at each, because the same upload has three different
+   consequences:
+
+     'stage'   no project exists yet (screen ②). Held in this browser and sent
+               the moment the project is created, so W6 has it from the start.
+     'before'  the project is running and W6 has not reached it. Saved now,
+               still in time.
+     'after'   W6 has already graded (screen ③). Saving does not re-grade
+               anything, and saying otherwise would be a lie the user finds out
+               about an hour later.
+   ------------------------------------------------------------------------ */
+const STAGED_INV='rd_inventory';
+const readStagedInv=()=>{try{return JSON.parse(sessionStorage.getItem(STAGED_INV)||'null')}catch(e){return null}};
+const clearStagedInv=()=>{try{sessionStorage.removeItem(STAGED_INV)}catch(e){}};
+// Called right after a project is created. Reported separately from the start
+// itself: a project that started is worth saying so even when the inventory
+// did not make it, and the two failures need different fixes.
+async function flushStagedInv(pid){
+  const s=readStagedInv();
+  if(!s||!s.inventory) return null;
+  try{
+    await call('dataset-save',{method:'POST',body:{project_id:pid,inventory:s.inventory}});
+    clearStagedInv();
+    return true;
+  }catch(e){ console.error(e); return false; }
+}
+
+function uploadPanel(pid,onDone,mode){
+  mode=mode||'after';
   const wrap=el('div',{class:'card',style:'margin-top:22px'});
   const preview=el('div',{style:'margin-top:16px'});
   let staged=null;
@@ -1229,7 +1346,8 @@ function uploadPanel(pid,onDone){
             +'font-family:var(--sans);font-size:12px;line-height:1.7;color:var(--text2)'},
             (inventory.files||[]).map(f2=>f2.filename+'\n  '
               +(f2.columns||[]).map(c=>c.name+(c.personal?' ⚑個資':'')).join('、')).join('\n\n')),
-          el('button',{class:'pill solid',style:'margin-top:14px',onclick:send},'送出這份清單'));
+          el('button',{class:'pill solid',style:'margin-top:14px',onclick:send},
+            mode==='stage'?'先存在這台電腦上':'送出這份清單'));
       }catch(err){
         preview.append(el('p',{class:'hint',style:'color:var(--wine)'},String(err.message||err)));
       }
@@ -1237,17 +1355,38 @@ function uploadPanel(pid,onDone){
 
   async function send(){
     if(!staged) return;
+    // No project to attach it to yet. Held here and sent by `begin()` the
+    // instant one exists, which is the only way W6 can have it from the start.
+    if(mode==='stage'){
+      try{
+        sessionStorage.setItem(STAGED_INV,JSON.stringify(
+          {inventory:staged.inventory,nCols:staged.nCols,source:staged.source}));
+        toast('清單先存在這台電腦上了（'+staged.nCols+' 個欄位）。'
+          +'按「確認並開始檢索」時會跟專案一起送出，W6 分級時就吃得到。',0);
+        onDone&&onDone();
+      }catch(e){ toast('這個瀏覽器存不下來：'+(e.message||e),0); }
+      return;
+    }
     try{
       busy('存清單…');
       await call('dataset-save',{method:'POST',body:{project_id:pid,inventory:staged.inventory}});
-      // The chain parks before W6 waiting for exactly this, so releasing here
-      // saves a second trip. A failed release does not undo a saved inventory,
-      // so the two outcomes are reported separately.
+      // Only screen ③ sits on a parked chain, so only there does releasing mean
+      // anything. Calling it anywhere else would advance a chain the user never
+      // asked to advance. A failed release does not undo a saved inventory, so
+      // the two outcomes are reported separately.
+      if(mode!=='after'){
+        unbusy();
+        toast('清單存好了。W6 還沒跑到，分級的時候就會用這一份。',0);
+        onDone&&onDone();
+        return;
+      }
       let released=true;
       try{ await call('release',{method:'POST',body:{project_id:pid}}); }
       catch(e){ released=false; }
       unbusy();
-      toast(released?'清單存好了，鏈也放行了。':'清單存好了，但鏈沒有放行——到進度頁手動放行。',0);
+      toast(released
+        ? '清單存好了，鏈也放行了。但上面那份分級是 W6 用舊狀態判的——要讓這份清單生效，得重跑 W6。'
+        : '清單存好了，但鏈沒有放行——到進度頁手動放行。',0);
       onDone&&onDone();
     }catch(e){ unbusy(); fail(e); }
   }
@@ -1271,9 +1410,23 @@ function uploadPanel(pid,onDone){
     }catch(e){ unbusy(); fail(e); }
   }
 
+  // Where in the run this panel is standing, said in the panel itself. The
+  // upload is identical; what it is worth is not.
+  const WHEN={
+    stage:['W6 分級的時候會拿你的欄位去比對，所以清單要在它跑之前就在。'
+          +'現在還沒有專案，這份清單先留在這台電腦上，'
+          +'按「確認並開始檢索」時跟專案一起送出——這是最早、也最該傳的時機。',null],
+    before:['W6 還沒跑到，現在傳還來得及——分級的時候就會用這一份。',null],
+    after:['上面那份分級是 W6 已經判完的結果，現在傳清單不會讓它重判。'
+          +'這裡適合的是把 documented 的清單換成 tools/inventory.py 量測過的版本；'
+          +'要讓新清單真的生效，得重跑一次 W6。','wine']
+  }[mode]||[null,null];
+
   wrap.append(
     el('p',{class:'eyebrow',style:'margin-bottom:8px'},'UPLOAD AN INVENTORY'),
     el('h4',{style:'margin-bottom:10px'},'上傳資料清單'),
+    WHEN[0]?el('p',{class:'note',style:'margin-bottom:14px'
+      +(WHEN[1]==='wine'?';color:var(--wine)':'')},WHEN[0]):null,
     el('p',{class:'note',style:'margin-bottom:16px'},
       '清單描述的是「你有哪些欄位」，一列是一個欄位、不是一個病人。'
       +'這個頁面跑在你自己的電腦上，檔案在瀏覽器裡解析，'
@@ -1281,14 +1434,30 @@ function uploadPanel(pid,onDone){
     el('div',{style:'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px'},
       el('button',{class:'pill ghost',onclick:downloadTemplate},'下載範本 CSV')),
     el('label',{class:'field'},el('span',{class:'lb'},'選擇 inventory.json 或填好的範本'),file),
-    preview,
-    el('p',{class:'eyebrow',style:'margin:22px 0 8px'},'OR — NO DATA YET'),
-    el('div',{style:'display:flex;gap:10px;flex-wrap:wrap'},
-      el('button',{class:'pill ghost',onclick:()=>noData(false)},'沒有資料，直接繼續'),
-      el('button',{class:'pill ghost',onclick:()=>noData(true)},'沒有資料，先停著')),
-    el('p',{class:'hint',style:'margin-top:10px'},
-      '「直接繼續」會讓 W6 改判「要做到需要什麼」，B 級的意思變成「公開資料就能回答」。'
-      +'「先停著」會把鏈明確停在錦標賽排名——那份排名本身就是結果。'));
+    preview);
+
+  // The two "no data" buttons act on a parked chain, so they only belong where
+  // there is one. On ② nothing has started; on the progress screen the chain is
+  // mid-flight and releasing it would advance something the user did not ask to
+  // advance. Offering a button that cannot do what it says is worse than not
+  // offering it - so each screen gets the sentence that is true there instead.
+  if(mode==='after'){
+    wrap.append(
+      el('p',{class:'eyebrow',style:'margin:22px 0 8px'},'OR — NO DATA YET'),
+      el('div',{style:'display:flex;gap:10px;flex-wrap:wrap'},
+        el('button',{class:'pill ghost',onclick:()=>noData(false)},'沒有資料，直接繼續'),
+        el('button',{class:'pill ghost',onclick:()=>noData(true)},'沒有資料，先停著')),
+      el('p',{class:'hint',style:'margin-top:10px'},
+        '「直接繼續」會放行到 W7，B 級的意思是「公開資料就能回答」。'
+        +'「先停著」會把鏈明確停在這裡——錦標賽排名本身就是結果。'));
+  }else{
+    wrap.append(
+      el('p',{class:'eyebrow',style:'margin:22px 0 8px'},'OR — NO DATA YET'),
+      el('p',{class:'hint'},
+        '沒有清單也可以照跑，不用在這裡做什麼。W6 會換一個問題：'
+        +'不是「你做不做得到」，而是「要做到需要什麼」——'
+        +'代價是不會出現 A 級，因為 A 的意思是「這週就能開始分析」。'));
+  }
   return wrap;
 }
 async function downloadTemplate(){
@@ -1311,9 +1480,10 @@ function paintDataset(side,ds,pid){
   const reload=()=>{ if(pid) screenTiers(pid); };
   if(!rows.length){
     side.append(emptyNote(
-      '還沒有上傳資料清單。沒有清單時所有方向都會落在 C 級——不是因為它們不好，'
-      +'而是系統無從知道你手上有哪些欄位。'));
-    if(pid) side.append(uploadPanel(pid,reload));
+      '這個專案沒有資料清單，所以上面那份分級是 W6 在不知道你手上有哪些欄位的情況下判的——'
+      +'方向會集中在 C 級，不是因為它們不好。'
+      +'清單要在 W6 跑之前就在才有用：下一個專案在「概念」那一頁就可以先傳。'));
+    if(pid) side.append(uploadPanel(pid,reload,'after'));
     return;
   }
   const st=el('div',{class:'stack'});
@@ -1330,7 +1500,7 @@ function paintDataset(side,ds,pid){
   side.append(st);
   // Re-upload stays available: a documented inventory is meant to be replaced
   // by a measured one once tools/inventory.py has been run.
-  if(pid) side.append(uploadPanel(pid,reload));
+  if(pid) side.append(uploadPanel(pid,reload,'after'));
 }
 
 /* ===========================================================================
