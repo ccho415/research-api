@@ -1432,3 +1432,74 @@ def novelty_merge_pubmed(check_id, by_round):
         conn.commit()
     return {"check_id": str(check_id), "n_added": added,
             "rounds_no_longer_empty": revived, "contradiction": contradiction}
+
+
+# The marker that says a PubMed pass has happened for a literature run. Written
+# into `search_query.query_angle` by both collectors, so no schema change and no
+# second source of truth: if a row like this exists, the pass has happened.
+PUBMED_ANGLE_PREFIX = "pubmed via"
+
+
+def pubmed_work(limit=12):
+    """Everything on this deployment that still needs a PubMed pass.
+
+    One call rather than a walk over every project, because the thing that runs
+    this wakes up every few minutes, does nothing, and goes away again - and a
+    worker that costs six requests to learn there is no work will be turned off.
+
+    Two kinds of work, and they are separate because they fail separately:
+
+      literature  a project whose literature run has no PubMed-collected query.
+                  W2 plans the crossings and this repeats them from an address
+                  NCBI has not blocked.
+      novelty     an adversarial check whose rounds were decided without
+                  PubMed. The queries were recorded, so they can be asked again
+                  and merged into the round they belong to.
+
+    `parked_after_novelty` says the chain is waiting and the worker may release
+    it once the merge is done. It is deliberately a fact about the run rather
+    than an instruction: releasing something that is not parked is how a chain
+    gets pushed past a review point nobody looked at.
+    """
+    out = []
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT p.id, p.topic, p.title FROM project p "
+            "WHERE p.status IS NULL OR p.status NOT IN ('archived','stopped') "
+            "ORDER BY p.created_at DESC LIMIT %s", (int(limit),))
+        projects = cur.fetchall()
+
+        for p in projects:
+            pid = str(p["id"])
+
+            # --- the literature half -------------------------------------
+            cur.execute(
+                "SELECT r.id, "
+                "       COUNT(*) FILTER (WHERE q.query_angle LIKE %s) AS n_pubmed, "
+                "       MAX(q.domain) AS domain "
+                "FROM run r LEFT JOIN search_query q ON q.run_id = r.id "
+                "WHERE r.project_id = %s AND r.stage = 'lit_search' "
+                "GROUP BY r.id ORDER BY MAX(q.executed_at) DESC NULLS LAST "
+                "LIMIT 1", (PUBMED_ANGLE_PREFIX + "%", pid))
+            lit = cur.fetchone()
+            literature = None
+            if lit and not lit["n_pubmed"]:
+                literature = {"run_id": str(lit["id"]),
+                              "domain": lit["domain"] or "clinical"}
+
+            # --- the novelty half ----------------------------------------
+            nov = novelty_pubmed_pending(pid)
+            novelty = nov["checks"] if nov["n"] else None
+
+            # --- is the chain waiting on us ------------------------------
+            cur.execute(
+                "SELECT status FROM run WHERE project_id = %s AND stage = 'novelty' "
+                "ORDER BY started_at DESC LIMIT 1", (pid,))
+            nr = cur.fetchone()
+            parked = bool(nr and nr["status"] == "awaiting_review")
+
+            if literature or novelty or parked:
+                out.append({"project_id": pid, "topic": p["topic"] or p["title"],
+                            "literature": literature, "novelty": novelty,
+                            "parked_after_novelty": parked})
+    return {"n": len(out), "projects": out}

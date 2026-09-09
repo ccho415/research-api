@@ -229,6 +229,23 @@ def search_ingest(body: IngestIn, x_api_key: Optional[str] = Header(None)):
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+@app.get("/compute/pubmed/work")
+def pubmed_work(limit: int = 12, x_api_key: Optional[str] = Header(None)):
+    """Everything still waiting on a PubMed pass, in one request.
+
+    Answered in one call because the thing that asks wakes every few minutes,
+    almost always finds nothing, and goes away again. A check that costs six
+    requests to learn there is no work is a check somebody eventually turns
+    off, and then the whole arrangement quietly stops happening.
+    """
+    check_key(x_api_key)
+    import db
+    try:
+        return db.pubmed_work(limit=limit)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.get("/compute/novelty/pubmed-pending")
 def novelty_pubmed_pending(project_id: str, x_api_key: Optional[str] = Header(None)):
     """The novelty rounds that were decided without PubMed, and their queries.

@@ -58,8 +58,21 @@ check("dedup hands over to the tournament",
       chain.decide_next("dedup")[:2], ("done", "tournament"))
 check("the tournament hands over to feasibility",
       chain.decide_next("tournament")[:2], ("done", "feasibility"))
-check("novelty hands over to the debate",
-      chain.decide_next("novelty")[:2], ("done", "debate"))
+# Novelty parks rather than handing straight over, and not so a person can read
+# something: NCBI blocks this deployment from E-utilities, so every round W7
+# just ran was decided without PubMed. The recorded queries get asked again
+# from a machine that is not blocked and merged back in, and that has to happen
+# BEFORE the debate - the critic may only cite papers an actual search
+# returned, and this is when those papers arrive.
+check("novelty parks so the PubMed pass can land before the debate",
+      chain.decide_next("novelty")[:2], ("awaiting_review", None))
+check("...and says what it is waiting for, rather than 'a pause set on this "
+      "stage', which would send somebody looking for a setting they never made",
+      "PubMed" in chain.decide_next("novelty")[2], True)
+# The successor is unchanged - only whether it starts by itself. A pause that
+# also quietly reordered the chain would be very hard to see.
+check("the stage after novelty is still the debate",
+      chain.decide_next("novelty", pause_after=False)[:2], ("done", "debate"))
 check("the report is the end of the chain",
       chain.decide_next("report")[:2], ("done", None))
 

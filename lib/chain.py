@@ -74,7 +74,19 @@ STAGE_PLAN = (
     Stage("dedup",       "W4 去重",       "lzjAL1ONErAwLkoK", 0.05, "①", False),
     Stage("tournament",  "W5B 錦標賽",    "Ob0O5ufSMHF3XZrU", 0.30, "②", False),
     Stage("feasibility", "W6 可行性分級", "xKB9e0sepZPaPTYM", 0.06, "③", True),
-    Stage("novelty",     "W7 新穎性驗證", "1PrxDrB7760V5vom", 0.25, None, False),
+# Stops by default, and not for a person to read something. NCBI blocks this
+    # deployment's IP from E-utilities, so every round W7 just ran was decided
+    # without PubMed - and the queries it used are recorded, so they can be
+    # asked again from a machine that is not blocked and merged back in. That
+    # has to happen BEFORE the debate, because the debate's critic may only
+    # cite papers an actual search returned, and this is where those papers
+    # arrive. See `db.pubmed_work` and tools/pubmed_worker.py.
+    #
+    # If nothing ever does that work the chain sits at `awaiting_review`, which
+    # is the same state review points ③ and ④ use: visible on the progress
+    # screen, released by the same button. The cost of the worker never running
+    # is one fewer cross-check, not a stuck pipeline.
+    Stage("novelty",     "W7 新穎性驗證", "1PrxDrB7760V5vom", 0.25, None, True),
     Stage("debate",      "W8 唱反調",     "PSqvLA7DS4huNrSU", 0.50, "④", True),
     Stage("report",      "W9 最終報告",   "FIWgMalCUagYln9M", 0.30, None, False),
 )
@@ -133,7 +145,16 @@ def decide_next(stage, ok=True, pause_after=None):
     nxt = successor(stage)
 
     if pause:
-        where = f"審閱點 {s.review}" if s.review else "a pause set on this stage"
+        if s.review:
+            where = f"審閱點 {s.review}"
+        elif stage == "novelty":
+            # Named, because "a pause set on this stage" would send somebody
+            # looking for a setting they did not make.
+            where = ("PubMed 補查（這台主機連不到 E-utilities，所以 W7 的每一輪"
+                     "都是在沒有 PubMed 的情況下判的。補查完會自動放行；"
+                     "不想等就自己按放行）")
+        else:
+            where = "a pause set on this stage"
         if nxt is None:
             return "done", None, f"{s.label} was the last stage."
         return "awaiting_review", None, (
