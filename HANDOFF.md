@@ -157,6 +157,33 @@ pinned data `{}`，會蓋掉 `execute_workflow` 傳進去的 `inputData`，
 （帶 `Research API Key`），可以當對照組——它們正常而目標路由 404，
 就確定是「服務活著但新路由沒上線」，不是服務掛了。
 
+## 📅 文獻年份切點：只有 W3 有，其他都沒有（2026-09-10 查證）
+
+被問到「發想、錦標賽、辯論分別用哪一年當切點」，追過一遍程式碼的結果：
+
+| 階段 | 切點 | 出處 |
+|---|---|---|
+| W2 文獻檢索 | **無，全年份** | `Run One Search` 不帶 `year_from`／`year_to` |
+| **W3 方向發想** | **當年** | W-START 傳 `cutoff: new Date().getFullYear()` |
+| W7 新穎性 | **無，全年份** | `novelty.py` 的十四輪檢索不帶年份 |
+| W5B 錦標賽 | **無** | 不檢索文獻，只比較兩個方向的文字 |
+| W8 辯論 | **無** | 引用池就是 W7 撈回來的論文（`debate._evidence_pool`）|
+
+W3 的切點只用在 `verify.verify`：把命中數切成 `papers_before`（≤ cutoff）與
+`papers_after`（> cutoff），判決依序是
+`ALREADY DONE` → `PURSUED SINCE` → `STILL OPEN`。
+
+**已知的後果，不是缺陷**：切點是當年，所以 `papers_after` 幾乎恆為 0，
+`PURSUED SINCE` 這個判決在正常使用下**永遠不會出現**，三檔實質剩兩檔。
+那一檔是為另一種情境設計的——拿一個 2015 年提出的想法問「當年新、之後有沒有
+人做」。實際專案問的是「到今天為止有沒有人做過」，當年切點才是對的。
+
+**W3 有一個刻意不發布的草稿**（`49a71ac1`「清掉表單裡的肺腺癌預設值」）。
+它要移除表單欄位殘留的 `topic = lung adenocarcinoma 2013-2015 gap harvest`
+與 `cutoff = 2015`。已發布版本仍然預填這兩個，但**只影響手動開 W3 表單那條路**，
+前端那條一律明確帶當年。使用者 2026-09-10 表示不再用表單，所以不發布。
+**看到 W3 的 versionId ≠ activeVersionId 不用再查一次，就是這一筆。**
+
 ## ⏭️ 明天第一件事
 
 測試專案 `82ffbcec-20fc-4377-b1a1-01f5dff6061f`
