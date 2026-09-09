@@ -710,8 +710,19 @@ async function screenConcepts(){
 
   const listBox=el('div',{class:'stack'});
   const invBox=el('div',{});
+  // Kept in step with W-START and W2, which both refuse above this. Enforced
+  // here as well so the refusal arrives while you are still editing, rather
+  // than as a failed workflow after you press the button that spends money.
+  const MAX_CONCEPTS=5;
+  const addBtn=el('button',{class:'pill ghost',onclick:()=>{
+    if(st.concepts.length>=MAX_CONCEPTS){
+      toast('最多 '+MAX_CONCEPTS+' 個概念。它們是用 AND 交叉的——每多一個，檢索就更窄一次。',0);
+      return;
+    }
+    st.concepts.push(''); paint();
+  }},'加一個概念');
   const addRow=el('div',{style:'display:flex;gap:10px;margin-top:18px;flex-wrap:wrap'},
-    el('button',{class:'pill ghost',onclick:()=>{ st.concepts.push(''); paint(); }},'加一個概念'),
+    addBtn,
     el('button',{class:'pill ghost',onclick:verify},'重新檢查'),
     el('button',{class:'pill solid',onclick:begin},'確認並開始檢索'));
 
@@ -725,7 +736,14 @@ async function screenConcepts(){
     el('section',{class:'band'},shell(
       sechead('03','概念與 MeSH 比對'),
       listBox, addRow,
+      // Said here because the consequence is invisible until the results come
+      // back thin. The crossing is an AND, so a fourth concept does not widen
+      // the search by a quarter - it cuts it.
       el('p',{class:'hint',style:'margin-top:18px'},
+        '概念之間是 AND：每一個都必須同時出現,所以多加一個是把檢索變窄,不是變廣。'
+        +'最多 '+MAX_CONCEPTS+' 個。像 safety、novel、association 這種框架詞'
+        +'通常不適合單獨當一軸——它們在 MeSH 裡對不到主題,反而會把結果砍掉一大半。'),
+      el('p',{class:'hint',style:'margin-top:10px'},
         '按「確認並開始檢索」之後才會建立專案、開始花錢。之後就改不動了。'))),
     shell(el('section',{},invBox)),
     footer());
@@ -806,6 +824,12 @@ async function screenConcepts(){
   async function begin(){
     const concepts=st.concepts.map(s=>String(s||'').trim()).filter(Boolean);
     if(!concepts.length){ toast('至少要有一個概念'); return; }
+    // The server refuses above this too. Caught here so the answer arrives now
+    // rather than as a failed workflow after the project has been created.
+    if(concepts.length>MAX_CONCEPTS){
+      toast('有 '+concepts.length+' 個概念，最多 '+MAX_CONCEPTS+' 個。先刪掉幾個。',0);
+      return;
+    }
     try{
       busy('建立專案並開始檢索…');
       const d=await startCall({mode:'search',topic:st.topic,domain:st.domain,
