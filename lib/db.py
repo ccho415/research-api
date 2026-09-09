@@ -773,11 +773,23 @@ def list_dedup_pairs(run_id, undecided_only=False, limit=200):
 
 
 def papers_for(project_id=None, source_run_id=None, limit=300):
-    """The papers W2 already found, newest search first.
+    """The papers W2 already found, best venues first, then newest.
 
     Reached through the searches that returned them rather than by re-searching:
     that is the whole point of the cache, and the harvest was previously paying
     Europe PMC a second time for records already sitting in this table.
+
+    The ordering matters because this is the step with a cap. The search is
+    free and stays wide; fetching full text is neither, so only a few hundred
+    of those papers get mined for the sentences where authors say what is still
+    unknown. Which few hundred is therefore a real choice, and it used to be
+    made on publication year alone.
+
+    Venue tier comes first now - see `journals`, and note that it is a priority
+    and not a filter: everything is still returned, in a different order. A
+    paper with no venue recorded, which a real fraction of Europe PMC records
+    are, scores zero and falls through to year and citations rather than being
+    pushed behind anything.
     """
     where, args = [], []
     if source_run_id:
@@ -788,24 +800,54 @@ def papers_for(project_id=None, source_run_id=None, limit=300):
         args.append(project_id)
     if not where:
         raise ValueError("need project_id or source_run_id")
-    args.append(int(limit))
+
+    # The domain this project searched under, so the journal tiers follow the
+    # project instead of being fixed. W2 stores it on every query, so it is
+    # already here and needs no new parameter; a project from before it existed
+    # gets no domain tier and the ordering is simply less precise.
+    domain = None
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT q.domain FROM search_query q "
+            "LEFT JOIN run r ON r.id = q.run_id "
+            f"WHERE {' AND '.join(where)} AND q.domain IS NOT NULL "
+            "ORDER BY q.executed_at DESC LIMIT 1", list(args))
+        row = cur.fetchone()
+        if row:
+            domain = row["domain"]
+
+    import journals
+    gen, dom = journals.patterns(domain)
+    # `ILIKE ANY` of an empty array matches nothing rather than failing, but a
+    # value that cannot occur says what is meant more plainly than `{}`.
+    gen = gen or ["__no_such_venue__"]
+    dom = dom or ["__no_such_venue__"]
 
     with connect() as conn, conn.cursor() as cur:
         cur.execute(
+            # The tier is selected rather than only ordered by, because under
+            # SELECT DISTINCT Postgres requires every ORDER BY expression to be
+            # in the select list. `venue` and `citations` come along for the
+            # same reason, and the caller is free to ignore them.
+            #
             # `abstract` is here because most of this corpus has no open full
             # text, and the harvest falls back to mining the abstract for the
             # papers that do not. It is already stored, so this costs one column.
             "SELECT DISTINCT p.id, p.pmid, p.pmcid, p.doi, p.title, p.year, "
-            "       p.abstract "
+            "       p.abstract, p.venue, p.citations, "
+            "       (CASE WHEN p.venue ILIKE ANY(%s) THEN 2 "
+            "             WHEN p.venue ILIKE ANY(%s) THEN 1 "
+            "             ELSE 0 END) AS venue_tier "
             "FROM paper p "
             "JOIN search_hit h ON h.paper_id = p.id "
             "JOIN search_query q ON q.id = h.search_query_id "
             "LEFT JOIN run r ON r.id = q.run_id "
             f"WHERE {' AND '.join(where)} "
-            "ORDER BY p.year DESC NULLS LAST "
-            "LIMIT %s", args)
+            "ORDER BY venue_tier DESC, "
+            "         p.year DESC NULLS LAST, "
+            "         p.citations DESC NULLS LAST "
+            "LIMIT %s", [gen, dom] + list(args) + [int(limit)])
         return [dict(r, id=str(r["id"])) for r in cur.fetchall()]
-
 
 def cached_sections(paper_ids, kind="discussion"):
     """Which of these papers have already been fetched, and what came back.
