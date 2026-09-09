@@ -35,15 +35,54 @@
 `order_flip_rate: 0.23`、`all_gates_pass: false`、`cost_usd: 1.105`——
 這是第一次這些數字存得下來，之前每跑一次都算、推去 LINE、然後消失。
 
-### 還沒做（使用者說晚點做）
+### 還沒做
 
-- **批次 3**：守門沒過就停在審閱點 ③，讓使用者勾選哪些題目放行。
-  資料層已經支援了——`list_feasibility(project_id, idea_ids)` 收得下 `idea_ids`，
-  缺的是 `/compute/feasibility` 與 W7/W8/W9 把它接上去。
-  **目前守門「偵測到但擋不住」**：`all_gates_pass: false` 的那一次，
-  `Tell The Chain` 照樣回報 done 並排了 W6。
 - **批次 4**：檢索詞分「一定要包含」與「可有可無」，
   動到 `/compute/search/expand`、W2、W3 與畫面 ②。
+- **守門「偵測到但擋不住」**：`all_gates_pass: false` 的那一次，
+  `Tell The Chain` 照樣回報 done 並排了 W6。勾選功能做完之後這件事的急迫性降低了
+  （人本來就會在 ③ 看到守門結果再決定放行誰），但守門本身仍然不會擋。
+
+## ✅ 2026-09-09 完成：審閱點 ③ 可以勾選要放行的方向
+
+原本 ③ 只有一顆「放行」，然後 W7/W8/W9 各自回頭按 `tiers` + `max_ideas`
+取排名前幾名。**人讀完分級板的判斷沒有地方可以進來**——而那正是審閱點的用意。
+
+| 改哪裡 | 改什麼 |
+|---|---|
+| `frontend/index.html` `paintTiers` | 每個方向一個勾選框，加三顆批次勾選鈕 |
+| `frontend/index.html` `releaseBlock` | 收一個 `Set`，回傳 `{node, sync}`；送 `params.idea_ids` |
+| W7 `Novelty Request`／`Pick The Directions` | 收 `idea_ids`，有勾選時照 id 選 |
+| W8 `Debate Request`／`Pick The Directions` | 同上 |
+| W9 `Report Request`／`Pick The Directions` | 同上，但新穎性分層不受影響 |
+
+**管路本來就通，不用改後端。** `chain.resume(params)` 會把 params 併進交棒
+（merge 不是取代，所以送 `idea_ids` 不會蓋掉 W6 算出來的 `tiers`），
+W-API 的 `release` 早就帶 `body.params`。`idea_ids` 走每一支的 `incoming`
+一路往下傳，所以**在 ③ 勾一次，W8 和 W9 都算數**。
+
+### 三個刻意的決定
+
+1. **一開始一個都不勾。** 預先勾好的板子收到的是「按了放行」，不是一個決定。
+2. **勾選蓋過 `tiers`。** C 級方向可能比 A 級值錢——這也是分級板從不按 tier
+   重排的同一個理由。勾了卻不在分級板上的 id 直接擋掉，不默默少跑。
+3. **錢寫在按鈕旁邊。** 每個方向往下跑約 $0.53（W7 $0.06 + W8 $0.40 + W9 $0.07）。
+   預算護欄是在你決定**之後**才擋，那時候它已經不是資訊了。
+
+### ⚠️ 動 idea_ids 就一定要動 max_ideas
+
+三支的 `May We Afford This` 都**跑在讀分級板之前**，用 `max_ideas` 估預算
+（W7：`0.061 × max_ideas`；W8：`0.04 × max_rounds × max_ideas`；W9：`0.07 × max_ideas`）。
+勾六個而 `max_ideas` 留在預設 2 → **照兩個估、跑六個，護欄回報通過，超支要到帳單才看得見**。
+所以正規化節點把 `max_ideas` 設成勾選數量。**以後任何會改變實際跑幾個方向的參數，
+都要在正規化節點就把 `max_ideas` 對齊。**
+
+W9 有一個差別：勾選只縮小候選範圍，**新穎性分層原封不動**。報告第 5 節就是
+新穎性判決，被勾選但沒驗過新穎性的方向照樣寫不出報告——那是缺少輸入，
+不是偏好，勾再多次也生不出判決。
+
+順帶修掉：`release` 現在會看回應的 `resumed: false` 並照實回報。
+原本不管後端說什麼都報「放行了」，一條沒有重啟的鏈會就這樣被晾著。
 
 ## ✅ 2026-09-09 完成：資料清單移到分級之前
 
