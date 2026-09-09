@@ -69,25 +69,33 @@
 `chain/start` 會花錢，刻意不在前端白名單裡，目前要用 n8n 或 curl 打
 （`stage: "feasibility"`）。要不要放進前端是個獨立決定。
 
-## ⚠️ MCP 改不了既有節點的 notes（2026-09-09 實測）
+## ⚠️ 用 MCP 改既有節點的 notes：只有一條路（2026-09-09 實測）
 
-想改 W-API `Write To The API` 的節點備註，踩到這個：
+改 W-API `Write To The API` 的備註時踩到的：
 
 - **`setNodeParameter` 只會寫進 `parameters`。** 傳 `path: "/notes"` 的結果是在
   HTTP Request 上長出一個不存在的 `parameters.notes` 參數，**真正的 `node.notes`
-  一動也沒動**，而且工具回報 `appliedOperations: 1`、零警告——完全看不出做錯了。
-- `update_workflow` 的操作清單裡**沒有**任何一個能改既有節點的 `notes`；
+  一動也沒動**，而且工具回報 `appliedOperations: 1`、零警告——
+  完全看不出做錯了。這是靜默失效。
+- `update_workflow` 的操作清單裡沒有專門改 notes 的操作；
   `setNodeSettings` 只吃 onError／retry／executeOnce 那一組。
-  只有 `addNode` 的輸入結構收得下 `notes`。
-- 已用 `updateNodeParameters` + `replace: true` 還原，並發布（`f12622d1`）。
-  **草稿與已發布現在一致。**
+  **只有 `addNode` 的輸入結構收得下 `notes`。**
 
-**要改節點備註就去 n8n 網頁上改**，或者接受 remove + addNode 重建的風險——
-但 `addNode` 有丟欄位的前科（會吃掉 `executeOnce`），為了一行註解不值得。
+**唯一可行的做法：`removeNode` + `addNode` 重建，同一批操作送出（原子性的）。**
+`id`、`position`、`typeVersion`、`parameters`、`credentials` 逐字照抄，
+然後把每一條進出的連線 `addConnection` 接回去——`removeNode` 會把連線一起帶走。
 
-那條備註目前仍寫著「只有 verify-terms 與 release 走這裡」，**是錯的**：
-`kind: 'write'` 的路由有五條——`verify-terms`、`dataset-save`、`chain-pause`、
-`chain-stop`、`release`，其中只有 `release` 會讓鏈前進、因而會花錢。
+兩個要注意的地方：
+
+1. 回應會附一句 `HTTP Request nodes were skipped during credential auto-assignment`。
+   **那句話會誤導**：只要 `addNode` 裡明確給了 `credentials`，憑證是有進去的
+   （已逐欄比對確認）。那句講的是自動指派，不是你手動給的那份。
+2. `addNode` 有丟欄位的前科（會吃掉 `executeOnce`），所以重建前先確認
+   那個節點有沒有設 `executeOnce`／`onError`／`alwaysOutputData`／`retryOnFail`。
+   有的話要一併確認有沒有被帶過去。
+
+已完成並發布（`9015bf2d`）。發布後兩個 method 都測過，各回 403（驗證擋下），
+不是 404 或 500——代表 webhook 兩條路都還活著。
 
 ## ⏭️ 明天第一件事
 
