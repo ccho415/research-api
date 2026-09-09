@@ -740,9 +740,17 @@ async function screenConcepts(){
       // back thin. The crossing is an AND, so a fourth concept does not widen
       // the search by a quarter - it cuts it.
       el('p',{class:'hint',style:'margin-top:18px'},
-        '概念之間是 AND：每一個都必須同時出現,所以多加一個是把檢索變窄,不是變廣。'
-        +'最多 '+MAX_CONCEPTS+' 個。像 safety、novel、association 這種框架詞'
-        +'通常不適合單獨當一軸——它們在 MeSH 裡對不到主題,反而會把結果砍掉一大半。'),
+        '概念之間是 AND：每一個都必須同時出現，所以多加一個是把檢索變窄，不是變廣。'
+        +'最多 '+MAX_CONCEPTS+' 個。'),
+      // Written from what the dictionary actually says, after an earlier
+      // version of this line asserted that `safety` is not in MeSH. It is
+      // (D012449). The real trap is narrower and worse than "not found".
+      el('p',{class:'hint',style:'margin-top:10px'},
+        '框架詞要小心，但問題不是「不在 MeSH」那麼單純。novel、correlation、'
+        +'relationship 確實不在，那一軸會退成純字串比對；而 safety、risk 在 MeSH 裡'
+        +'是很寬的描述詞，association 在 MeSH 裡指的是「心理聯想」而不是統計關聯——'
+        +'對得到反而更危險，因為看起來像成功了。下面每一列會告訴你這個詞實際對到什麼，'
+        +'看一眼再決定。'),
       el('p',{class:'hint',style:'margin-top:10px'},
         '按「確認並開始檢索」之後才會建立專案、開始花錢。之後就改不動了。'))),
     shell(el('section',{},invBox)),

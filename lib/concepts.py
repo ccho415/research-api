@@ -93,6 +93,51 @@ def load(path=None):
     return _DICT
 
 
+_SQUASHED = None
+
+
+def _squashed():
+    """The same index again with punctuation removed rather than spaced out.
+
+    `norm` turns punctuation into a space, so `Dual Anti-Platelet Therapy`
+    becomes "dual anti platelet therapy" and never meets "dual antiplatelet
+    therapy", which is how the field writes it. Built lazily and once; the
+    dictionary is already resident, so this is a second set of keys over the
+    same values.
+
+    First key wins on collision. Two MeSH terms differing only in punctuation
+    are near-synonyms in practice, and this index is a fallback consulted only
+    after the exact one has missed - so the alternative to an imperfect answer
+    here is no answer at all.
+    """
+    global _SQUASHED
+    if _SQUASHED is None:
+        _SQUASHED = {}
+        for k, ui in load()["terms"].items():
+            sq = k.replace(" ", "")
+            if sq and sq not in _SQUASHED:
+                _SQUASHED[sq] = ui
+    return _SQUASHED
+
+
+def lookup(term):
+    """The descriptor id for `term`, tolerating a difference in punctuation.
+
+    Every screen that tells somebody whether a term is "in MeSH" has to answer
+    the same way the search itself will, or the person edits their concepts
+    against a verdict that will not hold. `search.vocab_mesh_rdf` resolves
+    "dual antiplatelet therapy" through NLM; this used to say it was unknown,
+    so the confirmation screen advised dropping a term that in fact works.
+    """
+    key = norm(term)
+    if not key:
+        return None
+    ui = load()["terms"].get(key)
+    if ui:
+        return ui
+    return _squashed().get(key.replace(" ", ""))
+
+
 def label(ui):
     return load()["labels"].get(ui, ui)
 

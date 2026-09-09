@@ -142,7 +142,7 @@ def variants(term, cap=8):
     narrower subtype.
     """
     out = [term]
-    ui = C.load()["terms"].get(C.norm(term))
+    ui = C.lookup(term)
 
     if ui:
         out.extend(extra_by_ui().get(ui, []))
@@ -249,7 +249,7 @@ def describe_terms(terms):
         key = C.norm(t)
         if not key or key in seen:
             continue
-        ui = d["terms"].get(key)
+        ui = C.lookup(t)
         vs = variants(t)
         seen[key] = True
         out.append({
