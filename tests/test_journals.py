@@ -46,6 +46,11 @@ check("a clinical venue scores under the clinical domain",
       J.tier("Stroke", "clinical") == 1 and J.tier("Circulation", "clinical") == 1)
 check("...and the same venue is not special in another domain",
       J.tier("Stroke", "cs") == 0)
+# Added after a live search returned it and it scored zero. The pattern that
+# would also have caught `Journal of Stroke and Cerebrovascular Diseases` was
+# rejected for that reason - see the check further down that still guards it.
+check("a specialty venue seen in real results reaches the domain tier",
+      J.tier("European stroke journal", "clinical") == 1)
 check("an environmental venue scores under env, not clinical",
       J.tier("Environmental Health Perspectives", "env") == 1
       and J.tier("Environmental Health Perspectives", "clinical") == 0)

@@ -166,6 +166,31 @@ def s_pubmed(q, limit, year_from, year_to):
     return out
 
 
+def _epmc_venue(it):
+    """Where Europe PMC actually keeps the journal name.
+
+    Not in `journalTitle`. That key exists on the record and is empty on every
+    one of them - measured at 0 of 150 across three unrelated searches, against
+    149 of 150 for `journalInfo.journal.title`. Reading the empty one meant
+    every Europe PMC paper was stored with no venue at all, and Europe PMC is
+    the source that answers most clinical searches here because NCBI blocks
+    this host from E-utilities. So the journal was missing for effectively the
+    whole corpus, silently, since the first run.
+
+    The full title is preferred over the Medline abbreviation because that is
+    what reads properly in a report six months later, and matching is done with
+    case-insensitive substrings that cope with either. Europe PMC writes it in
+    sentence case and sometimes with a qualifier - `Lancet (London, England)`,
+    `International journal of stroke : official journal of...` - which the
+    substring patterns in `journals` are written to survive.
+    """
+    ji = it.get("journalInfo") or {}
+    j = ji.get("journal") or {}
+    return (j.get("title") or j.get("medlineAbbreviation")
+            or it.get("journalTitle")
+            or (it.get("bookOrReportDetails") or {}).get("publisher") or "")
+
+
 def s_europepmc(q, limit, year_from, year_to):
     query = q
     if year_from or year_to:
@@ -178,7 +203,7 @@ def s_europepmc(q, limit, year_from, year_to):
         out.append(_rec("europepmc", it.get("id", ""), it.get("title", ""),
                         it.get("abstractText", ""),
                         int(it["pubYear"]) if str(it.get("pubYear", "")).isdigit() else None,
-                        it.get("journalTitle", "") or it.get("bookOrReportDetails", {}).get("publisher", ""),
+                        _epmc_venue(it),
                         [a.strip() for a in (it.get("authorString", "") or "").split(",")][:8],
                         it.get("doi", ""), it.get("citedByCount"),
                         f"https://europepmc.org/article/{it.get('source','MED')}/{it.get('id','')}",

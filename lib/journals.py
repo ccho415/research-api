@@ -59,7 +59,17 @@ BY_DOMAIN = {
         "circulation", "circulation %", "circ %",
         "journal of the american college of cardiology%", "j am coll cardiol%",
         "european heart journal%", "eur heart j%",
+        # "stroke%" is prefix-anchored on purpose - a bare "%stroke%" sweeps in
+        # every journal with the word in its title and the tier stops meaning
+        # anything. `european stroke journal` was added after showing up in a
+        # live search and being missed.
+        #
+        # `journal of stroke%` was tried and removed: it also matched Journal
+        # of Stroke and Cerebrovascular Diseases, which is not the same tier,
+        # and a pattern that cannot tell two journals apart should not be
+        # deciding between them. The test that caught it is kept.
         "stroke", "stroke %", "international journal of stroke%",
+        "european stroke journal%",
         "neurology", "neurology %", "annals of neurology%", "brain",
         "journal of clinical oncology%", "j clin oncol%",
         "diabetes care%", "diabetologia%",
