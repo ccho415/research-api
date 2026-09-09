@@ -69,6 +69,26 @@
 `chain/start` 會花錢，刻意不在前端白名單裡，目前要用 n8n 或 curl 打
 （`stage: "feasibility"`）。要不要放進前端是個獨立決定。
 
+## ⚠️ MCP 改不了既有節點的 notes（2026-09-09 實測）
+
+想改 W-API `Write To The API` 的節點備註，踩到這個：
+
+- **`setNodeParameter` 只會寫進 `parameters`。** 傳 `path: "/notes"` 的結果是在
+  HTTP Request 上長出一個不存在的 `parameters.notes` 參數，**真正的 `node.notes`
+  一動也沒動**，而且工具回報 `appliedOperations: 1`、零警告——完全看不出做錯了。
+- `update_workflow` 的操作清單裡**沒有**任何一個能改既有節點的 `notes`；
+  `setNodeSettings` 只吃 onError／retry／executeOnce 那一組。
+  只有 `addNode` 的輸入結構收得下 `notes`。
+- 已用 `updateNodeParameters` + `replace: true` 還原，並發布（`f12622d1`）。
+  **草稿與已發布現在一致。**
+
+**要改節點備註就去 n8n 網頁上改**，或者接受 remove + addNode 重建的風險——
+但 `addNode` 有丟欄位的前科（會吃掉 `executeOnce`），為了一行註解不值得。
+
+那條備註目前仍寫著「只有 verify-terms 與 release 走這裡」，**是錯的**：
+`kind: 'write'` 的路由有五條——`verify-terms`、`dataset-save`、`chain-pause`、
+`chain-stop`、`release`，其中只有 `release` 會讓鏈前進、因而會花錢。
+
 ## ⏭️ 明天第一件事
 
 測試專案 `82ffbcec-20fc-4377-b1a1-01f5dff6061f`
