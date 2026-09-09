@@ -182,6 +182,21 @@ input:focus,textarea:focus,select:focus{outline:0;border-bottom-color:var(--wine
 .plist .st.stop{background:var(--wine)}
 .plist .st.wait{background:var(--wine);box-shadow:0 0 0 3px #7A223333}
 
+/* --- the tick that decides what goes on --------------------------------- */
+/* Given the same weight as the tier chip beside it, because it is the control
+   this whole screen exists for. A checkbox at browser-default size next to a
+   filled pill reads as metadata about the row rather than the decision. */
+.tick{display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+  border:1px solid var(--rule);border-radius:999px;padding:4px 12px 4px 9px;
+  background:#FFFFFF66;font-family:var(--sans);font-size:11px;letter-spacing:.8px;
+  color:var(--text2);transition:background .15s,border-color .15s,color .15s}
+.tick:hover{border-color:var(--camel);color:var(--text)}
+.tick:has(.tickbox:checked){background:var(--teal);border-color:var(--teal);color:#fff}
+.tickbox{width:15px;height:15px;margin:0;accent-color:var(--wine);cursor:pointer}
+.tick:has(.tickbox:checked) .tickbox{accent-color:#fff}
+.tick:focus-within{outline:2px solid var(--teal);outline-offset:2px}
+.blocked .hint.on-dark{color:#FFFFFFAA}
+
 /* --- what a stage said about itself ------------------------------------- */
 /* Set apart from `detail` on purpose. `detail` counts rows that reached the
    database; this is the stage's own account of what it is doing, which for a
@@ -1154,9 +1169,22 @@ const TIER_NOTE={
   C:'要另外去取得資料才能做。',
   D:'現階段做不了。'
 };
+// What the rest of the chain costs, per direction, from the stages' own
+// measured estimates rather than STAGE_PLAN's rough figures. Shown because
+// ticking a sixth box is not a free click - it is another $0.53 - and the
+// budget guardrail refuses AFTER you have decided, which is too late to be
+// information.
+const PER_DIRECTION={novelty:0.061,debate:0.40,report:0.07};
+const PER_DIRECTION_TOTAL=PER_DIRECTION.novelty+PER_DIRECTION.debate+PER_DIRECTION.report;
+
 function paintTiers(box,f,pid){
   box.innerHTML='';
   const c=f.counts||{};
+  // Which directions go on. Nothing is ticked to start with: the point of this
+  // screen is a decision, and a board that arrives pre-ticked collects a click
+  // on "release" rather than a choice.
+  const sel=new Set();
+  let syncBar=()=>{};
   box.append(sechead('01','分級板', f.n?`${f.n} 個方向`:null));
   box.append(el('div',{class:'grid2',style:'margin-bottom:30px'},
     ...['A','B','C','D'].map(t=>el('div',{class:'card flat'},
@@ -1165,29 +1193,56 @@ function paintTiers(box,f,pid){
       el('p',{class:'hint'},TIER_NOTE[t])))));
 
   const rows=f.assessments||[];
-  if(!rows.length){ box.append(notYet('W6 可行性分級')); }
-  else{
-    box.append(el('p',{class:'note',style:'margin-bottom:14px'},'依錦標賽名次排列，不依分級排序。'));
-    const stack=el('div',{class:'stack'});
-    for(const a of rows){
-      const missing=Array.isArray(a.missing)?a.missing:[];
-      stack.append(el('div',{class:'row'},
-        el('div',{style:'display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px'},
-          el('span',{class:'chip tier'+(a.tier||'D')},(a.tier||'?')+' 級'),
-          el('span',{class:'meta'},'名次 '+(a.rank===null||a.rank===undefined?'未排名':a.rank)),
-          a.code?el('span',{class:'meta'},'#'+a.code):null),
-        el('h4',{style:'margin-bottom:6px'},a.title||'(無標題)'),
-        a.statement?el('p',{style:'font-size:13px;line-height:1.9;margin-bottom:12px'},a.statement):null,
-        a.design?field('研究設計',a.design):null,
-        missing.length?field('缺什麼',missing.join('；')):null,
-        a.route_to_tier_a?field('怎麼補上',a.route_to_tier_a):null,
-        a.power_note?field('檢定力',a.power_note):null));
-    }
-    box.append(stack);
+  if(!rows.length){ box.append(notYet('W6 可行性分級')); box.append(releaseBlock(pid,'③',
+    '放行之後會跑 W7 新穎性驗證和 W8 唱反調辯論，會花錢。')); return; }
+
+  box.append(el('p',{class:'note',style:'margin-bottom:6px'},
+    '依錦標賽名次排列，不依分級排序。'));
+  box.append(el('p',{class:'note',style:'margin-bottom:14px'},
+    '勾選要往下跑的方向。勾了什麼就跑什麼——分級只是資訊，不是門檻，'
+    +'一個 C 級方向可能比 A 級值錢，所以這裡不會替你篩掉任何一個。'));
+
+  const boxes=[];
+  const stack=el('div',{class:'stack'});
+  for(const a of rows){
+    const id=String(a.idea_id);
+    const cb=el('input',{type:'checkbox',class:'tickbox',
+      onchange:e=>{ if(e.target.checked) sel.add(id); else sel.delete(id); syncBar(); }});
+    boxes.push({cb:cb,id:id,tier:a.tier});
+    stack.append(el('div',{class:'row'},
+      el('div',{style:'display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px'},
+        el('label',{class:'tick'},cb,el('span',{},'放行這個')),
+        el('span',{class:'chip tier'+(a.tier||'D')},(a.tier||'?')+' 級'),
+        el('span',{class:'meta'},'名次 '+(a.rank===null||a.rank===undefined?'未排名':a.rank)),
+        a.code?el('span',{class:'meta'},'#'+a.code):null),
+      el('h4',{style:'margin-bottom:6px'},a.title||'(無標題)'),
+      a.statement?el('p',{style:'font-size:13px;line-height:1.9;margin-bottom:12px'},a.statement):null,
+      a.design?field('研究設計',a.design):null,
+      missingOf(a).length?field('缺什麼',missingOf(a).join('；')):null,
+      a.route_to_tier_a?field('怎麼補上',a.route_to_tier_a):null,
+      a.power_note?field('檢定力',a.power_note):null));
   }
-  box.append(releaseBlock(pid,'③',
-    '放行之後會跑 W7 新穎性驗證和 W8 唱反調辯論，會花錢。'));
+  box.append(stack);
+
+  const setAll=(fn)=>{
+    sel.clear();
+    boxes.forEach(b=>{ const on=fn(b); b.cb.checked=on; if(on) sel.add(b.id); });
+    syncBar();
+  };
+  box.append(el('div',{style:'display:flex;gap:10px;flex-wrap:wrap;margin-top:20px'},
+    el('button',{class:'pill ghost',onclick:()=>setAll(b=>b.tier==='A'||b.tier==='B')},'勾選所有 A、B 級'),
+    el('button',{class:'pill ghost',onclick:()=>setAll(()=>true)},'全部勾選'),
+    el('button',{class:'pill ghost',onclick:()=>setAll(()=>false)},'全部取消')));
+
+  const rb=releaseBlock(pid,'③',null,sel,rows.length);
+  syncBar=rb.sync;
+  syncBar();
+  box.append(rb.node);
 }
+// `missing` is a list from W6, but a project graded before that column settled
+// can carry something else. Guarded rather than assumed: `.join` on a string
+// silently produces the string back, one character per row.
+function missingOf(a){ return Array.isArray(a.missing)?a.missing:[]; }
 function field(k,v){
   return el('div',{class:'kv',style:'margin-bottom:7px'},
     el('span',{class:'k'},k), el('span',{style:'flex:1;min-width:220px;font-size:13px;line-height:1.85'},v));
@@ -1590,22 +1645,66 @@ function paintObjections(box,s){
 }
 
 /* --- release ------------------------------------------------------------ */
-function releaseBlock(pid,point,warn){
+// Two shapes, one block. Review point ④ releases the whole chain and has
+// nothing to choose between, so it gets the plain node back. Review point ③
+// passes a Set of ticked idea_ids and gets back `{node, sync}` - `sync` is
+// called whenever a box is ticked, because the count and the money in this
+// block are the feedback that makes ticking a decision rather than a gesture.
+function releaseBlock(pid,point,warn,sel,nTotal){
+  const picking=!!sel;
   const b=el('div',{class:'blocked',style:'margin-top:40px'});
+  const line=el('p',{style:'margin-bottom:6px'});
+  const money=el('p',{class:'hint on-dark',style:'margin-bottom:20px;color:#FFFFFFAA'});
   const go=el('button',{class:'pill solid',onclick:async()=>{
+    const ids=picking?Array.from(sel):null;
+    if(picking&&!ids.length){ toast('一個都沒勾。勾選至少一個方向才有東西可以往下跑。'); return; }
     go.disabled=true;
     try{ busy('放行…');
-      await call('release',{method:'POST',body:{project_id:pid}});
-      unbusy(); toast('放行了。接下來的階段會自己開始跑。',0);
+      // `params` is merged over what W6 handed forward, so sending idea_ids
+      // here does not drop the tiers that stage worked out.
+      const body={project_id:pid};
+      if(ids) body.params={idea_ids:ids};
+      const r=await call('release',{method:'POST',body:body});
+      unbusy();
+      // The API answers `resumed: false` with a reason when nothing was parked
+      // or the budget is out. Reporting that as success is how a chain that
+      // never restarted gets left for an hour before anyone checks.
+      if(r&&r.resumed===false){ go.disabled=false;
+        toast('沒有放行成功：'+((r&&r.reason)||'後端沒有說明原因。'),0); return; }
+      toast(ids?('放行了 '+ids.length+' 個方向。接下來的階段會自己開始跑。')
+               :'放行了。接下來的階段會自己開始跑。',0);
       setTimeout(()=>location.hash='#/p/'+pid+'/progress',900);
     }catch(e){ unbusy(); go.disabled=false; fail(e); }
-  }},'放行，繼續往下跑');
+  }},picking?'放行勾選的方向':'放行，繼續往下跑');
+
   b.append(
     el('p',{class:'eyebrow on-dark',style:'margin-bottom:8px'},'RELEASE — REVIEW '+point),
-    el('h3',{style:'margin-bottom:12px'},'要放行嗎'),
-    el('p',{style:'margin-bottom:20px'},warn),
+    el('h3',{style:'margin-bottom:12px'},picking?'要放行哪些':'要放行嗎'),
+    picking?line:el('p',{style:'margin-bottom:20px'},warn),
+    picking?money:null,
     go);
-  return b;
+
+  if(!picking) return b;
+
+  function sync(){
+    const n=sel.size;
+    line.innerHTML='';
+    line.append(n
+      ? ('已勾選 '+n+' 個方向，共 '+nTotal+' 個。只有勾選的會進到 W7 新穎性驗證，'
+         +'然後一路到 W8 辯論與 W9 報告——沒勾的就停在這份分級板上。')
+      : ('還沒勾選任何方向。勾了哪些，就只有哪些往下跑。'));
+    money.innerHTML='';
+    money.append(n
+      ? ('每個方向往下跑約 $'+PER_DIRECTION_TOTAL.toFixed(2)
+         +'（W7 約 $'+PER_DIRECTION.novelty.toFixed(2)
+         +'、W8 約 $'+PER_DIRECTION.debate.toFixed(2)
+         +'、W9 約 $'+PER_DIRECTION.report.toFixed(2)+'），'
+         +n+' 個約 $'+(PER_DIRECTION_TOTAL*n).toFixed(2)+'。'
+         +'這是估算——超過專案上限的話，每一段自己的預算護欄會在花錢之前擋下來。')
+      : '　');
+    go.disabled=!n;
+  }
+  return {node:b,sync:sync};
 }
 
 /* ===========================================================================
