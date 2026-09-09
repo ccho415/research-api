@@ -136,6 +136,27 @@ W9 有一個差別：勾選只縮小候選範圍，**新穎性分層原封不動
 已完成並發布（`9015bf2d`）。發布後兩個 method 都測過，各回 403（驗證擋下），
 不是 404 或 500——代表 webhook 兩條路都還活著。
 
+## 🔧 怎麼從 MCP 問「這條路由上線了沒」（2026-09-09 實測）
+
+**research-api 只在 Zeabur 內網**（`research-api.zeabur.internal:8080`）。
+公開網域 `ccho415-research.zeabur.app` 是 **n8n**，不是 API——
+所以從外面 curl `/admin/config` 一定 404，那不是部署失敗的證據。
+
+**W-ADMIN（`3kLQ9JvEdLBYnsWe`）從 MCP 叫不動**：它的表單觸發節點上有
+pinned data `{}`，會蓋掉 `execute_workflow` 傳進去的 `inputData`，
+所以每次都在問一個空路徑、每次都回 404。`update_workflow` 沒有清 pin data 的操作。
+
+**可行的做法**：暫時把 **W0 連線測試**（`LnIml88jxxjU5gSV`）的
+`Check API Health` 節點 URL 指到要問的路徑，`manual` 執行，讀完改回 `/healthz`。
+那支是停用的診斷工作流，觸發節點沒有 pin data。
+
+**連憑證都不用**：FastAPI 先路由、再驗金鑰，所以
+**404 = 路由不存在，401／403 = 路由存在但沒帶金鑰**。這就足以判斷部署。
+
+同一次執行裡 W0 還會打 `/compute/search/vocab` 與 `/compute/search/query`
+（帶 `Research API Key`），可以當對照組——它們正常而目標路由 404，
+就確定是「服務活著但新路由沒上線」，不是服務掛了。
+
 ## ⏭️ 明天第一件事
 
 測試專案 `82ffbcec-20fc-4377-b1a1-01f5dff6061f`
