@@ -161,14 +161,25 @@ def plan_queries(expansion, max_queries=10):
 
     def variants(c):
         v = [{"descriptor": c.get("descriptor"), "terms": c.get("terms") or [],
-              "unique_id": c.get("unique_id")}]
+              "unique_id": c.get("unique_id"),
+              # What to call this side of the crossing when it has no
+              # descriptor. The label used to fall back to "?", so a concept
+              # that failed to expand was stored and displayed as `? x Stroke`
+              # - which reads as "this term was dropped" when in fact it was
+              # searched, as a bare phrase, in every source. The search was
+              # right and the record of it was not.
+              "input": c.get("input")}]
         for alt in c.get("alternatives") or []:
             v.append({"descriptor": alt.get("descriptor"), "terms": [],
-                      "unique_id": alt.get("unique_id")})
+                      "unique_id": alt.get("unique_id"),
+                      "input": c.get("input")})
         return [x for x in v if x["descriptor"] or x["terms"]]
 
+    def name(c):
+        return c.get("descriptor") or c.get("input") or (c.get("terms") or ["?"])[0]
+
     if len(cs) == 1:
-        return [{"concepts": [v], "label": v["descriptor"] or cs[0]["input"]}
+        return [{"concepts": [v], "label": name(v) or cs[0]["input"]}
                 for v in variants(cs[0])[:max_queries]]
 
     # Enough per side to fill the budget once crossed, and no more: the pool is
@@ -181,8 +192,8 @@ def plan_queries(expansion, max_queries=10):
         picked = [sides[i][j] for i, j in enumerate(combo)]
         plans.append((sum(combo), picked))
     plans.sort(key=lambda p: p[0])
-    return [{"concepts": p, "label": " x ".join(
-        c["descriptor"] or "?" for c in p)} for _, p in plans[:max_queries]]
+    return [{"concepts": p, "label": " x ".join(name(c) for c in p)}
+            for _, p in plans[:max_queries]]
 
 
 def search_chain(doi, topic=None, depth=1, per_step=6, milestone=1000):

@@ -469,6 +469,65 @@ def _norm_space(s):
     return re.sub(r"\s+", " ", (s or "")).strip()
 
 
+_MESH_NORM_SPARQL = """
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX meshv: <http://id.nlm.nih.gov/mesh/vocab#>
+SELECT DISTINCT ?d ?dlabel
+FROM <http://id.nlm.nih.gov/mesh>
+WHERE {
+  ?d a meshv:TopicalDescriptor .
+  ?d rdfs:label ?dlabel .
+  { ?d meshv:concept ?c } UNION { ?d meshv:preferredConcept ?c }
+  { ?c rdfs:label ?x }
+  UNION
+  { { ?c meshv:term ?t } UNION { ?c meshv:preferredTerm ?t }
+    { ?t meshv:prefLabel ?x } UNION { ?t meshv:altLabel ?x } }
+  FILTER (REPLACE(LCASE(STR(?x)), "[^a-z0-9]", "") = %s)
+}
+"""
+
+
+def _mesh_norm(s):
+    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+
+
+def mesh_normalised_match(term):
+    """Entry-term match again, with punctuation removed from both sides.
+
+    `lookup/descriptor?match=contains` is a literal substring match and the
+    entry-term SPARQL is a literal equality, so a term differing from MeSH only
+    in punctuation resolves to nothing. That is not a rare edge: MeSH writes
+    `Dual Anti-Platelet Therapy` and registers no other spelling, while the
+    field writes "dual antiplatelet therapy" almost exclusively - so a current,
+    standard descriptor was unreachable, and that axis lost its MeSH-indexed
+    query and its hierarchy for the sake of two hyphens.
+
+    Normalising both sides in the FILTER also picks up word-order differences
+    wherever MeSH registers them as entry terms, which it usually does:
+    "lung adenocarcinoma" reaches `Adenocarcinoma of Lung`, and "non small cell
+    lung carcinoma" reaches `Carcinoma, Non-Small-Cell Lung`.
+
+    It stays an EQUALITY, not a similarity. Nonsense returns nothing rather
+    than the nearest thing - which is the property that makes "not expanded" a
+    signal worth printing. A matcher that always finds something would replace
+    a loud failure with a quiet wrong answer.
+
+    Costs about five seconds because the FILTER is computed over every term in
+    MeSH, so it is only worth spending when the cheap lookups found nothing.
+    One retry rather than the default two: a slow query should not be waited
+    for three times over.
+    """
+    n = _mesh_norm(term)
+    if not n:
+        return []
+    q = _MESH_NORM_SPARQL % json.dumps(n)
+    rows = _get_json(f"{MESH_RDF}/sparql?format=JSON&limit=30"
+                     f"&query={urllib.parse.quote(q)}",
+                     timeout=30, retries=1)["results"]["bindings"]
+    return [{"label": b["dlabel"]["value"], "resource": b["d"]["value"], "via": "entry"}
+            for b in rows if not b["dlabel"]["value"].startswith("[")]
+
+
 _STOP = {"of", "the", "and", "a", "an", "in", "for", "with", "to", "on", "by"}
 
 
@@ -550,7 +609,7 @@ def vocab_mesh_rdf(term, limit=10, pool=30):
     parts = _norm_space(term).split()
     if 1 < len(parts) <= 4:
         variants.append(" ".join(reversed(parts)))
-    for v in variants:
+    def label_lookup(v):
         try:
             for h in _get_json(f"{MESH_RDF}/lookup/descriptor?match=contains&limit={pool}"
                                f"&label={urllib.parse.quote(v)}"):
@@ -559,6 +618,21 @@ def vocab_mesh_rdf(term, limit=10, pool=30):
                     hits.append(h)
         except Exception as e:
             _warn(f"MeSH label lookup failed for {v!r} ({e})")
+
+    for v in variants:
+        label_lookup(v)
+
+    # Last resort: the same match again with punctuation normalised away.
+    # Only reached when every cheap lookup found nothing, because it costs
+    # about five seconds - see mesh_normalised_match for what it buys.
+    if not hits:
+        try:
+            for h in mesh_normalised_match(term):
+                if h["resource"] not in seen:
+                    seen.add(h["resource"])
+                    hits.append(h)
+        except Exception as e:
+            _warn(f"MeSH normalised match failed for {term!r} ({e})")
 
     if not hits:
         return []
