@@ -420,9 +420,17 @@ function paintRail(p){
   r.title=p.title||p.id;
 }
 
+const hasDraft=()=>{
+  try{ return !!JSON.parse(sessionStorage.getItem('rd_propose')||'null'); }catch(e){ return false; }
+};
 const STEPS=[
   {nm:'題目', to:()=>'#/'},
-  {nm:'概念', to:()=>'#/concepts', needsDraft:true},
+  // Two destinations, and the second is why this step used to be dead. Before a
+  // project exists it is the draft being edited; once one does, that draft is
+  // gone and the step pointed at nothing - while the question people actually
+  // ask later is "what did this project search for?", which is a different
+  // screen reading a different source.
+  {nm:'概念', to:p=>p?('#/p/'+p+'/concepts'):'#/concepts', projectOrDraft:true},
   {nm:'分級', to:p=>'#/p/'+p+'/tiers', needsProject:true},
   {nm:'辯論', to:p=>'#/p/'+p+'/debate', needsProject:true},
   {nm:'報告', to:p=>'#/p/'+p+'/report', needsProject:true}
@@ -432,13 +440,27 @@ function paintSteps(active){
   const proj=getProject();
   STEPS.forEach((s,i)=>{
     if(i) box.append(el('span',{class:'tick'}));
-    const reachable=(s.needsProject&&proj&&proj.id)||(!s.needsProject&&!s.needsDraft);
+    const reachable=s.needsProject ? !!(proj&&proj.id)
+                  : s.projectOrDraft ? (!!(proj&&proj.id)||hasDraft())
+                  : !s.needsDraft;
     const b=el('button',Object.assign(
       {class:'step'+(reachable&&i!==active?' reachable':''),type:'button',
        title:s.needsProject&&!(proj&&proj.id)?'先選一個專案':''},
       i===active?{'aria-current':'step'}:{}),
       el('span',{class:'dot'}), el('span',{class:'nm'},s.nm));
     b.onclick=()=>{
+      // A project wins over a draft: if you are looking at a project, the
+      // concepts you want are that project's, not whatever half-finished topic
+      // is still sitting in this tab.
+      if(s.projectOrDraft){
+        const p=getProject();
+        if(p&&p.id){ location.hash=s.to(p.id); return; }
+        if(!hasDraft()){
+          toast('還沒有專案，也沒有待確認的概念。先從下面交一個題目，或挑一個專案。');
+          location.hash='#/'; return;
+        }
+        location.hash=s.to(null); return;
+      }
       if(s.needsProject){
         const p=getProject();
         // Refusing with a reason beats navigating to a screen that can only
@@ -648,6 +670,7 @@ function paintProjects(box,d){
     const open=(what)=>{ setProject(p.id,p.title||p.topic); location.hash='#/p/'+p.id+'/'+what; };
     const acts=el('div',{style:'display:flex;gap:10px;flex-wrap:wrap;margin-top:14px'},
       el('button',{class:'pill ghost',onclick:()=>open('progress')},'進度'),
+      el('button',{class:'pill ghost',onclick:()=>open('concepts')},'概念'),
       el('button',{class:'pill ghost',onclick:()=>open('tiers')},'分級'),
       el('button',{class:'pill ghost',onclick:()=>open('debate')},'辯論'),
       el('button',{class:'pill ghost',onclick:()=>open('report')},'報告'));
@@ -800,6 +823,122 @@ async function screenConcepts(){
       if(d.project_id) location.hash='#/p/'+d.project_id+'/progress'; else location.hash='#/';
     }catch(e){ unbusy(); fail(e); }
   }
+}
+
+/* ===========================================================================
+   ② 一個已經跑過的專案，當初查了什麼
+   =========================================================================== */
+// The other half of screen ②. That screen edits a draft before anything is
+// spent; this one reads what a finished project actually searched for, which
+// nothing in the system could answer until `/compute/concepts` existed - the
+// concepts were stored on every run and never read back.
+async function screenProjectConcepts(pid){
+  setProject(pid); paintSteps(1);
+  const box=el('div',{}), side=el('div',{});
+  view(hero({tone:'teal',mark:'C',plate:'C',eyebrow:'WHAT THIS PROJECT SEARCHED FOR',
+      title:'檢索概念',
+      body:'這個專案當初送出去的概念，以及每一個對到的控制詞彙描述詞。'
+        +'檢索的廣度來自 MeSH 的階層——一個概念對不到 MeSH，那一軸就等於只查了一個字串。',
+      vlabel:'STATE 02'}),
+    shell(el('section',{},box)),
+    el('section',{class:'band'},shell(side)),
+    footer());
+  try{
+    busy('讀檢索概念…');
+    const d=await call('concepts',{query:{project_id:pid}});
+    unbusy();
+    setProject(pid,d.title||d.topic);
+    paintConcepts(box,d,pid);
+    paintQueries(side,d);
+  }catch(e){
+    unbusy();
+    box.append(sechead('01','檢索概念'),
+      emptyNote('讀不到這個專案的檢索概念。'
+        +'如果這個專案是用 n8n 表單跑的，或者檢索還沒開始，這裡就會是空的。'));
+    fail(e);
+  }
+}
+function paintConcepts(box,d,pid){
+  const L=d.latest;
+  box.append(sechead('01','你送出去的概念',
+    L?(L.concepts.length+' 個'):'還沒有'));
+  if(d.topic) box.append(el('p',{class:'dropcap',
+    style:'font-family:var(--cjk);font-size:17px;line-height:1.9;margin-bottom:26px'},d.topic));
+
+  if(!L||!L.concepts.length){
+    box.append(emptyNote('這個專案沒有存下概念展開的紀錄。'
+      +'只有走前端或 W2 檢索那條路的專案才會有——直接從別的地方建立的專案不會。'));
+    return;
+  }
+
+  const stack=el('div',{class:'stack'});
+  for(const c of L.concepts){
+    // `expanded: false` is the one thing on this screen that changes how every
+    // number elsewhere should be read, so it is a warning rather than a chip.
+    stack.append(el('div',{class:'row'},
+      el('div',{style:'display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px'},
+        el('span',{class:'chip '+(c.expanded?'ok':'warn')},
+          c.expanded?'已展開':'沒對到控制詞彙'),
+        c.unique_id?el('span',{class:'meta'},c.unique_id):null),
+      el('h4',{style:'margin-bottom:6px'},c.input||'(空白)'),
+      c.expanded
+        ? field('對到的描述詞',c.descriptor||'(沒有記錄)')
+        : el('p',{class:'hint',style:'color:var(--wine)'},
+            'MeSH 和 OpenAlex 都沒有對到這個詞，所以這一軸只查了「'+(c.input||'')+'」'
+            +'這個字串本身，沒有上下位詞可以展開。這一軸的涵蓋率大約是正常的十分之一——'
+            +'底下的查詢數與論文數要用這個前提去讀。')));
+  }
+  box.append(stack);
+  box.append(el('p',{class:'hint',style:'margin-top:16px'},
+    '概念是意圖，查詢才是真的跑過的東西。一個描述詞會跟它的上下位詞交叉出好幾個查詢，'
+    +'所以右邊那份查詢清單比這裡長。哪個查詢來自哪個概念沒有存下來，所以這裡不會替你猜。'));
+
+  // Kept because MeSH is revised yearly and the ranking is ours, so the same
+  // word resolving somewhere else on a re-run is a real event.
+  if(d.earlier&&d.earlier.length){
+    box.append(sechead('02','之前的展開',d.n_versions+' 版'));
+    box.append(el('p',{class:'note',style:'margin-bottom:14px'},
+      '同一個詞在不同時間可能對到不同的描述詞——MeSH 每年改版，排序也是這個系統自己的。'
+      +'留著兩份才看得出來有沒有變。'));
+    const old=el('div',{class:'stack'});
+    for(const v of d.earlier.slice().reverse()){
+      old.append(el('div',{class:'row'},
+        el('div',{style:'display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px'},
+          el('span',{class:'chip calm'},'第 '+v.version+' 版'),
+          v.at?el('span',{class:'meta'},fmt.date(v.at)):null),
+        ...v.concepts.map(c=>field(c.input||'(空白)',
+          (c.descriptor||'沒對到')+(c.unique_id?('　'+c.unique_id):'')))));
+    }
+    box.append(old);
+  }
+}
+function paintQueries(side,d){
+  const qs=d.queries||[];
+  side.append(sechead('03','實際跑過的查詢',
+    qs.length?(qs.length+' 次，命中 '+fmt.int(d.n_hits_total)+' 篇'):'還沒有'));
+  if(!qs.length){
+    side.append(emptyNote('這個專案還沒有跑過任何檢索。'));
+    return;
+  }
+  // Empty queries are named, not hidden. A query that came back with nothing is
+  // a fact about that angle - it is why the same angle is not tried again - and
+  // a list that quietly drops them makes the search look better than it was.
+  if(d.n_empty_queries) side.append(el('p',{class:'note',style:'margin-bottom:14px'},
+    qs.length+' 次查詢裡有 '+d.n_empty_queries+' 次一篇都沒撈到。'
+    +'空手不是失敗，它是關於那個角度的事實，也是下一輪不會再試同一個角度的原因。'));
+  const stack=el('div',{class:'stack'});
+  for(const q of qs){
+    stack.append(el('div',{class:'row'},
+      el('div',{style:'display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px'},
+        el('span',{class:'chip '+(q.n_hits?'calm':'warn')},
+          q.n_hits?(fmt.int(q.n_hits)+' 篇'):'空手'),
+        q.query_angle?el('span',{class:'meta'},q.query_angle):null,
+        q.domain?el('span',{class:'meta'},q.domain):null,
+        q.executed_at?el('span',{class:'meta'},fmt.date(q.executed_at)):null),
+      el('p',{style:'font-family:var(--sans);font-size:12px;line-height:1.8;'
+        +'overflow-wrap:anywhere;color:var(--text)'},q.query_text||'(空白)')));
+  }
+  side.append(stack);
 }
 
 /* ===========================================================================
@@ -1896,12 +2035,16 @@ async function showWatch(box,idea_id){
 function route(){
   if(!getKey()){ openGate(); return; }
   const h=location.hash||'#/';
-  const m=h.match(/^#\/p\/([0-9a-f-]{8,})\/(tiers|debate|report|progress)/i);
+  const m=h.match(/^#\/p\/([0-9a-f-]{8,})\/(tiers|debate|report|progress|concepts)/i);
   if(m){
     const [,pid,what]=m;
     if(what==='tiers') return screenTiers(pid);
     if(what==='debate') return screenDebate(pid);
     if(what==='report') return screenReport(pid);
+    // A project's concepts. Matched before the bare #/concepts below, which is
+    // the draft being edited before any project exists - two screens, two
+    // sources, and only this one survives a reload.
+    if(what==='concepts') return screenProjectConcepts(pid);
     return screenProgress(pid);
   }
   if(h.startsWith('#/concepts')) return screenConcepts();
