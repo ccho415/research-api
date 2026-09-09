@@ -470,6 +470,26 @@ def project_runs(project_id: str, limit: int = 50,
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+@app.get("/compute/concepts")
+def project_concepts(project_id: str, x_api_key: Optional[str] = Header(None)):
+    """What this project was searched for, and what those searches returned.
+
+    The concepts a person typed have been stored on `project.vocab_expansion`
+    since migration 002 and nothing has ever read them back, so the question
+    "what did I actually search for?" had no answer while the answer sat in a
+    column. The executed queries come back alongside them, because a concept is
+    an intention and a query is what ran, and only the second one has hit counts.
+    """
+    check_key(x_api_key)
+    import db
+    try:
+        return db.project_concepts(project_id)
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.get("/compute/ideas")
 def ideas_list(project_id: Optional[str] = None, run_id: Optional[str] = None,
                status: Optional[str] = None, limit: int = 200,
