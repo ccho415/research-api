@@ -1009,12 +1009,111 @@ async function runPubmedPass(project_id, run_id, concepts, domain, year_from){
   }
 }
 
+/* --- W7 的新穎性輪次，事後補查 -------------------------------------------
+   Every adversarial novelty check in this system was decided WITHOUT PubMed:
+   W7 runs its rounds server-side and NCBI blocks that IP. The queries were
+   recorded, so the same questions get asked again from here and merged into
+   the round they belong to.
+
+   Run when a project screen is opened rather than on a schedule, because the
+   server cannot reach into this machine to start one - every connection has to
+   begin here - and because the moment somebody opens the project is exactly
+   when the answer is worth having: the chain stops at a review point and waits
+   for them. A pass that never runs costs nothing; it just means one fewer
+   cross-check on a verdict.
+
+   Nothing here re-decides a verdict. The merge endpoint establishes one narrow
+   mechanical fact - whether `no_prior_art` has been contradicted by a round
+   that was empty and no longer is - and everything else is reported as a count
+   for a person to read.
+   ------------------------------------------------------------------------ */
+const noveltyRun={active:false,project:null,done:0,total:0,
+                  merged:0,added:0,flags:[],finished:false,note:''};
+
+function noveltySummary(){
+  if(!noveltyRun.project) return null;
+  if(noveltyRun.note) return noveltyRun.note;
+  if(!noveltyRun.finished){
+    return 'PubMed 補查新穎性：第 '+(noveltyRun.done+1)+'/'+noveltyRun.total+' 個想法…';
+  }
+  if(!noveltyRun.merged) return null;
+  let t='PubMed 補查新穎性：'+noveltyRun.merged+' 個想法，另外找到 '+noveltyRun.added+' 篇';
+  const bad=noveltyRun.flags.filter(f=>f.level==='contradicted');
+  if(bad.length) t+='　⚠ '+bad.length+' 個「無前案」判定被推翻';
+  return t;
+}
+
+async function runNoveltyPubmedPass(project_id){
+  if(noveltyRun.active||pubmedRun.active) return;
+  let pend;
+  try{ pend=await call('novelty-pubmed-pending',{query:{project_id:project_id}}); }
+  catch(e){ return; }            // 沒有就是沒有，不必吵
+  const checks=(pend&&pend.checks)||[];
+  if(!checks.length) return;
+
+  Object.assign(noveltyRun,{active:true,project:project_id,done:0,
+    total:checks.length,merged:0,added:0,flags:[],finished:false,note:''});
+  try{
+    for(const c of checks){
+      const results=[];
+      for(const qq of (c.queries||[])){
+        try{
+          const su=EUTILS+'esearch.fcgi?db=pubmed&retmode=json&sort=relevance'
+            +'&retmax=5&term='+encodeURIComponent(qq.query)+ncbiSuffix();
+          const sr=await fetch(su);
+          if(!sr.ok) throw new Error('esearch '+sr.status);
+          const ids=(((await sr.json())||{}).esearchresult||{}).idlist||[];
+          if(ids.length){
+            await sleep(PUBMED_GAP);
+            const fr=await fetch(EUTILS+'efetch.fcgi?db=pubmed&retmode=xml&id='
+              +ids.join(',')+ncbiSuffix());
+            if(!fr.ok) throw new Error('efetch '+fr.status);
+            results.push({round:qq.round,xml:await fr.text()});
+          }
+        }catch(e){ /* 一輪失敗不該丟掉其他輪 */ }
+        await sleep(PUBMED_GAP);
+      }
+      if(results.length){
+        try{
+          const m=await call('novelty-pubmed-merge',{method:'POST',
+            body:{check_id:c.check_id,results:results}});
+          noveltyRun.merged++;
+          noveltyRun.added+=(m&&m.n_added)||0;
+          if(m&&m.contradiction){
+            noveltyRun.flags.push(Object.assign(
+              {code:c.code,title:c.title,verdict:c.verdict},m.contradiction));
+          }
+        }catch(e){ /* 合併失敗：下次開這頁還會再問一次 */ }
+      }
+      noveltyRun.done++;
+      paintPubmed();
+    }
+    noveltyRun.finished=true;
+  }catch(e){
+    noveltyRun.note='新穎性補查沒跑完：'+String((e&&e.message)||e);
+    noveltyRun.finished=true;
+  }finally{
+    noveltyRun.active=false;
+    paintPubmed();
+  }
+}
+
 function paintPubmed(){
-  const el=document.getElementById('pubmed_line');
-  if(!el) return;
-  const t=pubmedSummary();
-  el.textContent=t||'';
-  el.style.display=t?'':'none';
+  // `box`, not `el` - that name is the element helper this whole file uses,
+  // and shadowing it here silently broke every append below.
+  const box=document.getElementById('pubmed_line');
+  if(!box) return;
+  const parts=[pubmedSummary(),noveltySummary()].filter(Boolean);
+  box.innerHTML='';
+  parts.forEach(t=>box.append(el('div',{},t)));
+  // The contradictions are the reason this pass exists, so they are not left
+  // inside a one-line summary. A `no_prior_art` that has been contradicted is
+  // the difference between committing a year to a question and not.
+  noveltyRun.flags.filter(f=>f.level==='contradicted').forEach(f=>{
+    box.append(el('div',{style:'color:#b45309;margin-top:6px'},
+      '⚠ '+(f.code||'')+'　'+(f.why||'')));
+  });
+  box.style.display=(parts.length||noveltyRun.flags.length)?'':'none';
 }
 
 /* ===========================================================================
@@ -1151,6 +1250,12 @@ async function screenProgress(pid){
   let ds=null;
   const reloadDs=async()=>{ try{ ds=await call('dataset',{query:{project_id:pid}}); }catch(e){ ds=null; } };
   await reloadDs();
+  // Not awaited, and not on a schedule. The server cannot start anything on
+  // this machine - every connection has to begin here - and opening the
+  // project is exactly when the answer matters, because the chain has stopped
+  // at a review point and is waiting for a decision. If W7 has not run yet the
+  // pending list is empty and this returns immediately.
+  runNoveltyPubmedPass(pid);
   async function tick(){
     try{
       if(first) busy('讀進度…');

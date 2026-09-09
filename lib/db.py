@@ -1266,3 +1266,169 @@ def get_domain_frame(project_id):
         return None
     return {"project_id": str(row["id"]), "title": row["title"],
             "topic": row["topic"], "domain_frame": row["domain_frame"]}
+
+
+def novelty_pubmed_pending(project_id):
+    """Novelty checks whose rounds have not had a PubMed pass yet.
+
+    W7 runs its rounds server-side, where NCBI blocks E-utilities, so every
+    adversarial check in this system was decided without PubMed. The queries it
+    used are recorded, though, which is what makes a later pass possible at all:
+    the same questions can be asked again from an address NCBI has not blocked,
+    and the answers merged into the round they belong to.
+
+    Only the latest check per idea is offered. An older one has already been
+    superseded, and re-checking it would spend requests to update a row nothing
+    reads.
+    """
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT DISTINCT ON (n.idea_id) n.id, n.idea_id, n.verdict, "
+            "       n.rounds, n.checked_at, i.code, i.title "
+            "FROM novelty_check n "
+            "JOIN idea i ON i.id = n.idea_id "
+            "WHERE i.project_id = %s AND n.method = 'adversarial' "
+            "ORDER BY n.idea_id, n.checked_at DESC", (project_id,))
+        out = []
+        for r in cur.fetchall():
+            blob = r["rounds"] or {}
+            if blob.get("pubmed_pass"):
+                continue
+            qs = []
+            for rd in (blob.get("rounds") or []):
+                q = (rd.get("query") or "").strip()
+                if not q:
+                    continue
+                qs.append({"round": rd.get("round"), "query": q,
+                           "n_hits": rd.get("n_hits"),
+                           # Carried because an empty round that stops being
+                           # empty is the single most informative outcome of
+                           # this pass - see `_pubmed_contradiction`.
+                           "was_empty": not (rd.get("papers") or [])})
+            if not qs:
+                continue
+            out.append({"check_id": str(r["id"]), "idea_id": str(r["idea_id"]),
+                        "code": r["code"], "title": r["title"],
+                        "verdict": r["verdict"], "n_queries": len(qs),
+                        "queries": qs})
+        return {"project_id": project_id, "n": len(out), "checks": out}
+
+
+def _paper_key(p):
+    """What makes two records the same paper, in order of how much it is worth.
+
+    Written as three exits rather than an `or` chain because the chain had a
+    hole: `"pmid:" + ""` is `"pmid:"`, which is truthy, so every record with
+    neither a DOI nor a PMID collided on that one string and the merge would
+    have folded unrelated papers into one. A title is a weak key but it is a
+    key; a prefix with nothing after it is not.
+    """
+    doi = (p.get("doi") or "").strip().lower()
+    if doi:
+        return doi
+    pmid = str(p.get("pmid") or "").strip()
+    if pmid:
+        return "pmid:" + pmid
+    return (p.get("title") or "").strip().lower()[:120]
+
+
+def _pubmed_contradiction(verdict, added, revived):
+    """Whether the merged evidence has made the recorded verdict untenable.
+
+    Deliberately mechanical and narrow. The verdict itself was never computed
+    from these rounds - `save_novelty` takes the model's word and only refuses
+    what the evidence cannot support - so nothing here recomputes it. What can
+    be established without judgement is a contradiction:
+
+    `no_prior_art` is a bounded negative whose bound was "these searches found
+    nothing". A round that found nothing and now, asked in the same words of a
+    database the first pass could not reach, finds papers is not a hint that
+    the verdict was optimistic. It is the bound failing.
+
+    Everything else is reported as a count and left alone, because "PubMed
+    added four papers to an `adjacent` verdict" needs somebody to read the four
+    papers before it means anything.
+    """
+    if verdict == "no_prior_art" and revived:
+        return {"level": "contradicted",
+                "why": f"判定是「無前案」，但 PubMed 在原本空白的第 "
+                       f"{', '.join(str(r) for r in revived)} 輪找到了論文。"
+                       f"那個判定的依據是「這些檢索什麼都沒找到」，而依據不成立了。"}
+    if verdict == "no_prior_art" and added:
+        return {"level": "weakened",
+                "why": f"判定是「無前案」，而 PubMed 另外找到 {added} 篇。"
+                       f"沒有推翻空白輪次，但涵蓋範圍的說明是在 PubMed "
+                       f"不可用的前提下寫的。"}
+    if added:
+        return {"level": "note",
+                "why": f"PubMed 另外找到 {added} 篇。判定沒有被機械地推翻——"
+                       f"要不要改判，得有人讀過那幾篇。"}
+    return None
+
+
+def novelty_merge_pubmed(check_id, by_round):
+    """Merge a PubMed pass into a stored novelty check, round by round.
+
+    Papers are unioned into the round that asked for them rather than appended
+    to `closest_papers`. That list is the model's own selection of what came
+    closest, and quietly growing it would turn a judgement into a pile. The
+    debate's evidence pool reads the rounds as well, so nothing is lost by
+    keeping the two apart - see `debate._evidence_pool`.
+
+    `by_round` is {round number: [paper, ...]} already parsed by the caller.
+    """
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, verdict, rounds FROM novelty_check "
+                        "WHERE id = %s", (check_id,))
+            row = cur.fetchone()
+            if not row:
+                raise ValueError(f"no such novelty check: {check_id}")
+            blob = dict(row["rounds"] or {})
+            rounds = [dict(r) for r in (blob.get("rounds") or [])]
+
+            added = 0
+            revived = []
+            for rd in rounds:
+                new = by_round.get(rd.get("round")) or by_round.get(str(rd.get("round")))
+                if not new:
+                    continue
+                have = {_paper_key(p) for p in (rd.get("papers") or [])}
+                was_empty = not (rd.get("papers") or [])
+                keep = []
+                for p in new:
+                    k = _paper_key(p)
+                    if k and k not in have:
+                        have.add(k)
+                        keep.append({x: p.get(x) for x in
+                                     ("title", "year", "doi", "pmid", "journal",
+                                      "venue", "citations", "source")
+                                     if p.get(x) is not None})
+                if not keep:
+                    continue
+                rd["papers"] = (rd.get("papers") or []) + keep
+                rd["n_hits"] = len(rd["papers"])
+                rd["pubmed_added"] = len(keep)
+                added += len(keep)
+                if was_empty:
+                    revived.append(rd.get("round"))
+
+            contradiction = _pubmed_contradiction(
+                (row["verdict"] or "").strip().lower(), added, revived)
+
+            blob["rounds"] = rounds
+            # Stamped whether or not anything was found. "PubMed added nothing"
+            # and "PubMed was never asked" are different facts, and without this
+            # the pass would be offered again for ever.
+            blob["pubmed_pass"] = {
+                "n_queries": len(by_round), "n_added": added,
+                "rounds_no_longer_empty": revived,
+                "contradiction": contradiction,
+                "collected_by": "browser or local machine, because NCBI blocks "
+                                "this deployment's IP from E-utilities",
+            }
+            cur.execute("UPDATE novelty_check SET rounds = %s WHERE id = %s",
+                        (psycopg.types.json.Jsonb(blob), check_id))
+        conn.commit()
+    return {"check_id": str(check_id), "n_added": added,
+            "rounds_no_longer_empty": revived, "contradiction": contradiction}

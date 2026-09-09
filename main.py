@@ -81,6 +81,13 @@ class PubmedIngestIn(BaseModel):
     domain: Optional[str] = None
 
 
+class NoveltyMergeIn(BaseModel):
+    check_id: str
+    # {round number: efetch XML}. Parsed here rather than at the other end for
+    # the same reason as `PubmedIngestIn`: one implementation of PubMed's XML.
+    results: List[Dict[str, Any]]
+
+
 class ExpandIn(BaseModel):
     concepts: List[str]
     domain: str = "general"
@@ -218,6 +225,66 @@ def search_ingest(body: IngestIn, x_api_key: Optional[str] = Header(None)):
     try:
         return db.ingest(body.query_text, body.results, body.run_id, body.domain,
                          body.sources, body.query_angle, body.axis_source)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.get("/compute/novelty/pubmed-pending")
+def novelty_pubmed_pending(project_id: str, x_api_key: Optional[str] = Header(None)):
+    """The novelty rounds that were decided without PubMed, and their queries.
+
+    Every adversarial check in this system was made without it: W7 runs its
+    rounds server-side and NCBI blocks this deployment's IP from E-utilities.
+    The queries were recorded, so the same questions can be asked again from an
+    address that is not blocked and merged back into the round they belong to.
+
+    A check that has already had a pass is not offered again, whether or not
+    the pass found anything - "PubMed added nothing" is an answer.
+    """
+    check_key(x_api_key)
+    import db
+    try:
+        return db.novelty_pubmed_pending(project_id)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.post("/compute/novelty/pubmed-merge")
+def novelty_pubmed_merge(body: NoveltyMergeIn, x_api_key: Optional[str] = Header(None)):
+    """Merge a PubMed pass into one stored novelty check.
+
+    Nothing here re-decides the verdict. `save_novelty` never computed it from
+    the rounds in the first place - it takes the model's word and refuses only
+    what the evidence cannot support - so recomputing it now would be inventing
+    a rule that never existed.
+
+    What is established instead is narrower and mechanical: whether the merged
+    evidence has contradicted the verdict on record. `no_prior_art` is a
+    bounded negative whose bound was "these searches found nothing", and a
+    round that was empty and is now not empty is that bound failing. See
+    `db._pubmed_contradiction`.
+    """
+    check_key(x_api_key)
+    import db
+    import search as lit
+    by_round = {}
+    for item in body.results or []:
+        rn = item.get("round")
+        xml = item.get("xml")
+        if rn is None or not isinstance(xml, str) or not xml.strip():
+            continue
+        try:
+            by_round[rn] = lit.parse_pubmed_xml(xml)
+        except Exception as e:
+            raise HTTPException(400, f"round {rn}: could not parse that as "
+                                     f"PubMed efetch XML: {type(e).__name__}: "
+                                     f"{str(e)[:160]}")
+    if not by_round:
+        raise HTTPException(400, "no parseable rounds were sent")
+    try:
+        return db.novelty_merge_pubmed(body.check_id, by_round)
+    except ValueError as e:
+        raise HTTPException(404, str(e))
     except Exception as e:
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
