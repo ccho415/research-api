@@ -141,4 +141,32 @@ finally:
 check("the key is put back, so nothing after this file is affected",
       search.UMLS_KEY == "")
 
+# --- MeSH headings from Europe PMC -----------------------------------------
+# The indexing PubMed serves, taken from the source that is actually reachable:
+# NCBI blocks this deployment's IP from E-utilities, so s_pubmed contributes
+# nothing on a clinical search and its MeSH went with it.
+
+check("descriptor names come out flat, matching what s_pubmed produces",
+      search._epmc_mesh({"meshHeadingList": {"meshHeading": [
+          {"majorTopic_YN": "N", "descriptorName": "Humans"},
+          {"majorTopic_YN": "Y", "descriptorName": "Myocardial Infarction"}]}})
+      == ["Humans", "Myocardial Infarction"])
+check("the major-topic flag is dropped rather than carried into a field the "
+      "other source cannot fill",
+      all(isinstance(x, str) for x in search._epmc_mesh(
+          {"meshHeadingList": {"meshHeading": [
+              {"majorTopic_YN": "Y", "descriptorName": "Stroke"}]}})))
+check("a repeated descriptor appears once",
+      search._epmc_mesh({"meshHeadingList": {"meshHeading": [
+          {"descriptorName": "Humans"}, {"descriptorName": "humans"}]}}) == ["Humans"])
+check("a record with no indexing yet is empty, not an error - NLM has not "
+      "indexed the current year and PubMed has the same gap",
+      search._epmc_mesh({}) == []
+      and search._epmc_mesh({"meshHeadingList": {}}) == []
+      and search._epmc_mesh({"meshHeadingList": {"meshHeading": []}}) == [])
+check("a malformed heading is skipped rather than raising",
+      search._epmc_mesh({"meshHeadingList": {"meshHeading": [
+          None, {}, {"descriptorName": ""}, {"descriptorName": "Aspirin"}]}})
+      == ["Aspirin"])
+
 print("\nall expansion checks passed")

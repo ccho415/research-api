@@ -191,6 +191,32 @@ def _epmc_venue(it):
             or (it.get("bookOrReportDetails") or {}).get("publisher") or "")
 
 
+def _epmc_mesh(it):
+    """The MeSH descriptors Europe PMC carries for a MEDLINE record.
+
+    The same indexing PubMed serves, from the source that is actually reachable
+    from here - NCBI blocks this deployment's egress IP from E-utilities, so
+    `s_pubmed` contributes nothing on a clinical search and its MeSH went with
+    it. Measured coverage on indexed years is high (15/20 for 2018, 18/20 for
+    2022) and low for the current year (6/20 for 2026), because NLM has not
+    finished indexing recent papers yet. That gap is NLM's backlog and exists
+    on PubMed identically; it is not caused by the block.
+
+    Flat descriptor names, to match what `s_pubmed` produces - one shape for
+    one column. `majorTopic_YN` is dropped rather than carried into a list that
+    the other source cannot fill, which would make the field mean two different
+    things depending on where the paper came from.
+    """
+    heads = ((it.get("meshHeadingList") or {}).get("meshHeading")) or []
+    out, seen = [], set()
+    for h in heads:
+        name = ((h or {}).get("descriptorName") or "").strip()
+        if name and name.lower() not in seen:
+            seen.add(name.lower())
+            out.append(name)
+    return out
+
+
 def s_europepmc(q, limit, year_from, year_to):
     query = q
     if year_from or year_to:
@@ -200,14 +226,18 @@ def s_europepmc(q, limit, year_from, year_to):
     res = _get_json(u).get("resultList", {}).get("result", [])
     out = []
     for it in res:
-        out.append(_rec("europepmc", it.get("id", ""), it.get("title", ""),
+        r = _rec("europepmc", it.get("id", ""), it.get("title", ""),
                         it.get("abstractText", ""),
                         int(it["pubYear"]) if str(it.get("pubYear", "")).isdigit() else None,
                         _epmc_venue(it),
                         [a.strip() for a in (it.get("authorString", "") or "").split(",")][:8],
-                        it.get("doi", ""), it.get("citedByCount"),
-                        f"https://europepmc.org/article/{it.get('source','MED')}/{it.get('id','')}",
-                        it.get("pubType", "")))
+                    it.get("doi", ""), it.get("citedByCount"),
+                    f"https://europepmc.org/article/{it.get('source','MED')}/{it.get('id','')}",
+                    it.get("pubType", ""))
+        m = _epmc_mesh(it)
+        if m:
+            r["mesh"] = m
+        out.append(r)
     return out
 
 

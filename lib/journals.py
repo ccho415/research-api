@@ -24,6 +24,11 @@ The Lancet Neurology and Lancet Oncology, "nature" reaches Nature Medicine and
 Nature Reviews Cardiology, "jama" reaches JAMA Neurology. That is deliberate -
 maintaining a list of every subsidiary would be wrong within a year.
 
+A family therefore needs BOTH separators. Europe PMC writes subsidiaries with
+a period - `Circulation. Heart failure`, `Nature reviews. Cardiology` - so a
+pattern of `family %` alone misses every one of them. Found by checking the
+tiers against venue strings from a real search rather than from memory.
+
 HONEST LIMITS, because a curated list rots and this one will:
 
   - The medical tiers are the ones this project actually uses and the ones I am
@@ -56,7 +61,11 @@ GENERAL = [
 # broken one.
 BY_DOMAIN = {
     "clinical": [
-        "circulation", "circulation %", "circ %",
+        "circulation", "circulation %", "circulation.%", "circ %",
+        "journal of the american heart association%",
+        # BMJ's cardiology journal. Europe PMC disambiguates it by society, and
+        # a bare "heart%" would sweep in a dozen unrelated titles.
+        "heart (%",
         "journal of the american college of cardiology%", "j am coll cardiol%",
         "european heart journal%", "eur heart j%",
         # "stroke%" is prefix-anchored on purpose - a bare "%stroke%" sweeps in

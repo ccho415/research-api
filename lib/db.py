@@ -68,6 +68,12 @@ def _upsert_paper(cur, r):
         authors=psycopg.types.json.Jsonb(r.get("authors") or []),
         citations=r.get("citations"), url=r.get("url"),
         source=r.get("source") or "unknown", title_key=tkey,
+        # `paper.mesh` has existed since the first schema and nothing ever
+        # wrote to it: the column was created, PubMed's parser filled the field
+        # on the record, and the insert never carried it across. So the MeSH
+        # indexing was fetched and discarded on every run, silently, and no
+        # screen could show it because there was nothing to show.
+        mesh=psycopg.types.json.Jsonb(r.get("mesh") or []),
     )
 
     if doi:
@@ -107,6 +113,11 @@ def _upsert_paper(cur, r):
         "  citations = COALESCE(EXCLUDED.citations, paper.citations),"
         "  url       = COALESCE(EXCLUDED.url,       paper.url),"
         "  pmid      = COALESCE(paper.pmid,  EXCLUDED.pmid),"
+        # Kept if the newcomer has none: one source indexes a paper and another
+        # does not, and the merge must not empty a field that was already
+        # filled. Same rule the other columns use.
+        "  mesh      = CASE WHEN jsonb_array_length(COALESCE(EXCLUDED.mesh,'[]'::jsonb)) > 0"
+        "                   THEN EXCLUDED.mesh ELSE paper.mesh END,"
         "  openalex_id = COALESCE(paper.openalex_id, EXCLUDED.openalex_id) "
         "RETURNING id, (xmax = 0) AS inserted, fetched_at", cols)
     row = cur.fetchone()

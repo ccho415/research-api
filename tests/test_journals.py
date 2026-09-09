@@ -58,7 +58,25 @@ check("the general tier does not depend on the domain at all",
       J.tier("The Lancet", "cs") == 2 and J.tier("The Lancet", None) == 2)
 
 
+# Europe PMC writes subsidiaries with a period, not a space. A family pattern
+# of "circulation %" alone matched none of these, which is why the tiers are
+# now checked against strings taken from a real search rather than from memory.
+check("a period-separated subsidiary reaches its family's tier",
+      J.tier("Circulation. Heart failure", "clinical") == 1
+      and J.tier("Circulation. Cardiovascular interventions", "clinical") == 1
+      and J.tier("Nature reviews. Cardiology", "clinical") == 2)
+check("venues Europe PMC disambiguates by society still match",
+      J.tier("Heart (British Cardiac Society)", "clinical") == 1
+      and J.tier("BMJ (Clinical research ed.)", "clinical") == 2
+      and J.tier("Lancet (London, England)", "clinical") == 2)
+
+
 # --- what must NOT happen ---------------------------------------------------
+# The corollary of "heart (%": a bare "heart%" would have taken these too, and
+# the tier would stop distinguishing anything.
+check("sharing a word with a listed venue is not enough",
+      J.tier("Heart failure reviews", "clinical") == 0
+      and J.tier("Heart rhythm", "clinical") == 0)
 check("an ordinary venue scores zero rather than being excluded - a zero is a "
       "position in the queue, not a rejection",
       J.tier("Journal of Stroke and Cerebrovascular Diseases", "clinical") == 0)
