@@ -1,0 +1,1469 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Jost:wght@300;400;500&family=Noto+Sans+TC:wght@400;500&family=Noto+Serif+TC:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ---------------------------------------------------------------------------
+   Tokens. Lifted from the pen.dev document's own variables so the two cannot
+   drift apart - names match `s-*` there.
+   --------------------------------------------------------------------------- */
+:root{
+  --ground:#F8E2D8; --ground2:#F1D2C5; --white:#FFFFFF;
+  --camel:#C2A084; --camel2:#E0CBB6;
+  --teal:#4E9A95; --wine:#7A2233; --night:#1E1B1A;
+  --text:#333333; --text2:#7A6E68; --rule:#E2CCC0;
+  --ochre:#B0862B; --ochre-tint:#F0DFBE;
+
+  --serif:"Cormorant Garamond",Georgia,serif;
+  --sans:"Jost",system-ui,sans-serif;
+  --cjk:"Noto Serif TC",serif;
+  --cjks:"Noto Sans TC",system-ui,sans-serif;
+
+  --shell:1200px;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--ground); color:var(--text);
+  font-family:var(--cjks); font-size:14px; line-height:1.75;
+}
+img{max-width:100%}
+[hidden]{display:none!important}
+
+/* Latin runs on Jost, CJK on Noto - the eyebrow/label/number vocabulary */
+.eyebrow{font-family:var(--sans);font-size:9px;font-weight:400;letter-spacing:1.8px;text-transform:uppercase;color:var(--text2)}
+.eyebrow.on-dark{color:#FFFFFFCC}
+.label{font-family:var(--sans);font-size:10px;letter-spacing:2.4px;text-transform:uppercase;color:var(--text2)}
+.meta{font-family:var(--sans);font-size:12px;letter-spacing:.8px;color:var(--text2)}
+.num{font-family:var(--sans);font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:0}
+h1,h2,h3,h4{font-family:var(--cjk);font-weight:500;margin:0;color:var(--text)}
+h1{font-size:29px;line-height:1.35}
+h2{font-size:22px;letter-spacing:.6px;line-height:1.45}
+h3{font-size:19px;letter-spacing:.6px;line-height:1.72}
+h4{font-size:16px;line-height:1.7}
+p{margin:0}
+a{color:inherit}
+
+/* --- header ------------------------------------------------------------- */
+header.top{
+  position:sticky;top:0;z-index:40;background:var(--ground);
+  border-bottom:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 40px;gap:24px;flex-wrap:wrap;
+}
+.wordmark{display:flex;flex-direction:column;gap:3px;line-height:1.1}
+.wordmark span{font-family:var(--sans);font-size:10px;letter-spacing:2.4px;color:var(--text)}
+.steps{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:7px;background:none;border:0;padding:4px 2px;cursor:pointer;
+  font:inherit;border-radius:0;transition:opacity .15s}
+.step .dot{width:5px;height:5px;border-radius:50%;background:var(--camel2);flex:none;transition:all .15s}
+.step .nm{font-family:var(--cjks);font-size:11px;letter-spacing:1.2px;color:var(--text2)}
+.step[aria-current="step"] .dot{width:7px;height:7px;background:var(--wine)}
+.step[aria-current="step"] .nm{color:var(--text)}
+.step:hover .dot{background:var(--wine)}
+.step:hover .nm{color:var(--text)}
+.step.reachable .nm{color:var(--text)}
+.step.reachable .dot{background:var(--camel)}
+.step:focus-visible{outline:1px solid var(--wine);outline-offset:3px}
+.tick{width:18px;height:1px;background:var(--rule);flex:none}
+.top nav{display:flex;align-items:center;gap:20px}
+.top nav button{
+  background:none;border:0;padding:0;cursor:pointer;
+  font-family:var(--sans);font-size:10px;letter-spacing:2.4px;text-transform:uppercase;color:var(--text2)
+}
+.top nav button:hover{color:var(--text)}
+
+/* --- hero band ---------------------------------------------------------- */
+.hero{position:relative;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;min-height:340px}
+.hero .art{background:linear-gradient(140deg,var(--camel2),var(--camel));position:relative;
+  display:flex;align-items:center;justify-content:center;padding:34px}
+/* Paper grain, so the flat colour panels read as printed rather than as CSS */
+.hero .art::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:radial-gradient(#FFFFFF22 1px,transparent 1px);background-size:5px 5px}
+.plate{width:100%;max-width:400px;height:auto;color:#FFFFFF;overflow:visible}
+.plate .thin{stroke:currentColor;stroke-width:1;opacity:.42;fill:none;stroke-linecap:round}
+.plate .stroke{stroke:currentColor;stroke-width:1.8;opacity:.85;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.plate .ring{stroke:currentColor;stroke-width:1.3;opacity:.6;fill:none}
+.plate .dot{fill:currentColor;opacity:.75;stroke:none}
+.plate .fill{fill:currentColor;opacity:.3;stroke:currentColor;stroke-width:1.2}
+.hero .panel{background:var(--camel);padding:56px 48px;display:flex;flex-direction:column;justify-content:center;gap:16px;position:relative}
+.hero.teal .panel{background:var(--teal)} .hero.teal .art{background:linear-gradient(140deg,#8FC0BC,var(--teal))}
+.hero.wine .panel{background:var(--wine)} .hero.wine .art{background:linear-gradient(140deg,#B4707C,var(--wine))}
+.hero.night .panel{background:var(--night)} .hero.night .art{background:linear-gradient(140deg,#5B5049,var(--night))}
+.hero .mark{
+  position:absolute;right:16px;bottom:-28px;pointer-events:none;
+  font-family:var(--serif);font-weight:300;font-size:150px;line-height:.8;color:#FFFFFF33;
+}
+.hero h1,.hero h2,.hero p{color:#fff}
+.hero p{font-size:13px;line-height:1.9;color:#FFFFFFDD;max-width:46ch}
+.hero .vlabel{
+  position:absolute;left:14px;top:40px;writing-mode:vertical-rl;
+  font-family:var(--sans);font-size:9px;letter-spacing:3px;color:#FFFFFF99;text-transform:uppercase
+}
+
+/* --- layout ------------------------------------------------------------- */
+main{padding-bottom:120px}
+.shell{max-width:var(--shell);margin:0 auto;padding:0 40px}
+section{padding:56px 0}
+.sechead{display:flex;align-items:baseline;gap:14px;padding-bottom:14px;border-bottom:1px solid var(--rule);margin-bottom:24px;flex-wrap:wrap}
+.sechead .n{font-family:var(--sans);font-size:12px;letter-spacing:1px;color:var(--text2)}
+.note{font-size:12px;line-height:1.9;color:var(--text2)}
+.stack{display:flex;flex-direction:column}
+.row{padding:20px 0;border-bottom:1px solid var(--rule)}
+.row:first-child{border-top:1px solid var(--rule)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+
+/* --- controls ----------------------------------------------------------- */
+button.pill,a.pill{
+  display:inline-flex;align-items:center;gap:10px;cursor:pointer;
+  border:1px solid var(--text);border-radius:999px;background:none;color:var(--text);
+  padding:11px 22px;font-family:var(--cjks);font-size:13px;letter-spacing:.5px;text-decoration:none;
+}
+button.pill:hover,a.pill:hover{background:var(--text);color:var(--ground)}
+button.pill.solid{background:var(--night);border-color:var(--night);color:var(--ground)}
+button.pill.solid:hover{background:#000}
+button.pill.ghost{border-color:var(--rule);color:var(--text2)}
+button.pill[disabled]{opacity:.4;cursor:not-allowed}
+button.pill.solid[disabled]:hover{background:var(--night)}
+.linkish{background:none;border:0;padding:0;cursor:pointer;font:inherit;color:var(--text);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--camel)}
+
+label.field{display:flex;flex-direction:column;gap:7px;margin-bottom:22px}
+label.field>.lb{font-family:var(--sans);font-size:9px;letter-spacing:1.8px;text-transform:uppercase;color:var(--text2)}
+input,textarea,select{
+  font-family:var(--cjks);font-size:14px;color:var(--text);
+  background:#FFFDFA;border:0;border-bottom:1px solid var(--rule);
+  padding:11px 2px;width:100%;border-radius:0;
+}
+textarea{min-height:88px;resize:vertical;line-height:1.8}
+input:focus,textarea:focus,select:focus{outline:0;border-bottom-color:var(--wine)}
+.hint{font-size:11px;line-height:1.8;color:var(--text2)}
+
+/* --- pills / chips ------------------------------------------------------ */
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 11px;
+  font-family:var(--sans);font-size:11px;letter-spacing:1px;text-transform:uppercase}
+.chip.tierA{background:var(--teal);color:#fff}
+.chip.tierB{background:var(--ochre-tint);color:#6A5211}
+.chip.tierC{background:var(--camel2);color:#4A382A}
+.chip.tierD{background:var(--ground2);color:var(--text2)}
+.chip.warn{background:var(--wine);color:#fff}
+.chip.calm{background:var(--ground2);color:var(--text2)}
+.chip.ok{background:var(--teal);color:#fff}
+
+/* --- panels ------------------------------------------------------------- */
+.card{background:#FFFDFA;padding:26px 28px;border-radius:0 16px 0 0}
+.card.flat{background:#FFFFFF7A}
+.blocked{background:var(--wine);color:#fff;padding:40px;border-radius:0 16px 0 0}
+.blocked h2,.blocked h3{color:#fff}
+.blocked p{color:#FFFFFFDD}
+.blocked button.pill{border-color:#fff;color:#fff}
+.blocked button.pill:hover{background:#fff;color:var(--wine)}
+.blocked button.pill.solid{background:#fff;border-color:#fff;color:var(--wine)}
+
+.kv{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.kv .k{font-family:var(--sans);font-size:9px;letter-spacing:1.8px;text-transform:uppercase;color:var(--text2);min-width:96px}
+.big{font-family:var(--sans);font-weight:300;font-size:36px;font-variant-numeric:tabular-nums;line-height:1.1}
+
+.empty{padding:22px 0;font-size:12px;line-height:1.9;color:var(--text2);border-top:1px solid var(--rule)}
+.scroller{overflow-x:auto}
+
+/* --- steps list (progress) ---------------------------------------------- */
+.plist{list-style:none;margin:0;padding:0}
+.plist li{display:grid;grid-template-columns:22px 1fr auto;gap:14px;align-items:baseline;
+  padding:13px 0;border-bottom:1px solid var(--rule)}
+.plist .st{width:9px;height:9px;border-radius:50%;background:var(--camel2);margin-top:6px}
+.plist .st.done{background:var(--teal)}
+.plist .st.run{background:var(--ochre)}
+.plist .st.stop{background:var(--wine)}
+.plist .st.wait{background:var(--wine);box-shadow:0 0 0 3px #7A223333}
+
+/* --- toast / gate ------------------------------------------------------- */
+#gate{position:fixed;inset:0;background:var(--ground);z-index:90;display:flex;align-items:center;justify-content:center;padding:32px}
+#gate .card{max-width:520px;width:100%}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:28px;z-index:80;
+  background:var(--night);color:var(--ground);padding:13px 22px;border-radius:999px;
+  font-size:13px;max-width:min(720px,92vw);line-height:1.6;box-shadow:0 6px 30px #0000002E}
+/* --- footer ------------------------------------------------------------- */
+.foot{background:var(--night);color:var(--ground);border-radius:32px 32px 0 0;margin-top:80px;padding:56px 0 48px}
+.foot-in{display:flex;gap:32px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap}
+.foot .wordmark span{color:var(--ground)}
+
+/* --- editorial ornaments ------------------------------------------------ */
+/* A staggered ground behind alternating sections, so the page reads as bands
+   rather than one long scroll of white cards. */
+section.band{background:var(--ground2);margin:0 -9999px;padding-left:9999px;padding-right:9999px}
+.sechead{position:relative}
+.sechead .n{font-variant-numeric:tabular-nums}
+.rail{position:fixed;right:0;top:50%;transform:translateY(-50%) ;z-index:30;
+  background:var(--night);color:var(--ground);writing-mode:vertical-rl;
+  padding:16px 7px;border-radius:8px 0 0 8px;
+  font-family:var(--sans);font-size:9px;letter-spacing:3px;text-transform:uppercase;
+  max-height:70vh;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:1100px){.rail{display:none}}
+.card{position:relative}
+/* Hairline corner tick - the reference uses a single asymmetric detail per
+   panel rather than a uniform radius on every corner. */
+.card::before{content:"";position:absolute;left:0;top:0;width:18px;height:1px;background:var(--camel)}
+.blocked{position:relative;overflow:hidden}
+.blocked::after{content:"";position:absolute;right:-70px;bottom:-90px;width:260px;height:260px;
+  border:1px solid #FFFFFF2E;border-radius:50%;pointer-events:none}
+.dropcap::first-letter{font-family:var(--serif);font-size:46px;line-height:.9;float:left;
+  margin:5px 10px 0 0;color:var(--wine)}
+.spin{display:inline-block;width:11px;height:11px;border:2px solid var(--camel2);border-top-color:var(--wine);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-1px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+
+@media(max-width:860px){
+  .hero{grid-template-columns:1fr}
+  .hero .art{min-height:180px}
+  header.top{padding:16px 20px}
+  .shell{padding:0 20px}
+  .steps{order:3;width:100%}
+}
+</style>
+</head>
+<body>
+
+<div id="gate" hidden>
+  <div class="card">
+    <p class="eyebrow" style="margin-bottom:10px">ACCESS KEY</p>
+    <h2 style="margin-bottom:14px">貼上前端金鑰</h2>
+    <p class="note" style="margin-bottom:20px">
+      這把金鑰存在這台瀏覽器裡，不會送到 n8n 以外的任何地方，也沒有寫在這個檔案裡。
+      換一台電腦要再貼一次。它在 n8n 的憑證 <span class="meta">Frontend Webhook Token</span> 裡。
+    </p>
+    <label class="field"><span class="lb">X-Frontend-Key</span>
+      <input id="gateKey" type="password" autocomplete="off" placeholder="貼上金鑰"></label>
+    <button class="pill solid" id="gateGo">開始使用</button>
+  </div>
+</div>
+
+<header class="top">
+  <div class="wordmark"><span>RESEARCH</span><span>DIRECTIONS</span></div>
+  <div class="steps" id="steps"></div>
+  <nav>
+    <button data-go="#/">專案</button>
+    <button id="navKey">金鑰</button>
+  </nav>
+</header>
+
+<main id="view"></main>
+<div id="toast" hidden></div>
+
+<script>
+/* ===========================================================================
+   Endpoints. The API path carries a UUID because its n8n webhook path has a
+   `:route` parameter - n8n prefixes parameterised paths with the webhook id.
+   =========================================================================== */
+const CFG = {
+  api:   'https://ccho415-research.zeabur.app/webhook/5165edde-989c-4cc2-a500-f5915745ef67/research/api',
+  start: 'https://ccho415-research.zeabur.app/webhook/research/start'
+};
+
+const $  = (s,r=document)=>r.querySelector(s);
+const el = (t,a={},...kids)=>{
+  const n=document.createElement(t);
+  for(const[k,v]of Object.entries(a)){
+    if(v===null||v===undefined||v===false)continue;
+    if(k==='class')n.className=v;
+    else if(k==='html')n.innerHTML=v;
+    else if(k.startsWith('on'))n.addEventListener(k.slice(2),v);
+    else n.setAttribute(k,v);
+  }
+  for(const k of kids.flat()){ if(k===null||k===undefined||k===false)continue;
+    n.append(k.nodeType?k:document.createTextNode(String(k))); }
+  return n;
+};
+const fmt = {
+  usd:v=>v===null||v===undefined?'—':'$'+Number(v).toFixed(2),
+  int:v=>v===null||v===undefined?'—':Number(v).toLocaleString('en-US'),
+  date:s=>s?String(s).slice(0,10).replace(/-/g,'.'):'—',
+  pct:v=>v===null||v===undefined?'—':(Math.round(v*1000)/10)+'%'
+};
+
+/* --- key ---------------------------------------------------------------- */
+const KEY='rd_frontend_key';
+const getKey=()=>{try{return localStorage.getItem(KEY)||''}catch(e){return ''}};
+const setKey=v=>{try{localStorage.setItem(KEY,v)}catch(e){}};
+function openGate(){ $('#gate').hidden=false; $('#gateKey').value=getKey(); $('#gateKey').focus(); }
+$('#gateGo').onclick=()=>{ const v=$('#gateKey').value.trim(); if(!v)return; setKey(v); $('#gate').hidden=true; route(); };
+$('#gateKey').addEventListener('keydown',e=>{ if(e.key==='Enter')$('#gateGo').click(); });
+$('#navKey').onclick=openGate;
+
+/* --- toast -------------------------------------------------------------- */
+let toastT=null;
+function toast(msg,ms=6000){
+  const t=$('#toast'); t.textContent=msg; t.hidden=false;
+  clearTimeout(toastT); if(ms) toastT=setTimeout(()=>t.hidden=true,ms);
+}
+function busy(msg){ const t=$('#toast'); t.innerHTML=''; t.append(el('span',{class:'spin'}),' '+msg); t.hidden=false; clearTimeout(toastT); }
+function unbusy(){ $('#toast').hidden=true; clearTimeout(toastT); }
+
+/* --- api ---------------------------------------------------------------- */
+class ApiError extends Error{ constructor(status,msg,where){ super(msg); this.status=status; this.where=where; } }
+
+async function call(route,{method='GET',query={},body=null}={}){
+  const qs=new URLSearchParams(Object.entries(query).filter(([,v])=>v!==undefined&&v!==null&&v!=='')).toString();
+  const url=`${CFG.api}/${route}`+(qs?`?${qs}`:'');
+  let res;
+  try{
+    res=await fetch(url,{method,
+      headers:Object.assign({'X-Frontend-Key':getKey()},body?{'Content-Type':'application/json'}:{}),
+      body:body?JSON.stringify(body):undefined});
+  }catch(e){
+    // A network-level failure and a refusal by the API are different problems
+    // with different fixes, so they are never reported with the same words.
+    throw new ApiError(0,'連不到 n8n。可能是網路，也可能是 CORS 沒開。',route);
+  }
+  const text=await res.text();
+  let data=null; try{ data=text?JSON.parse(text):null }catch(e){ data={error:text.slice(0,300)} }
+  if(res.status===401||res.status===403) throw new ApiError(res.status,'金鑰不對或沒帶到。按右上角「金鑰」重貼一次。',route);
+  if(!res.ok) throw new ApiError(res.status,(data&&data.error)||res.statusText||'unknown',route);
+  return data;
+}
+async function startCall(body){
+  let res;
+  try{
+    res=await fetch(CFG.start,{method:'POST',
+      headers:{'X-Frontend-Key':getKey(),'Content-Type':'application/json'},
+      body:JSON.stringify(body)});
+  }catch(e){ throw new ApiError(0,'連不到 n8n。可能是網路，也可能是 CORS 沒開。','start'); }
+  const text=await res.text();
+  let data=null; try{ data=text?JSON.parse(text):null }catch(e){ data={error:text.slice(0,300)} }
+  if(res.status===401||res.status===403) throw new ApiError(res.status,'金鑰不對或沒帶到。按右上角「金鑰」重貼一次。','start');
+  if(!res.ok) throw new ApiError(res.status,(data&&data.error)||res.statusText||'unknown','start');
+  return data;
+}
+function fail(e){
+  console.error(e);
+  if(e instanceof ApiError && (e.status===401||e.status===403)){ toast(e.message,0); openGate(); return; }
+  toast((e&&e.message)||'出錯了',0);
+}
+
+/* --- which project the header steps point at ----------------------------
+   The five steps are one project's journey, but the header is global, so the
+   axis needs to remember which project you are in. It survives a reload
+   because the id lives in the URL of every project screen anyway.
+   ------------------------------------------------------------------------ */
+const PKEY='rd_project';
+const getProject=()=>{try{return JSON.parse(sessionStorage.getItem(PKEY)||'null')}catch(e){return null}};
+function setProject(id,title){
+  if(!id) return;
+  const cur=getProject();
+  const next={id,title:title||(cur&&cur.id===id?cur.title:null)};
+  try{sessionStorage.setItem(PKEY,JSON.stringify(next))}catch(e){}
+  paintRail(next);
+}
+function paintRail(p){
+  let r=$('.rail');
+  if(!p||!p.id){ if(r) r.remove(); return; }
+  if(!r){ r=el('div',{class:'rail'}); document.body.append(r); }
+  r.textContent=(p.title||p.id).slice(0,46);
+  r.title=p.title||p.id;
+}
+
+const STEPS=[
+  {nm:'題目', to:()=>'#/'},
+  {nm:'概念', to:()=>'#/concepts', needsDraft:true},
+  {nm:'分級', to:p=>'#/p/'+p+'/tiers', needsProject:true},
+  {nm:'辯論', to:p=>'#/p/'+p+'/debate', needsProject:true},
+  {nm:'報告', to:p=>'#/p/'+p+'/report', needsProject:true}
+];
+function paintSteps(active){
+  const box=$('#steps'); box.innerHTML='';
+  const proj=getProject();
+  STEPS.forEach((s,i)=>{
+    if(i) box.append(el('span',{class:'tick'}));
+    const reachable=(s.needsProject&&proj&&proj.id)||(!s.needsProject&&!s.needsDraft);
+    const b=el('button',Object.assign(
+      {class:'step'+(reachable&&i!==active?' reachable':''),type:'button',
+       title:s.needsProject&&!(proj&&proj.id)?'先選一個專案':''},
+      i===active?{'aria-current':'step'}:{}),
+      el('span',{class:'dot'}), el('span',{class:'nm'},s.nm));
+    b.onclick=()=>{
+      if(s.needsProject){
+        const p=getProject();
+        // Refusing with a reason beats navigating to a screen that can only
+        // say "nothing here" - the two look identical once you arrive.
+        if(!p||!p.id){ toast('這三步是某一個專案的結果。先從下面的清單挑一個專案。'); location.hash='#/'; return; }
+        location.hash=s.to(p.id); return;
+      }
+      if(s.needsDraft){
+        let d=null; try{ d=JSON.parse(sessionStorage.getItem('rd_propose')||'null') }catch(e){}
+        if(!d){ toast('還沒有待確認的概念。先在首頁交一個題目。'); location.hash='#/'; return; }
+      }
+      location.hash=s.to();
+    };
+    box.append(b);
+  });
+}
+
+/* --- plates -------------------------------------------------------------
+   Hand-drawn scientific line work, inline. The pen.dev sketches cannot be used
+   here: images generated in that app never land on disk, so the HTML export
+   points at relative paths that do not exist. Drawing them here keeps the
+   subject under control too - the earlier attempt at stock photography
+   answered "petri dish" with a plate of food.
+   ------------------------------------------------------------------------ */
+const svg=(inner,vb='0 0 400 320')=>
+  `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="plate">${inner}</svg>`;
+const rnd=(s)=>{let x=Math.sin(s)*10000;return x-Math.floor(x)};
+
+// 題目 - a field of papers, one question pulling threads between them
+const PLATE_Q=(()=>{
+  const pts=[]; for(let i=0;i<26;i++){const a=rnd(i*3.1)*360*Math.PI/180,r=40+rnd(i*7.7)*120;
+    pts.push([200+Math.cos(a)*r*1.35,160+Math.sin(a)*r*0.85]);}
+  let ln=''; pts.forEach((p,i)=>{const q=pts[(i*7+3)%pts.length];
+    ln+=`<line x1="${p[0].toFixed(1)}" y1="${p[1].toFixed(1)}" x2="${q[0].toFixed(1)}" y2="${q[1].toFixed(1)}"/>`;});
+  const dots=pts.map((p,i)=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${(1.6+rnd(i)*2.6).toFixed(1)}"/>`).join('');
+  return svg(`<g class="thin">${ln}</g><g class="dot">${dots}</g>
+    <circle class="ring" cx="200" cy="160" r="74"/><circle class="ring" cx="200" cy="160" r="96"/>
+    <path class="stroke" d="M186 148 q0-20 16-20 q16 0 16 17 q0 13-14 18 q-8 3-8 12"/>
+    <circle class="dot" cx="196" cy="188" r="3.4"/>`);
+})();
+
+// 概念 - controlled vocabulary: a term opening into its hierarchy
+const PLATE_C=(()=>{
+  let t='';
+  const lv=[[200,54],[120,132],[280,132],[74,214],[164,214],[236,214],[326,214]];
+  [[0,1],[0,2],[1,3],[1,4],[2,5],[2,6]].forEach(([a,b])=>{
+    const p=lv[a],q=lv[b];
+    t+=`<path class="thin" d="M${p[0]} ${p[1]+13} C${p[0]} ${(p[1]+q[1])/2} ${q[0]} ${(p[1]+q[1])/2} ${q[0]} ${q[1]-13}"/>`;});
+  lv.forEach((p,i)=>{t+=`<circle class="${i?'ring':'stroke'}" cx="${p[0]}" cy="${p[1]}" r="${i?11:15}"/>`;});
+  const leaf=[74,164,236,326].map(x=>
+    `<line class="thin" x1="${x-26}" y1="252" x2="${x+26}" y2="252"/>
+     <line class="thin" x1="${x-18}" y1="266" x2="${x+18}" y2="266"/>`).join('');
+  return svg(t+leaf+`<ellipse class="ring" cx="200" cy="160" rx="176" ry="132"/>`);
+})();
+
+// 分級 - a ranked board, longest bar first, with what is missing marked
+const PLATE_A=(()=>{
+  let b=''; for(let i=0;i<9;i++){
+    const w=210-i*15-rnd(i*2.3)*40, y=44+i*28;
+    b+=`<rect class="${i%3===2?'fill':'ring'}" x="86" y="${y}" width="${w.toFixed(0)}" height="13" rx="6.5"/>`;
+    b+=`<circle class="dot" cx="70" cy="${y+6.5}" r="3"/>`;
+    if(i%3===2) b+=`<line class="thin" x1="${(86+w+10).toFixed(0)}" y1="${y+6.5}" x2="330" y2="${y+6.5}" stroke-dasharray="3 6"/>`;
+  }
+  return svg(b+`<line class="thin" x1="60" y1="30" x2="60" y2="300"/>
+    <path class="stroke" d="M300 250 v34 h34" /><circle class="ring" cx="300" cy="250" r="26"/>`);
+})();
+
+// 辯論 - two positions and the balance between them
+const PLATE_D=(()=>{
+  const arc=(x,d)=>`<path class="stroke" d="M${x} 96 q${d*54} 46 0 92"/>`;
+  let ev=''; for(let i=0;i<7;i++){const y=232+i*11;
+    ev+=`<line class="thin" x1="${132+rnd(i)*10}" y1="${y}" x2="${252-rnd(i*3)*24}" y2="${y}"/>`;}
+  return svg(`<circle class="ring" cx="112" cy="142" r="40"/><circle class="ring" cx="288" cy="142" r="40"/>
+    ${arc(152,1)}${arc(248,-1)}
+    <line class="thin" x1="200" y1="60" x2="200" y2="212"/>
+    <path class="stroke" d="M136 200 h128"/><circle class="fill" cx="200" cy="200" r="6"/>
+    <g>${ev}</g>`);
+})();
+
+// 報告 - pages that can be read on their own, and what they cite
+const PLATE_R=(()=>{
+  let ln=''; for(let i=0;i<11;i++){const y=92+i*15;
+    ln+=`<line class="thin" x1="132" y1="${y}" x2="${262-rnd(i*5)*70}" y2="${y}"/>`;}
+  return svg(`<rect class="ring" x="112" y="52" width="176" height="228" rx="3"/>
+    <rect class="ring" x="126" y="40" width="176" height="228" rx="3" opacity=".45"/>
+    ${ln}<path class="fill" d="M244 40 h30 v56 l-15-13 -15 13 z"/>
+    <circle class="ring" cx="322" cy="238" r="30"/><path class="stroke" d="M312 238 l7 8 14-17"/>`);
+})();
+const PLATES={Q:PLATE_Q,C:PLATE_C,A:PLATE_A,D:PLATE_D,R:PLATE_R};
+
+/* --- shared bits -------------------------------------------------------- */
+function hero({tone='',mark='',eyebrow='',title='',body='',vlabel='',plate=''}){
+  const art=el('div',{class:'art'});
+  if(PLATES[plate]) art.innerHTML=PLATES[plate];
+  if(vlabel) art.append(el('span',{class:'vlabel'},vlabel));
+  return el('div',{class:'hero '+tone}, art,
+    el('div',{class:'panel'},
+      eyebrow?el('p',{class:'eyebrow on-dark'},eyebrow):null,
+      el('h1',{},title),
+      body?el('p',{},body):null,
+      el('span',{class:'mark'},mark)));
+}
+function footer(){
+  return el('footer',{class:'foot'}, el('div',{class:'shell'},
+    el('div',{class:'foot-in'},
+      el('div',{},
+        el('div',{class:'wordmark',style:'margin-bottom:12px'},
+          el('span',{},'RESEARCH'),el('span',{},'DIRECTIONS')),
+        el('p',{class:'note',style:'color:#FFFFFF88;max-width:44ch'},
+          '這套系統只提出方向，不替你做研究。每一份報告都要能單獨閱讀——'
+          +'半年後回頭看不必重跑系統。')),
+      el('p',{class:'label',style:'color:#FFFFFF66;text-align:right'},
+        'W1 — W10　·　n8n × research-api'))));
+}
+function sechead(n,title,right){
+  return el('div',{class:'sechead'}, el('span',{class:'n'},n), el('h2',{},title),
+    right?el('span',{class:'meta',style:'margin-left:auto'},right):null);
+}
+// A zero-length list must say why it is zero. An empty container that simply
+// collapses reads as a broken screen, and 0 is a normal outcome here.
+function emptyNote(text){ return el('p',{class:'empty'},text); }
+
+// Any screen may start a poll; leaving the screen must stop it, or two screens
+// end up writing into the same DOM and the older one wins at random.
+let POLL=null;
+function stopPoll(){ if(POLL){ clearInterval(POLL); POLL=null; } }
+function view(...kids){ stopPoll(); const v=$('#view'); v.innerHTML=''; kids.flat().forEach(k=>k&&v.append(k)); window.scrollTo(0,0); }
+function shell(...kids){ return el('div',{class:'shell'},kids.flat().filter(Boolean)); }
+
+/* ===========================================================================
+   ① 首頁 - 交題目 / 專案列表 / 進行中
+   =========================================================================== */
+async function screenHome(){
+  paintSteps(0);
+  const form=el('div',{class:'card'});
+  const topic=el('textarea',{id:'f_topic',placeholder:'用中文寫就好。例如：某個暴露與某個疾病結果的關聯'});
+  const domain=el('select',{id:'f_domain'},
+    ...[['clinical','臨床醫學'],['biomed','生物醫學'],['publichealth','公共衛生'],
+        ['env','環境'],['cs','資訊科學'],['general','一般']]
+      .map(([v,t])=>el('option',{value:v},t)));
+  const limit=el('input',{id:'f_limit',type:'number',min:'5',max:'100',value:'25'});
+  const budget=el('input',{id:'f_budget',type:'number',min:'0.1',step:'0.1',value:'2'});
+  const go=el('button',{class:'pill solid',onclick:submitTopic},'拆成檢索概念');
+
+  form.append(
+    el('p',{class:'eyebrow',style:'margin-bottom:8px'},'YOUR QUESTION'),
+    el('h2',{style:'margin-bottom:20px'},'交一個研究題目'),
+    el('label',{class:'field'},el('span',{class:'lb'},'題目'),topic),
+    el('div',{class:'grid2'},
+      el('label',{class:'field'},el('span',{class:'lb'},'領域'),domain),
+      el('label',{class:'field'},el('span',{class:'lb'},'每個查詢取幾篇'),limit),
+      el('label',{class:'field'},el('span',{class:'lb'},'整條鏈的花費上限（美元）'),budget)),
+    el('p',{class:'hint',style:'margin-bottom:20px'},
+      '按下去只會叫一次模型把題目拆成檢索概念，還不會建立專案，也還不會開始花錢。下一頁可以改。'),
+    go);
+
+  const listBox=el('div',{});
+  view(hero({tone:'',mark:'Q',plate:'Q',eyebrow:'START FROM ONE QUESTION',
+      title:'從一個問題開始',
+      body:'系統會讀文獻、找出作者自己說還沒解決的缺口、生出候選方向、排名次、判斷可不可行、驗證有沒有人做過，最後讓兩個模型辯論一場再寫成報告。整條約 30–60 分鐘，中間你不必在場。',
+      vlabel:'STATE 01'}),
+    shell(el('section',{},form)),
+    el('section',{class:'band'},shell(listBox)),
+    footer());
+
+  try{
+    busy('讀專案清單…');
+    const d=await call('projects',{query:{limit:50}});
+    unbusy();
+    paintProjects(listBox,d);
+  }catch(e){ unbusy(); listBox.append(sechead('01','專案'), emptyNote('讀不到專案清單。')); fail(e); }
+}
+
+function paintProjects(box,d){
+  box.innerHTML='';
+  const n=d&&d.n||0, waiting=d&&d.n_awaiting_you||0;
+  box.append(sechead('01','專案', n?`${n} 個專案 · ${waiting} 個在等你`:null));
+  const rows=(d&&d.projects)||[];
+  if(!rows.length){ box.append(emptyNote('還沒有任何專案。上面交一個題目就會出現在這裡。')); return; }
+
+  const stack=el('div',{class:'stack'});
+  for(const p of rows){
+    const parked=p.parked||null;
+    const state=p.chain_state;
+    let chip;
+    if(state==='awaiting_you') chip=el('span',{class:'chip warn'},'等你 '+(parked&&parked.review_point||''));
+    else if(state==='running') chip=el('span',{class:'chip ok'},'進行中');
+    else if(state==='failed')  chip=el('span',{class:'chip warn'},'失敗');
+    else if(state==='done')    chip=el('span',{class:'chip calm'},'完成');
+    else                       chip=el('span',{class:'chip calm'},state||'未開始');
+
+    // The project list is the one place truncation is allowed, because the full
+    // title is one click away on the project's own screens.
+    const title=el('p',{style:'font-family:var(--cjk);font-size:17px;line-height:1.6;margin:6px 0 10px;'
+      +'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden'},
+      p.title||p.topic||'(無標題)');
+
+    const facts=el('div',{class:'meta',style:'display:flex;gap:18px;flex-wrap:wrap'},
+      el('span',{},fmt.date(p.created_at)),
+      el('span',{},'論文 '+fmt.int(p.n_papers)),
+      el('span',{},'方向 '+fmt.int(p.n_ideas)),
+      el('span',{},fmt.usd(p.usd_spent)+(p.usd_budget!==null&&p.usd_budget!==undefined?' / '+fmt.usd(p.usd_budget):' / 無上限')),
+      el('span',{},'階段 '+fmt.int(p.n_stages_done)+' / '+fmt.int(p.n_stages)));
+
+    // Picking a project here is what makes the header's last three steps
+    // clickable - they are that project's results, and nothing else's.
+    const open=(what)=>{ setProject(p.id,p.title||p.topic); location.hash='#/p/'+p.id+'/'+what; };
+    const acts=el('div',{style:'display:flex;gap:10px;flex-wrap:wrap;margin-top:14px'},
+      el('button',{class:'pill ghost',onclick:()=>open('progress')},'進度'),
+      el('button',{class:'pill ghost',onclick:()=>open('tiers')},'分級'),
+      el('button',{class:'pill ghost',onclick:()=>open('debate')},'辯論'),
+      el('button',{class:'pill ghost',onclick:()=>open('report')},'報告'));
+
+    stack.append(el('div',{class:'row'},
+      el('div',{style:'display:flex;align-items:center;gap:12px;flex-wrap:wrap'},
+        chip, el('span',{class:'meta'},p.id.slice(0,8))),
+      title, facts, acts));
+  }
+  box.append(stack);
+}
+
+async function submitTopic(){
+  const topic=$('#f_topic').value.trim();
+  if(!topic){ toast('先寫題目'); return; }
+  const payload={mode:'propose',topic,
+    domain:$('#f_domain').value,
+    limit:Number($('#f_limit').value)||25,
+    usd_budget:Number($('#f_budget').value)||null};
+  try{
+    busy('把題目拆成檢索概念…');
+    const d=await startCall(payload);
+    unbusy();
+    sessionStorage.setItem('rd_propose',JSON.stringify({...payload,concepts:d.concepts||[]}));
+    location.hash='#/concepts';
+  }catch(e){ unbusy(); fail(e); }
+}
+
+/* ===========================================================================
+   ② 確認檢索概念
+   =========================================================================== */
+async function screenConcepts(){
+  paintSteps(1);
+  let st=null;
+  try{ st=JSON.parse(sessionStorage.getItem('rd_propose')||'null'); }catch(e){}
+  if(!st){ location.hash='#/'; return; }
+
+  const listBox=el('div',{class:'stack'});
+  const addRow=el('div',{style:'display:flex;gap:10px;margin-top:18px;flex-wrap:wrap'},
+    el('button',{class:'pill ghost',onclick:()=>{ st.concepts.push(''); paint(); }},'加一個概念'),
+    el('button',{class:'pill ghost',onclick:verify},'重新檢查'),
+    el('button',{class:'pill solid',onclick:begin},'確認並開始檢索'));
+
+  view(hero({tone:'teal',mark:'C',plate:'C',eyebrow:'CHECK BEFORE YOU SPEND',
+      title:'確認檢索概念',
+      body:'模型把你的題目拆成了下面幾個英文概念。檢索的廣度來自 MeSH 的階層，所以一個對不到 MeSH 的詞等於這一軸沒有東西可以展開。改到滿意再往下——這一頁完全免費，改幾次都不用錢。',
+      vlabel:'STATE 02'}),
+    shell(el('section',{},
+      sechead('02','你的題目'),
+      el('p',{class:'dropcap',style:'font-family:var(--cjk);font-size:17px;line-height:1.9;margin-bottom:32px'},st.topic))),
+    el('section',{class:'band'},shell(
+      sechead('03','概念與 MeSH 比對'),
+      listBox, addRow,
+      el('p',{class:'hint',style:'margin-top:18px'},
+        '按「確認並開始檢索」之後才會建立專案、開始花錢。之後就改不動了。'))),
+    footer());
+
+  paint(); verify();
+
+  function paint(){
+    listBox.innerHTML='';
+    if(!st.concepts.length){ listBox.append(emptyNote('目前一個概念都沒有。至少要有一個才能檢索。')); return; }
+    st.concepts.forEach((c,i)=>{
+      const inp=el('input',{value:c,placeholder:'英文概念，例如 particulate matter',
+        oninput:e=>{ st.concepts[i]=e.target.value; }});
+      const res=el('div',{class:'meta',id:'v_'+i,style:'margin-top:8px'},'　');
+      listBox.append(el('div',{class:'row'},
+        el('div',{style:'display:flex;gap:14px;align-items:flex-start'},
+          el('span',{class:'eyebrow',style:'padding-top:14px;min-width:26px'},String(i+1).padStart(2,'0')),
+          el('div',{style:'flex:1;min-width:0'}, inp, res),
+          el('button',{class:'linkish',style:'margin-top:12px',
+            onclick:()=>{ st.concepts.splice(i,1); paint(); verify(); }},'移除'))));
+    });
+  }
+
+  async function verify(){
+    const terms=st.concepts.map(s=>String(s||'').trim()).filter(Boolean);
+    if(!terms.length) return;
+    try{
+      busy('比對 MeSH…');
+      const d=await call('verify-terms',{method:'POST',body:{terms}});
+      unbusy();
+      const by={}; (d.terms||[]).forEach(t=>by[t.term]=t);
+      st.concepts.forEach((c,i)=>{
+        const slot=$('#v_'+i); if(!slot) return;
+        const t=by[String(c||'').trim()];
+        slot.innerHTML='';
+        if(!t){ slot.append('　'); return; }
+        const ok=!!t.in_mesh;
+        slot.append(
+          el('span',{class:'chip '+(ok?'ok':'warn'),style:'margin-right:10px'}, ok?'MeSH':'不在 MeSH'),
+          el('span',{},ok?t.mesh_label:'沒有階層可以展開'),
+          el('span',{style:'margin:0 10px;color:var(--rule)'},'·'),
+          el('span',{class:'num'},fmt.int(t.papers)),
+          el('span',{},' 篇'));
+        // No fixed threshold is invented here. The pairing of "not in MeSH"
+        // with a small paper count is what makes an axis dead, and both
+        // numbers are shown so the judgement stays with the person.
+        if(!ok && Number(t.papers) < 1000)
+          slot.append(el('p',{class:'hint',style:'color:var(--wine);margin-top:6px'},
+            '這個詞既不在 MeSH，論文數也很少——這一軸大概等於沒有。換一個標準術語試試。'));
+      });
+    }catch(e){ unbusy(); fail(e); }
+  }
+
+  async function begin(){
+    const concepts=st.concepts.map(s=>String(s||'').trim()).filter(Boolean);
+    if(!concepts.length){ toast('至少要有一個概念'); return; }
+    try{
+      busy('建立專案並開始檢索…');
+      const d=await startCall({mode:'search',topic:st.topic,domain:st.domain,
+        limit:st.limit,usd_budget:st.usd_budget,concepts});
+      unbusy();
+      sessionStorage.removeItem('rd_propose');
+      toast('開始跑了。'+(d.project_id?('專案 '+String(d.project_id).slice(0,8)):'')+'　你可以關掉這一頁。',0);
+      if(d.project_id) location.hash='#/p/'+d.project_id+'/progress'; else location.hash='#/';
+    }catch(e){ unbusy(); fail(e); }
+  }
+}
+
+/* ===========================================================================
+   進行中 - 十步進度（① 的第三個狀態）
+   =========================================================================== */
+async function screenProgress(pid){
+  setProject(pid); paintSteps(0);
+  const box=el('div',{});
+  view(hero({tone:'teal',mark:'S',plate:'Q',eyebrow:'YOU CAN CLOSE THIS TAB',
+      title:'系統正在跑',
+      body:'跑到需要你決定的地方會自己停下來，不需要你守在這裡。',
+      vlabel:'STATE 03'}),
+    shell(el('section',{},box)),
+    footer());
+  let first=true;
+  async function tick(){
+    try{
+      if(first) busy('讀進度…');
+      const d=await call('progress',{query:{project_id:pid}});
+      if(first){ unbusy(); first=false; }
+      setProject(pid,d.title||d.topic);
+      box.innerHTML='';
+      box.append(
+        sechead('01','進度',d.chain_state||null),
+        el('p',{style:'font-family:var(--cjk);font-size:17px;line-height:1.8;margin-bottom:10px'},d.title||d.topic||''),
+        spendLine(d.spend),
+        stepList(d.steps||[],pid,tick),
+        runningHint(d),
+        d.eta_note?el('p',{class:'note',style:'margin-top:18px'},d.eta_note):null,
+        el('p',{class:'meta',style:'margin-top:14px'},
+          '更新於 '+new Date().toLocaleTimeString('zh-TW',{hour12:false})+'　·　每 20 秒自動重讀'),
+        parkedCta(d));
+      // Nothing left to watch: stop asking rather than polling a finished
+      // project for as long as the tab stays open.
+      if(d.chain_state==='awaiting_you'||d.chain_state==='done'||d.chain_state==='failed') stopPoll();
+    }catch(e){
+      if(first){ unbusy(); first=false; box.append(emptyNote('讀不到進度。')); fail(e); }
+      stopPoll();
+    }
+  }
+  await tick();
+  if(!POLL) POLL=setInterval(tick,20000);
+}
+// The four steps before the chain only write their row when they finish, so a
+// step that is running right now reads as `not started` - the same words a step
+// that never began would use. That ambiguity is what makes a working system
+// look broken, so it is named here rather than left for the reader to work out.
+function runningHint(d){
+  const steps=d.steps||[];
+  const pre=steps.filter(s=>s.in_chain===false);
+  if(!pre.length) return null;
+  const doneCount=pre.filter(s=>s.status==='done').length;
+  const idle=pre.find(s=>s.status!=='done');
+  if(!idle||!doneCount||d.chain_state==='awaiting_you') return null;
+  return el('div',{class:'card flat',style:'margin-top:22px'},
+    el('p',{class:'eyebrow',style:'margin-bottom:8px'},'STILL WORKING?'),
+    el('p',{class:'note'},
+      '「'+(idle.label||idle.key)+'」現在寫著 '+idle.status+'，但前面幾步已經完成了。'
+      +'鏈之前的這幾步只有在「存好結果」的那一刻才會變成 done——'
+      +'所以正在跑的時候，它看起來跟從來沒跑過一模一樣。'),
+    el('p',{class:'note',style:'margin-top:8px'},
+      '各步大概要多久：文獻檢索 1–2 分、採集全文 5–8 分、'
+      +'W1 領域框架 10 秒、W3 想點子 3–5 分。'
+      +'超過這個時間還沒動，才是真的斷了。'));
+}
+function spendLine(s){
+  if(!s) return null;
+  return el('div',{class:'meta',style:'display:flex;gap:18px;flex-wrap:wrap;margin-bottom:24px'},
+    el('span',{},'已花 '+fmt.usd(s.usd_spent)),
+    el('span',{},'上限 '+(s.usd_budget===null||s.usd_budget===undefined?'無':fmt.usd(s.usd_budget))),
+    el('span',{},'剩 '+(s.usd_remaining===null||s.usd_remaining===undefined?'—':fmt.usd(s.usd_remaining))));
+}
+// Rounded to whatever unit reads naturally. Exactness is not the point - the
+// question this answers is "has this been sitting here too long", and 「3 小時
+// 42 分」answers it where a timestamp does not.
+function since(iso){
+  if(!iso) return null;
+  const t=new Date(iso).getTime();
+  if(!Number.isFinite(t)) return null;
+  const s=Math.max(0,Math.round((Date.now()-t)/1000));
+  if(s<60) return s+' 秒';
+  const m=Math.floor(s/60);
+  if(m<60) return m+' 分';
+  const h=Math.floor(m/60), r=m%60;
+  return h+' 小時'+(r?' '+r+' 分':'');
+}
+function stepList(steps,pid,onChange){
+  if(!steps.length) return emptyNote('這個專案還沒有任何階段紀錄。');
+  const ul=el('ul',{class:'plist'});
+  // A running stage writes nothing until it finishes, so "how long has this
+  // been going" has to be derived from when the stage before it ended. Without
+  // that number a stage stuck for hours looks exactly like one that started a
+  // moment ago - which is what happened on 2026-09-09.
+  let lastFinished=null;
+  for(const s of steps){
+    const cls={done:'done',running:'run',stopped:'stop',awaiting_review:'wait'}[s.status]||'';
+    const detail=s.detail&&typeof s.detail==='object'
+      ? Object.entries(s.detail).map(([k,v])=>k+' '+(typeof v==='object'?JSON.stringify(v):v)).join(' · ')
+      : '';
+
+    let clock=null;
+    if(s.status==='running'){
+      const el0=since(lastFinished);
+      clock=el0?('已執行 '+el0):'執行中';
+    }else if(s.finished_at){
+      const a=since(s.finished_at);
+      clock=a?(a+'前完成'):null;
+    }
+
+    const right=el('div',{style:'text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end'},
+      el('span',{class:'meta'},s.status),
+      clock?el('span',{class:'meta',style:s.status==='running'?'color:var(--wine)':''},clock):null);
+
+    // The switch only writes to a row that is already pending or running.
+    // Offered only there, because a button that silently does nothing on the
+    // other stages is worse than no button.
+    let pauseBtn=null;
+    if(s.in_chain&&(s.status==='pending'||s.status==='running')&&pid){
+      pauseBtn=el('button',{class:'linkish',style:'margin-top:6px',onclick:async()=>{
+        try{
+          busy('設定…');
+          const r=await call('chain-pause',{method:'POST',
+            body:{project_id:pid,stage:s.key,pause_after:true}});
+          unbusy();
+          toast(r&&r.rows_updated
+            ? '好，跑完「'+(s.label||s.key)+'」就會停下來等你。'
+            : ('沒有設定成功：'+((r&&r.note)||'這一段還沒有排入佇列，沒有列可以標。')),0);
+          onChange&&onChange();
+        }catch(e){ unbusy(); fail(e); }
+      }},'跑完這一段先停');
+    }else if(s.in_chain&&s.pauses_by_default&&s.status!=='done'){
+      pauseBtn=el('p',{class:'hint',style:'margin-top:4px'},'這一段預設就會停下來等你。');
+    }
+
+    ul.append(el('li',{},
+      el('span',{class:'st '+cls}),
+      el('div',{},
+        el('span',{style:'font-family:var(--cjk);font-size:15px'},s.label||s.key),
+        s.review_point?el('span',{class:'chip calm',style:'margin-left:10px'},'審閱 '+s.review_point):null,
+        detail?el('p',{class:'meta',style:'margin-top:4px'},detail):null,
+        s.error?el('p',{class:'hint',style:'color:var(--wine);margin-top:6px'},s.error):null,
+        pauseBtn),
+      right));
+
+    if(s.finished_at) lastFinished=s.finished_at;
+  }
+  return ul;
+}
+function parkedCta(d){
+  const p=d.parked; if(!p||d.chain_state!=='awaiting_you') return null;
+  const to=p.review_point==='③'?'tiers':p.review_point==='④'?'debate':null;
+  return el('div',{class:'blocked',style:'margin-top:34px'},
+    el('p',{class:'eyebrow on-dark',style:'margin-bottom:8px'},'AWAITING YOU'),
+    el('h3',{style:'margin-bottom:12px'},'停在審閱點 '+(p.review_point||'')+'　'+(p.label||'')),
+    el('p',{style:'margin-bottom:20px'},'不按放行就不會繼續。'),
+    to?el('button',{class:'pill solid',onclick:()=>location.hash='#/p/'+d.project_id+'/'+to},'去看'):null);
+}
+
+/* ===========================================================================
+   ③ 審閱點三 - 可行性分級
+   =========================================================================== */
+// "Nothing here yet" and "something went wrong" must not share a message. The
+// first is the normal state of a stage that has not run; the second needs
+// somebody to look at n8n.
+function notYet(stage){
+  return emptyNote('尚未有結果。'+stage+'　跑完之後這裡才會有東西——'
+    +'系統會自己接著跑，跑到需要你決定的地方才會停下來。');
+}
+async function screenTiers(pid){
+  setProject(pid); paintSteps(2);
+  const box=el('div',{}), side=el('div',{});
+  view(hero({tone:'',mark:'A',plate:'A',eyebrow:'REVIEW ③ — GRADE',
+      title:'可行性分級',
+      body:'每個方向按「你手上有沒有這份資料」分級。順序是錦標賽的名次，不是分級——C 級可能比 A 級值錢，所以這裡不重排。',
+      vlabel:'REVIEW 03'}),
+    shell(el('section',{},box)),
+    el('section',{class:'band'},shell(side)),
+    footer());
+  try{
+    busy('讀分級…');
+    const [f,ds]=await Promise.all([
+      call('feasibility',{query:{project_id:pid}}).catch(e=>(e.status>=400&&e.status<500)?null:Promise.reject(e)),
+      call('dataset',{query:{project_id:pid}}).catch(()=>null)
+    ]);
+    unbusy();
+    if(!f){ box.append(sechead('01','分級板'), notYet('W6 可行性分級')); }
+    else paintTiers(box,f,pid);
+    paintDataset(side,ds,pid);
+  }catch(e){ unbusy(); box.append(sechead('01','分級板'), notYet('W6 可行性分級')); fail(e); }
+}
+
+const TIER_NOTE={
+  A:'資料你手上就有，可以直接開始。',
+  B:'差一點點——缺的變項與去哪裡拿都寫在下面。',
+  C:'要另外去取得資料才能做。',
+  D:'現階段做不了。'
+};
+function paintTiers(box,f,pid){
+  box.innerHTML='';
+  const c=f.counts||{};
+  box.append(sechead('01','分級板', f.n?`${f.n} 個方向`:null));
+  box.append(el('div',{class:'grid2',style:'margin-bottom:30px'},
+    ...['A','B','C','D'].map(t=>el('div',{class:'card flat'},
+      el('span',{class:'chip tier'+t},t+' 級'),
+      el('p',{class:'big',style:'margin:10px 0 4px'},fmt.int(c[t]||0)),
+      el('p',{class:'hint'},TIER_NOTE[t])))));
+
+  const rows=f.assessments||[];
+  if(!rows.length){ box.append(notYet('W6 可行性分級')); }
+  else{
+    box.append(el('p',{class:'note',style:'margin-bottom:14px'},'依錦標賽名次排列，不依分級排序。'));
+    const stack=el('div',{class:'stack'});
+    for(const a of rows){
+      const missing=Array.isArray(a.missing)?a.missing:[];
+      stack.append(el('div',{class:'row'},
+        el('div',{style:'display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px'},
+          el('span',{class:'chip tier'+(a.tier||'D')},(a.tier||'?')+' 級'),
+          el('span',{class:'meta'},'名次 '+(a.rank===null||a.rank===undefined?'未排名':a.rank)),
+          a.code?el('span',{class:'meta'},'#'+a.code):null),
+        el('h4',{style:'margin-bottom:6px'},a.title||'(無標題)'),
+        a.statement?el('p',{style:'font-size:13px;line-height:1.9;margin-bottom:12px'},a.statement):null,
+        a.design?field('研究設計',a.design):null,
+        missing.length?field('缺什麼',missing.join('；')):null,
+        a.route_to_tier_a?field('怎麼補上',a.route_to_tier_a):null,
+        a.power_note?field('檢定力',a.power_note):null));
+    }
+    box.append(stack);
+  }
+  box.append(releaseBlock(pid,'③',
+    '放行之後會跑 W7 新穎性驗證和 W8 唱反調辯論，會花錢。'));
+}
+function field(k,v){
+  return el('div',{class:'kv',style:'margin-bottom:7px'},
+    el('span',{class:'k'},k), el('span',{style:'flex:1;min-width:220px;font-size:13px;line-height:1.85'},v));
+}
+/* --- inventory ----------------------------------------------------------
+   The same transform W-DATA does, moved into the browser. It has to match that
+   workflow exactly - W6 reads the shape, and an inventory in a different shape
+   is not a weaker answer, it is an unreadable one.
+
+   Doing it here is also the stronger version of the promise the whole design
+   rests on: this page runs on your machine, so the file is parsed locally and
+   only the derived column list is ever sent. The n8n form could not do that -
+   it runs in the cloud and says so.
+   ------------------------------------------------------------------------ */
+function parseCsv(text){
+  const rows=[]; let row=[],field='',quoted=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(quoted){
+      if(c==='"'){ if(text[i+1]==='"'){ field+='"'; i++; } else { quoted=false; } }
+      else field+=c;
+      continue;
+    }
+    if(c==='"') quoted=true;
+    else if(c===','||c==='\t'){ row.push(field); field=''; }
+    else if(c==='\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+    else if(c!=='\r') field+=c;
+  }
+  if(field.length||row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r=>r.some(v=>String(v).trim()));
+}
+const RAWKEYS=['rows','data','records','values','patients'];
+function buildInventory(raw){
+  const text=String(raw||'').trim();
+  if(!text) throw new Error('檔案是空的。');
+  // Excel writes a BOM on UTF-8 csv and the template ships with one, so that
+  // double-clicking it does not show mojibake. It must not survive into the
+  // first header name.
+  const body=text.charCodeAt(0)===0xFEFF?text.slice(1):text;
+
+  if(body[0]==='{'){
+    let inv;
+    try{ inv=JSON.parse(body); }
+    catch(e){ throw new Error('這看起來是 JSON 但解析失敗：'+e.message); }
+    if(!inv||!Array.isArray(inv.files))
+      throw new Error('JSON 裡沒有 files 陣列。請上傳 tools/inventory.py 產出的 inventory.json，不要自己改。');
+    const bad=RAWKEYS.filter(k=>inv[k]!==undefined);
+    if(bad.length) throw new Error('這份 JSON 帶著 '+bad.join('／')
+      +' 這種鍵，看起來是原始資料而不是欄位清單。原始資料不該離開你的電腦，這裡擋下來。');
+    if(!inv.provenance) inv.provenance='measured';
+    return {inventory:inv,source:'inventory.json'};
+  }
+
+  const rows=parseCsv(body);
+  if(rows.length<2) throw new Error('範本裡沒有資料列，只有標題。');
+  const head=rows[0].map(h=>String(h).trim().toLowerCase());
+  const missing=['file','column'].filter(h=>head.indexOf(h)===-1);
+  if(missing.length) throw new Error('範本少了必要的欄：'+missing.join(', ')
+    +'。請從範本開始，不要自己重畫標題列。（如果你選到的是原始資料檔，那就是這個錯誤的意思。）');
+  const at=(r,name)=>{ const i=head.indexOf(name);
+    return i===-1?'':String(r[i]===undefined?'':r[i]).trim(); };
+  const yes=v=>/^(y|yes|true|1|是|有)$/i.test(String(v).trim());
+
+  const byFile={};
+  rows.slice(1).forEach((r,n)=>{
+    const file=at(r,'file')||'dataset';
+    const name=at(r,'column');
+    if(!name) throw new Error('第 '+(n+2)+' 列沒有填欄位名稱。');
+    const col={name};
+    const dtype=at(r,'dtype'); if(dtype) col.dtype=dtype;
+    const desc=at(r,'description'); if(desc) col.description=desc;
+    const joins=at(r,'joins_on'); if(joins) col.joins_on=joins;
+    if(yes(at(r,'personal'))){ col.personal=true;
+      col.personal_because='declared by the researcher on the template'; }
+    // Nothing measured is carried and nothing is invented to fill the gap. The
+    // API refuses a documented inventory that has missing rates or ranges, and
+    // it is right to: an absent number is honest, a guessed one is not.
+    byFile[file]=byFile[file]||{filename:file,columns:[]};
+    byFile[file].columns.push(col);
+  });
+  return {source:'template',inventory:{
+    provenance:'documented',
+    filename:Object.keys(byFile).join(' + '),
+    files:Object.keys(byFile).map(k=>byFile[k])
+  }};
+}
+function countCols(inv){ return (inv.files||[]).reduce((a,f)=>a+((f.columns||[]).length),0); }
+
+function uploadPanel(pid,onDone){
+  const wrap=el('div',{class:'card',style:'margin-top:22px'});
+  const preview=el('div',{style:'margin-top:16px'});
+  let staged=null;
+
+  const file=el('input',{type:'file',accept:'.json,.csv,.tsv,.txt',
+    style:'background:none;border:0;padding:8px 0',
+    onchange:async e=>{
+      const f=e.target.files&&e.target.files[0];
+      preview.innerHTML=''; staged=null;
+      if(!f) return;
+      try{
+        const text=await f.text();
+        const {inventory,source}=buildInventory(text);
+        const nCols=countCols(inventory);
+        if(!nCols) throw new Error('清單裡一個欄位都沒有。');
+        staged={inventory,source,nCols};
+        const doc=inventory.provenance==='documented';
+        preview.append(
+          el('div',{style:'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px'},
+            el('span',{class:'chip '+(doc?'calm':'ok')},doc?'documented 未經量測':'measured 量出來的'),
+            el('span',{class:'meta'},(inventory.files||[]).length+' 個檔案'),
+            el('span',{class:'meta'},nCols+' 個欄位')),
+          doc?el('p',{class:'hint',style:'color:var(--wine);margin-bottom:10px'},
+            'W6 不會給這份任何 A 級——A 的意思是「這週就能開始分析」，'
+            +'而沒有人查證過這些變項有沒有值。之後跑 tools/inventory.py 再傳一次就會換成量測版。'):null,
+          // Shown before anything is sent, so a wrong file is caught by you
+          // rather than by the server. These are column names only - if this
+          // list looks like patient records, you picked the wrong file.
+          el('p',{class:'eyebrow',style:'margin-bottom:6px'},'WILL BE SENT — COLUMN NAMES ONLY'),
+          el('pre',{style:'margin:0;max-height:220px;overflow:auto;white-space:pre-wrap;'
+            +'font-family:var(--sans);font-size:12px;line-height:1.7;color:var(--text2)'},
+            (inventory.files||[]).map(f2=>f2.filename+'\n  '
+              +(f2.columns||[]).map(c=>c.name+(c.personal?' ⚑個資':'')).join('、')).join('\n\n')),
+          el('button',{class:'pill solid',style:'margin-top:14px',onclick:send},'送出這份清單'));
+      }catch(err){
+        preview.append(el('p',{class:'hint',style:'color:var(--wine)'},String(err.message||err)));
+      }
+    }});
+
+  async function send(){
+    if(!staged) return;
+    try{
+      busy('存清單…');
+      await call('dataset-save',{method:'POST',body:{project_id:pid,inventory:staged.inventory}});
+      // The chain parks before W6 waiting for exactly this, so releasing here
+      // saves a second trip. A failed release does not undo a saved inventory,
+      // so the two outcomes are reported separately.
+      let released=true;
+      try{ await call('release',{method:'POST',body:{project_id:pid}}); }
+      catch(e){ released=false; }
+      unbusy();
+      toast(released?'清單存好了，鏈也放行了。':'清單存好了，但鏈沒有放行——到進度頁手動放行。',0);
+      onDone&&onDone();
+    }catch(e){ unbusy(); fail(e); }
+  }
+
+  async function noData(stop){
+    if(stop){
+      const reason='使用者在前端宣告目前沒有可用的資料。W6 沒有欄位清單就無法判可行性，'
+        +'而 W7、W8、W9 都從 W6 的分級看板挑方向，所以這條鏈的誠實終點是錦標賽排名。';
+      try{ busy('停下這條鏈…');
+        await call('chain-stop',{method:'POST',body:{project_id:pid,reason}});
+        unbusy(); toast('鏈停在錦標賽排名了。之後有資料，上傳清單再從 feasibility 重開。',0);
+        onDone&&onDone();
+      }catch(e){ unbusy(); fail(e); }
+      return;
+    }
+    try{ busy('繼續往下跑…');
+      await call('release',{method:'POST',body:{project_id:pid}});
+      unbusy();
+      toast('好，鏈會照跑。W6 會換一個問題：不是「你做不做得到」，而是「要做到需要什麼」。不會出現 A 級。',0);
+      onDone&&onDone();
+    }catch(e){ unbusy(); fail(e); }
+  }
+
+  wrap.append(
+    el('p',{class:'eyebrow',style:'margin-bottom:8px'},'UPLOAD AN INVENTORY'),
+    el('h4',{style:'margin-bottom:10px'},'上傳資料清單'),
+    el('p',{class:'note',style:'margin-bottom:16px'},
+      '清單描述的是「你有哪些欄位」，一列是一個欄位、不是一個病人。'
+      +'這個頁面跑在你自己的電腦上，檔案在瀏覽器裡解析，'
+      +'送出去的只有欄位名稱與描述——原始資料連送都不會送。'),
+    el('div',{style:'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px'},
+      el('button',{class:'pill ghost',onclick:downloadTemplate},'下載範本 CSV')),
+    el('label',{class:'field'},el('span',{class:'lb'},'選擇 inventory.json 或填好的範本'),file),
+    preview,
+    el('p',{class:'eyebrow',style:'margin:22px 0 8px'},'OR — NO DATA YET'),
+    el('div',{style:'display:flex;gap:10px;flex-wrap:wrap'},
+      el('button',{class:'pill ghost',onclick:()=>noData(false)},'沒有資料，直接繼續'),
+      el('button',{class:'pill ghost',onclick:()=>noData(true)},'沒有資料，先停著')),
+    el('p',{class:'hint',style:'margin-top:10px'},
+      '「直接繼續」會讓 W6 改判「要做到需要什麼」，B 級的意思變成「公開資料就能回答」。'
+      +'「先停著」會把鏈明確停在錦標賽排名——那份排名本身就是結果。'));
+  return wrap;
+}
+async function downloadTemplate(){
+  try{
+    busy('取範本…');
+    const res=await fetch(`${CFG.api}/dataset-template`,{headers:{'X-Frontend-Key':getKey()}});
+    if(!res.ok){ unbusy(); toast('取不到範本：'+res.status,0); return; }
+    const blob=await res.blob(); unbusy();
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='inventory_template.csv';
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  }catch(e){ unbusy(); fail(e); }
+}
+
+function paintDataset(side,ds,pid){
+  side.innerHTML='';
+  const rows=(ds&&ds.datasets)||[];
+  side.append(sechead('02','你的資料清單', ds&&ds.n!==undefined?`${ds.n} 份`:null));
+  const reload=()=>{ if(pid) screenTiers(pid); };
+  if(!rows.length){
+    side.append(emptyNote(
+      '還沒有上傳資料清單。沒有清單時所有方向都會落在 C 級——不是因為它們不好，'
+      +'而是系統無從知道你手上有哪些欄位。'));
+    if(pid) side.append(uploadPanel(pid,reload));
+    return;
+  }
+  const st=el('div',{class:'stack'});
+  for(const d of rows){
+    st.append(el('div',{class:'row'},
+      el('div',{style:'display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:6px'},
+        d.filename?el('span',{style:'font-family:var(--cjk);font-size:15px'},d.filename):null,
+        d.pack?el('span',{class:'chip calm'},d.pack):null,
+        d.created_at?el('span',{class:'meta'},fmt.date(d.created_at)):null),
+      el('pre',{style:'margin:0;white-space:pre-wrap;word-break:break-word;'
+        +'font-family:var(--sans);font-size:12px;line-height:1.8;color:var(--text2)'},
+        JSON.stringify(d.inventory!==undefined?d.inventory:d,null,2).slice(0,3000))));
+  }
+  side.append(st);
+  // Re-upload stays available: a documented inventory is meant to be replaced
+  // by a measured one once tools/inventory.py has been run.
+  if(pid) side.append(uploadPanel(pid,reload));
+}
+
+/* ===========================================================================
+   ④ 審閱點四 - 辯論紀錄
+   =========================================================================== */
+async function screenDebate(pid){
+  setProject(pid); paintSteps(3);
+  const box=el('div',{});
+  view(hero({tone:'wine',mark:'D',plate:'D',eyebrow:'REVIEW ④ — DEBATE',
+      title:'唱反調的結果',
+      body:'一個模型負責挑毛病、另一個負責辯護。沒有引用的反對不算數；改寫得離原題太遠就會被強制停止，而且那個版本不會被採用。',
+      vlabel:'REVIEW 04'}),
+    shell(el('section',{},box)),
+    footer());
+  try{
+    busy('讀辯論…');
+    const d=await call('debate',{query:{project_id:pid}});
+    unbusy();
+    paintDebate(box,d,pid);
+  }catch(e){
+    unbusy(); box.append(sechead('01','辯論'), notYet('W8 唱反調'));
+    if(!(e instanceof ApiError&&e.status>=400&&e.status<500)) fail(e);
+  }
+}
+function paintDebate(box,d,pid){
+  box.innerHTML='';
+  box.append(sechead('01','辯論',
+    d.n_debated!==undefined?`${d.n_debated} 個方向 · 漂移上限 ${d.drift_max} · 輪數上限 ${d.max_rounds}`:null));
+  const rows=d.debates||[];
+  if(!rows.length){ box.append(notYet('W8 唱反調')); }
+  else{
+    const stack=el('div',{class:'stack'});
+    for(const r of rows){
+      const detail=el('div',{hidden:true,style:'margin-top:16px'});
+      let loaded=false;
+      const btn=el('button',{class:'linkish',onclick:async()=>{
+        detail.hidden=!detail.hidden;
+        if(!detail.hidden&&!loaded){
+          loaded=true;
+          try{ busy('讀反對意見…');
+            const s=await call('debate-state',{query:{idea_id:r.idea_id}});
+            unbusy(); paintObjections(detail,s);
+          }catch(e){ unbusy(); detail.append(emptyNote('讀不到這個方向的辯論內文。')); fail(e); }
+        }
+      }},'看反對意見');
+
+      stack.append(el('div',{class:'row'},
+        el('div',{style:'display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px'},
+          el('span',{class:'meta'},'名次 '+(r.rank??'—')),
+          r.code?el('span',{class:'meta'},'#'+r.code):null,
+          el('span',{class:'chip '+(r.terminated?'warn':'calm')},r.terminated?'已終止':'可繼續'),
+          el('span',{class:'chip '+(r.n_objections_open>0?'warn':'ok')},'未結案 '+fmt.int(r.n_objections_open))),
+        el('h4',{style:'margin-bottom:8px'},r.title||'(無標題)'),
+        el('div',{class:'meta',style:'display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px'},
+          el('span',{},'輪數 '+fmt.int(r.n_rounds)),
+          el('span',{},'漂移 '+(r.drift??'—'))),
+        r.termination_reason?el('p',{class:'hint',style:'color:var(--wine);margin-bottom:10px'},r.termination_reason):null,
+        btn, detail));
+    }
+    box.append(stack);
+  }
+  box.append(releaseBlock(pid,'④','放行之後會跑 W9 寫最終報告，會花錢。'));
+}
+const SEV={major:'warn',minor:'calm'};
+const STATUS_TXT={unresolved:'未解決',resolved_by_evidence:'被證據解決',resolved_by_revision:'被改寫解決',withdrawn:'撤回'};
+function paintObjections(box,s){
+  box.innerHTML='';
+  if(s.original_statement&&s.current_statement&&s.original_statement!==s.current_statement){
+    box.append(el('div',{class:'card flat',style:'margin-bottom:16px'},
+      field('原始問句',s.original_statement), field('目前問句',s.current_statement)));
+  }
+  const objs=s.objections||[];
+  if(!objs.length){ box.append(emptyNote('這個方向沒有記錄到任何反對意見。')); return; }
+  for(const o of objs){
+    box.append(el('div',{class:'row'},
+      el('div',{style:'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px'},
+        el('span',{class:'chip '+(SEV[o.severity]||'calm')},o.severity||'—'),
+        el('span',{class:'chip calm'},o.axis||'—'),
+        el('span',{class:'chip '+(o.citation_support==='strong'?'ok':'calm')},'引用 '+(o.citation_support||'—')),
+        el('span',{class:'chip '+(o.status==='unresolved'?'warn':'ok')},STATUS_TXT[o.status]||o.status||'—'),
+        el('span',{class:'meta'},'第 '+(o.round_no??'—')+' 輪 · 反駁分 '+(o.rebuttal_score??'—'))),
+      el('p',{style:'font-size:13px;line-height:1.9'},o.statement||'')));
+  }
+  if(s.n_evidence!==undefined)
+    box.append(el('p',{class:'note',style:'margin-top:14px'},
+      '這場辯論可以引用的論文有 '+fmt.int(s.n_evidence)+' 篇。沒有引用的反對意見不能結束辯論。'));
+}
+
+/* --- release ------------------------------------------------------------ */
+function releaseBlock(pid,point,warn){
+  const b=el('div',{class:'blocked',style:'margin-top:40px'});
+  const go=el('button',{class:'pill solid',onclick:async()=>{
+    go.disabled=true;
+    try{ busy('放行…');
+      await call('release',{method:'POST',body:{project_id:pid}});
+      unbusy(); toast('放行了。接下來的階段會自己開始跑。',0);
+      setTimeout(()=>location.hash='#/p/'+pid+'/progress',900);
+    }catch(e){ unbusy(); go.disabled=false; fail(e); }
+  }},'放行，繼續往下跑');
+  b.append(
+    el('p',{class:'eyebrow on-dark',style:'margin-bottom:8px'},'RELEASE — REVIEW '+point),
+    el('h3',{style:'margin-bottom:12px'},'要放行嗎'),
+    el('p',{style:'margin-bottom:20px'},warn),
+    go);
+  return b;
+}
+
+/* ===========================================================================
+   ⑤ 報告
+   =========================================================================== */
+async function screenReport(pid){
+  setProject(pid); paintSteps(4);
+  const box=el('div',{});
+  view(hero({tone:'night',mark:'R',plate:'R',eyebrow:'REPORT',
+      title:'最終報告',
+      body:'每個方向八節白話段落，依名次排列。引用只會來自實際檢索回傳的論文。報告要能單獨閱讀——半年後回頭看不必重跑系統。',
+      vlabel:'FINAL'}),
+    shell(el('section',{},box)),
+    footer());
+  try{
+    busy('讀報告清單…');
+    const d=await call('report',{query:{project_id:pid}});
+    unbusy();
+    paintReports(box,d,pid);
+  }catch(e){
+    unbusy(); box.append(sechead('01','報告'), notYet('W9 最終報告'));
+    if(!(e instanceof ApiError&&e.status>=400&&e.status<500)) fail(e);
+  }
+}
+function paintReports(box,d,pid){
+  box.innerHTML='';
+  box.append(sechead('01','報告',d.n?`${d.n} 份`:null));
+  const rows=d.reports||[];
+  if(!rows.length){ box.append(notYet('W9 最終報告')); return; }
+  const stack=el('div',{class:'stack'});
+  for(const r of rows){
+    const body=el('div',{hidden:true,style:'margin-top:18px'});
+    let loaded=false;
+    stack.append(el('div',{class:'row'},
+      el('div',{style:'display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px'},
+        el('span',{class:'chip tier'+(r.tier||'D')},(r.tier||'?')+' 級'),
+        el('span',{class:'meta'},'名次 '+(r.rank??'—')),
+        r.code?el('span',{class:'meta'},'#'+r.code):null,
+        el('span',{class:'meta'},fmt.date(r.created_at))),
+      el('h4',{style:'margin-bottom:8px'},r.title||'(無標題)'),
+      el('div',{class:'meta',style:'display:flex;gap:18px;flex-wrap:wrap;margin-bottom:12px'},
+        el('span',{},'引用 '+fmt.int(r.n_citations)),
+        el('span',{},'丟掉 '+fmt.int(r.n_dropped))),
+      el('div',{style:'display:flex;gap:10px;flex-wrap:wrap'},
+        el('button',{class:'pill ghost',onclick:async e=>{
+          body.hidden=!body.hidden;
+          if(!body.hidden&&!loaded){ loaded=true;
+            try{ busy('讀報告內文…');
+              const full=await call('report',{query:{report_id:r.id}});
+              unbusy(); paintReportBody(body,full);
+            }catch(err){ unbusy(); body.append(emptyNote('讀不到這一份的內文。')); fail(err); }
+          }
+        }},'看內文'),
+        el('button',{class:'pill ghost',onclick:()=>download(r.id,'markdown')},'下載 Markdown'),
+        el('button',{class:'pill ghost',onclick:()=>download(r.id,'pdf')},'下載 PDF'),
+        el('button',{class:'pill ghost',onclick:()=>showWatch(body,r.idea_id)},'撞題監看')),
+      body));
+  }
+  box.append(stack);
+}
+// The export route answers with a file and its own Content-Disposition, so the
+// bytes are fetched with the key attached and handed to the browser as a blob.
+// A plain link cannot carry the header.
+async function download(report_id,format){
+  try{
+    busy('準備檔案…');
+    const res=await fetch(`${CFG.api}/report-export?report_id=${encodeURIComponent(report_id)}&format=${format}`,
+      {headers:{'X-Frontend-Key':getKey()}});
+    if(!res.ok){ unbusy(); toast('下載失敗：'+res.status,0); return; }
+    const blob=await res.blob(); unbusy();
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='report-'+String(report_id).slice(0,8)+(format==='pdf'?'.pdf':'.md');
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  }catch(e){ unbusy(); fail(e); }
+}
+// The eight sections in reading order, with the keys the API actually uses.
+// Anything the server adds later that is not in this list still renders, at the
+// end, under its own key - so a new section appears without editing this file.
+const SECTIONS=[
+  ['title','研究問句'], ['background','背景與現況'], ['method','方法設計'],
+  ['novelty','新穎性查核'], ['feasibility','可行性與取得成本'],
+  ['prework','動手前要先做的事'], ['objections','未解決的反對'],
+  ['references','參考文獻']
+];
+function paintReportBody(box,full){
+  box.innerHTML='';
+  const rep=(full&&full.report)||full;
+  if(!rep){ box.append(emptyNote('這一份沒有內文。')); return; }
+
+  const meta=el('div',{class:'meta',style:'display:flex;gap:18px;flex-wrap:wrap;margin-bottom:22px'},
+    rep.model?el('span',{},'寫手 '+rep.model):null,
+    rep.tier?el('span',{},'分級 '+rep.tier):null,
+    rep.rank!==null&&rep.rank!==undefined?el('span',{},'名次 '+rep.rank):null,
+    el('span',{},fmt.date(rep.created_at)));
+  box.append(meta);
+
+  // Added by migration 018, so reports written before it carry null. Absent is
+  // a real state here, not a bug - rendering an empty heading would suggest the
+  // report has no caveats rather than that none were recorded.
+  if(rep.novelty_verdict) box.append(el('div',{class:'card flat',style:'margin-bottom:18px'},
+    field('新穎性判決',rep.novelty_verdict)));
+  if(rep.caveats) box.append(el('div',{class:'card flat',style:'margin-bottom:18px'},
+    field('但書',typeof rep.caveats==='string'?rep.caveats:JSON.stringify(rep.caveats,null,2))));
+  if(rep.acquisition) box.append(el('div',{class:'card flat',style:'margin-bottom:18px'},
+    field('要去弄的資料',typeof rep.acquisition==='string'?rep.acquisition:JSON.stringify(rep.acquisition,null,2))));
+
+  const sec=rep.sections||{};
+  const shown=new Set();
+  const put=(key,label)=>{
+    const v=sec[key]; if(v===null||v===undefined||v==='') return;
+    shown.add(key);
+    box.append(el('div',{style:'margin-bottom:26px'},
+      el('p',{class:'eyebrow',style:'margin-bottom:7px'},label),
+      el('p',{style:'font-size:13px;line-height:2;white-space:pre-wrap'},
+        typeof v==='string'?v:JSON.stringify(v,null,2))));
+  };
+  SECTIONS.forEach(([k,l])=>put(k,l));
+  Object.keys(sec).forEach(k=>{ if(!shown.has(k)) put(k,k); });
+  if(!Object.keys(sec).length) box.append(emptyNote('這一份報告沒有任何段落內容。'));
+
+  const cites=rep.citations||[];
+  box.append(el('p',{class:'eyebrow',style:'margin:26px 0 8px'},'CITATIONS'));
+  if(!cites.length) box.append(emptyNote('這一份沒有引用。引用只會來自實際檢索回傳的論文，所以 0 筆代表檢索沒有可用的來源，不是漏掉了。'));
+  else{
+    const st=el('div',{class:'stack'});
+    for(const c of cites){
+      const href=(c.links&&c.links.doi)||(c.doi?'https://doi.org/'+c.doi:null);
+      st.append(el('div',{class:'row'},
+        el('p',{style:'font-size:13px;line-height:1.8;margin-bottom:6px'},c.title||'(無標題)'),
+        el('div',{class:'meta',style:'display:flex;gap:14px;flex-wrap:wrap'},
+          c.year?el('span',{},String(c.year)):null,
+          c.venue?el('span',{},c.venue):null,
+          c.found_by?el('span',{},'來源 '+c.found_by):null,
+          c.cross_validated?el('span',{class:'chip ok'},'交叉驗證'):null,
+          href?el('a',{href,target:'_blank',rel:'noopener'},'DOI'):null),
+        c.used_for?el('p',{class:'hint',style:'margin-top:6px'},'用在：'+c.used_for):null));
+    }
+    box.append(st);
+  }
+  if(rep.dropped) box.append(el('p',{class:'hint',style:'margin-top:14px;color:var(--wine)'},
+    '有被丟掉的引用：'+(typeof rep.dropped==='string'?rep.dropped:JSON.stringify(rep.dropped))));
+}
+async function showWatch(box,idea_id){
+  if(!idea_id){ toast('這一份沒有對應的方向 id'); return; }
+  box.hidden=false; box.innerHTML='';
+  try{
+    busy('讀撞題監看…');
+    const w=await call('watch',{query:{idea_id,limit:30}});
+    unbusy();
+    box.append(el('p',{class:'eyebrow',style:'margin-bottom:8px'},'WATCH'));
+    const rows=(w&&w.watches)||[];
+    if(!rows.length){
+      box.append(emptyNote('還沒有監看紀錄。W10 每天重跑一次原始查詢，只有真的冒出新論文時才會留下一筆——所以 0 筆代表沒有人搶先，不是沒在看。'));
+      return;
+    }
+    const st=el('div',{class:'stack'});
+    for(const r of rows){
+      st.append(el('div',{class:'row'},
+        el('div',{style:'display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:6px'},
+          el('span',{class:'chip '+(r.verdict==='scooped'?'warn':r.verdict==='incremental'?'calm':'ok')},r.verdict||'—'),
+          el('span',{class:'meta'},'新論文 '+fmt.int(r.n_new_papers)),
+          el('span',{class:'meta'},fmt.date(r.checked_at))),
+        r.coverage_limits?el('p',{class:'hint'},'涵蓋範圍：'+r.coverage_limits):null));
+    }
+    box.append(st);
+  }catch(e){ unbusy(); box.append(emptyNote('讀不到監看紀錄。')); }
+}
+
+/* ===========================================================================
+   router
+   =========================================================================== */
+function route(){
+  if(!getKey()){ openGate(); return; }
+  const h=location.hash||'#/';
+  const m=h.match(/^#\/p\/([0-9a-f-]{8,})\/(tiers|debate|report|progress)/i);
+  if(m){
+    const [,pid,what]=m;
+    if(what==='tiers') return screenTiers(pid);
+    if(what==='debate') return screenDebate(pid);
+    if(what==='report') return screenReport(pid);
+    return screenProgress(pid);
+  }
+  if(h.startsWith('#/concepts')) return screenConcepts();
+  return screenHome();
+}
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>location.hash=b.dataset.go);
+paintRail(getProject());
+window.addEventListener('hashchange',route);
+route();
+</script>
+</body>
+</html>
