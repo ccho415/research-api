@@ -167,6 +167,11 @@ input:focus,textarea:focus,select:focus{outline:0;border-bottom-color:var(--wine
 
 .kv{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 .kv .k{font-family:var(--sans);font-size:9px;letter-spacing:1.8px;text-transform:uppercase;color:var(--text2);min-width:96px}
+/* These values are English prose carrying identifiers - DOIs, registry names
+   like NCDR CathPCI/BCIS, trial acronyms. CJK wraps anywhere so it never
+   overflows; a long Latin token has no break opportunity and pushes the row,
+   and one row wider than the page scrolls the whole body sideways. */
+.kv>span:not(.k){overflow-wrap:anywhere}
 .big{font-family:var(--sans);font-weight:300;font-size:36px;font-variant-numeric:tabular-nums;line-height:1.1}
 
 .empty{padding:22px 0;font-size:12px;line-height:1.9;color:var(--text2);border-top:1px solid var(--rule)}
@@ -183,18 +188,27 @@ input:focus,textarea:focus,select:focus{outline:0;border-bottom-color:var(--wine
 .plist .st.wait{background:var(--wine);box-shadow:0 0 0 3px #7A223333}
 
 /* --- the tick that decides what goes on --------------------------------- */
-/* Given the same weight as the tier chip beside it, because it is the control
-   this whole screen exists for. A checkbox at browser-default size next to a
-   filled pill reads as metadata about the row rather than the decision. */
-.tick{display:inline-flex;align-items:center;gap:8px;cursor:pointer;
-  border:1px solid var(--rule);border-radius:999px;padding:4px 12px 4px 9px;
-  background:#FFFFFF66;font-family:var(--sans);font-size:11px;letter-spacing:.8px;
-  color:var(--text2);transition:background .15s,border-color .15s,color .15s}
-.tick:hover{border-color:var(--camel);color:var(--text)}
-.tick:has(.tickbox:checked){background:var(--teal);border-color:var(--teal);color:#fff}
-.tickbox{width:15px;height:15px;margin:0;accent-color:var(--wine);cursor:pointer}
+/* In its own gutter column rather than inline among the chips. As a flex item
+   in that row it was shrunk below its own text width and wrapped to one
+   character per line, which then rode over the tier chip. A control cannot
+   share a wrapping row with content it must never cover. */
+.pick{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:start}
+.tick{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;
+  width:52px;padding:10px 0 9px;border:1px solid var(--rule);border-radius:12px;
+  background:#FFFFFF80;white-space:nowrap;
+  transition:background .15s,border-color .15s}
+.tick .tl{font-family:var(--sans);font-size:9px;letter-spacing:1.4px;
+  text-transform:uppercase;color:var(--text2);transition:color .15s}
+.tick:hover{border-color:var(--camel);background:#FFFFFFCC}
+.tick:has(.tickbox:checked){background:var(--teal);border-color:var(--teal)}
+.tick:has(.tickbox:checked) .tl{color:#fff}
+.tickbox{width:16px;height:16px;margin:0;accent-color:var(--wine);cursor:pointer}
 .tick:has(.tickbox:checked) .tickbox{accent-color:#fff}
 .tick:focus-within{outline:2px solid var(--teal);outline-offset:2px}
+@media (max-width:560px){
+  .pick{grid-template-columns:1fr;gap:12px}
+  .tick{flex-direction:row;width:auto;align-self:start;padding:7px 14px;gap:9px}
+}
 .blocked .hint.on-dark{color:#FFFFFFAA}
 
 /* --- what a stage said about itself ------------------------------------- */
@@ -1209,18 +1223,19 @@ function paintTiers(box,f,pid){
     const cb=el('input',{type:'checkbox',class:'tickbox',
       onchange:e=>{ if(e.target.checked) sel.add(id); else sel.delete(id); syncBar(); }});
     boxes.push({cb:cb,id:id,tier:a.tier});
-    stack.append(el('div',{class:'row'},
-      el('div',{style:'display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px'},
-        el('label',{class:'tick'},cb,el('span',{},'放行這個')),
-        el('span',{class:'chip tier'+(a.tier||'D')},(a.tier||'?')+' 級'),
-        el('span',{class:'meta'},'名次 '+(a.rank===null||a.rank===undefined?'未排名':a.rank)),
-        a.code?el('span',{class:'meta'},'#'+a.code):null),
-      el('h4',{style:'margin-bottom:6px'},a.title||'(無標題)'),
-      a.statement?el('p',{style:'font-size:13px;line-height:1.9;margin-bottom:12px'},a.statement):null,
-      a.design?field('研究設計',a.design):null,
-      missingOf(a).length?field('缺什麼',missingOf(a).join('；')):null,
-      a.route_to_tier_a?field('怎麼補上',a.route_to_tier_a):null,
-      a.power_note?field('檢定力',a.power_note):null));
+    stack.append(el('div',{class:'row pick'},
+      el('label',{class:'tick',title:'勾選就會往下跑'},cb,el('span',{class:'tl'},'放行')),
+      el('div',{},
+        el('div',{style:'display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px'},
+          el('span',{class:'chip tier'+(a.tier||'D')},(a.tier||'?')+' 級'),
+          el('span',{class:'meta'},'名次 '+(a.rank===null||a.rank===undefined?'未排名':a.rank)),
+          a.code?el('span',{class:'meta'},'#'+a.code):null),
+        el('h4',{style:'margin-bottom:6px'},a.title||'(無標題)'),
+        a.statement?el('p',{style:'font-size:13px;line-height:1.9;margin-bottom:12px'},a.statement):null,
+        a.design?field('研究設計',a.design):null,
+        missingOf(a).length?field('缺什麼',missingOf(a).join('；')):null,
+        a.route_to_tier_a?field('怎麼補上',a.route_to_tier_a):null,
+        a.power_note?field('檢定力',a.power_note):null)));
   }
   box.append(stack);
 
