@@ -593,6 +593,27 @@ function shell(...kids){ return el('div',{class:'shell'},kids.flat().filter(Bool
 /* ===========================================================================
    ① 首頁 - 交題目 / 專案列表 / 進行中
    =========================================================================== */
+// An absolute year, computed here and sent as a year. A relative "last 5
+// years" stored on a run would quietly mean something different every time
+// somebody read it back.
+function yearFrom(n){
+  n=Number(n);
+  if(!Number.isFinite(n)||n<=0) return null;
+  return new Date().getFullYear()-(Math.floor(n)-1);
+}
+// The one thing about this setting that is not obvious, said where it is set.
+// Restricting the search makes the raw material for new directions recent,
+// which is the point; restricting the novelty check would make a direction
+// published in 2010 read as untouched. The two searches want opposite things,
+// so only one of them is narrowed.
+function yearsNote(n){
+  const y=yearFrom(n);
+  if(!y) return '不限年份——會撈到很舊的論文。它們的缺口句多半已經被解決了，'
+    +'而發想的素材就是那些句子。';
+  return '只檢索 '+y+' 年以後的論文（最近 '+Math.floor(Number(n))+' 年）。'
+    +'發想的素材是作者自述的缺口句，近期的還開著的機率高得多。'
+    +'「有沒有人做過」不受這個設定影響——新穎性驗證一律看全部年份。';
+}
 async function screenHome(){
   paintSteps(0);
   const form=el('div',{class:'card'});
@@ -603,7 +624,17 @@ async function screenHome(){
       .map(([v,t])=>el('option',{value:v},t)));
   const limit=el('input',{id:'f_limit',type:'number',min:'5',max:'100',value:'25'});
   const budget=el('input',{id:'f_budget',type:'number',min:'0.1',step:'0.1',value:'2'});
+  // Restricts the SEARCH only. The novelty check deliberately still reads every
+  // year - see the hint below, and `yearsNote`.
+  const years=el('input',{id:'f_years',type:'number',min:'0',max:'50',value:'5',
+    oninput:()=>paintYears()});
+  const yearNote=el('p',{class:'hint',style:'margin-top:6px'});
   const go=el('button',{class:'pill solid',onclick:submitTopic},'拆成檢索概念');
+
+  function paintYears(){
+    yearNote.innerHTML='';
+    yearNote.append(yearsNote(Number(years.value)));
+  }
 
   form.append(
     el('p',{class:'eyebrow',style:'margin-bottom:8px'},'YOUR QUESTION'),
@@ -612,10 +643,13 @@ async function screenHome(){
     el('div',{class:'grid2'},
       el('label',{class:'field'},el('span',{class:'lb'},'領域'),domain),
       el('label',{class:'field'},el('span',{class:'lb'},'每個查詢取幾篇'),limit),
-      el('label',{class:'field'},el('span',{class:'lb'},'整條鏈的花費上限（美元）'),budget)),
-    el('p',{class:'hint',style:'margin-bottom:20px'},
+      el('label',{class:'field'},el('span',{class:'lb'},'整條鏈的花費上限（美元）'),budget),
+      el('label',{class:'field'},el('span',{class:'lb'},'文獻年份範圍（最近幾年）'),years)),
+    yearNote,
+    el('p',{class:'hint',style:'margin:14px 0 20px'},
       '按下去只會叫一次模型把題目拆成檢索概念，還不會建立專案，也還不會開始花錢。下一頁可以改。'),
     go);
+  paintYears();
 
   const listBox=el('div',{});
   view(hero({tone:'',mark:'Q',plate:'Q',eyebrow:'START FROM ONE QUESTION',
@@ -689,7 +723,10 @@ async function submitTopic(){
   const payload={mode:'propose',topic,
     domain:$('#f_domain').value,
     limit:Number($('#f_limit').value)||25,
-    usd_budget:Number($('#f_budget').value)||null};
+    usd_budget:Number($('#f_budget').value)||null,
+    // Carried through the draft so `begin()` sends the same window the person
+    // saw explained on this screen, rather than a default decided elsewhere.
+    year_from:yearFrom($('#f_years').value)};
   try{
     busy('把題目拆成檢索概念…');
     const d=await startCall(payload);
@@ -841,7 +878,8 @@ async function screenConcepts(){
     try{
       busy('建立專案並開始檢索…');
       const d=await startCall({mode:'search',topic:st.topic,domain:st.domain,
-        limit:st.limit,usd_budget:st.usd_budget,concepts});
+        limit:st.limit,usd_budget:st.usd_budget,concepts,
+        year_from:st.year_from===undefined?null:st.year_from});
       // Sent the moment the project exists, so W6 has it long before it runs.
       // A project that started is worth saying so even if this leg failed, and
       // the two need different fixes - so they are reported separately.
