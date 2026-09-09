@@ -169,4 +169,56 @@ check("a malformed heading is skipped rather than raising",
           None, {}, {"descriptorName": ""}, {"descriptorName": "Aspirin"}]}})
       == ["Aspirin"])
 
+# --- alternatives come from the hierarchy, not from spelling ----------------
+# `vocab_mesh` returns a LABEL match, so entries after the head are descriptors
+# whose NAME contains the same word. They used to be taken first and labelled
+# "sibling", which they were not: expanding "stroke" on a real project put
+# `Stroke Volume` - millilitres per heartbeat, filed under Cardiac Output - into
+# three of nine planned queries.
+
+class _FakeLit:
+    """Stands in for the MeSH endpoints so this stays offline."""
+    VOCAB_SOURCE = {"clinical"}
+
+    def vocab_mesh(self, term, limit=10):
+        return [{"descriptor": "Stroke", "unique_id": "D020521", "entry_terms": []},
+                {"descriptor": "Stroke Volume", "unique_id": "D013318"},
+                {"descriptor": "Heat Stroke", "unique_id": "D018883"}]
+
+    def vocab_openalex(self, term):
+        return []
+
+    def mesh_relatives(self, uid):
+        return [{"descriptor": "Ischemic Stroke", "unique_id": "D000083242",
+                 "relation": "narrower"},
+                {"descriptor": "Hemorrhagic Stroke", "unique_id": "D000083302",
+                 "relation": "narrower"}]
+
+    def _warn(self, msg):
+        pass
+
+
+_real = ops.lit
+ops.lit = _FakeLit()
+try:
+    exp = ops.search_expand(["stroke"], domain="clinical", per_concept=10)
+    alts = exp["concepts"][0]["alternatives"]
+    names = [a["descriptor"] for a in alts]
+    check("the hierarchy comes first, before any label match",
+          names[:2] == ["Ischemic Stroke", "Hemorrhagic Stroke"])
+    check("label matches are still kept, but after - `Stroke, Lacunar` is a "
+          "real subtype the hierarchy does not always return",
+          "Stroke Volume" in names and names.index("Stroke Volume") > 1)
+    check("a label match is no longer called a sibling, because it is not one",
+          all(a.get("relation") != "sibling" for a in alts)
+          and any(a.get("relation") == "label_match" for a in alts))
+    check("the head is never repeated among its own alternatives",
+          "Stroke" not in names)
+
+    plan = ops.plan_queries(exp, max_queries=4)
+    check("so the query cap spends its budget on the hierarchy first",
+          all("Volume" not in p["label"] for p in plan[:2]))
+finally:
+    ops.lit = _real
+
 print("\nall expansion checks passed")

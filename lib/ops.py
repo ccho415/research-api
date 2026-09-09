@@ -116,14 +116,24 @@ def search_expand(concepts, domain="general", per_concept=10):
                         "alternatives": []})
             continue
         head = entries[0]
-        alts = [{"descriptor": e.get("descriptor"), "unique_id": e.get("unique_id"),
-                 "relation": "sibling"} for e in entries[1:per_concept]]
+        have = {head.get("unique_id")}
+        alts = []
 
-        # A precise concept has exactly one descriptor, so label matching alone
-        # gives no alternatives and the crossing collapses to a single query.
-        # The hierarchy is where the other angles are.
-        if len(alts) < per_concept - 1 and head.get("unique_id"):
-            have = {a["unique_id"] for a in alts}
+        # HIERARCHY FIRST. What `vocab_mesh` returns is a LABEL match, so the
+        # entries after the head are descriptors whose name happens to contain
+        # the same word - not concepts related to it. For "stroke" that means
+        # `Stroke Volume` (millilitres per heartbeat, filed under Cardiac
+        # Output), `Heat Stroke`, and the National Institute of Neurological
+        # Disorders and Stroke, which is an organisation. They used to be
+        # labelled `relation: "sibling"`, which they never were, and they were
+        # taken BEFORE the hierarchy - so four of nine planned queries on a real
+        # project crossed terms with nothing to do with the question.
+        #
+        # The hierarchy for the same descriptor gives Ischemic Stroke,
+        # Hemorrhagic Stroke, Brain Infarction and Cerebrovascular Disorders.
+        # Those are the other angles on the question; the label matches are a
+        # coincidence of spelling.
+        if head.get("unique_id"):
             try:
                 for r in lit.mesh_relatives(head["unique_id"]):
                     if r["unique_id"] not in have and len(alts) < per_concept - 1:
@@ -134,6 +144,20 @@ def search_expand(concepts, domain="general", per_concept=10):
                 # exact crossing still runs.  Say so rather than failing.
                 lit._warn(f"MeSH relatives for {head['unique_id']} unavailable: "
                           f"{type(e).__name__}: {e}")
+
+        # Label matches fill what the hierarchy left empty, and are named for
+        # what they are. A term like `Stroke, Lacunar` is a real subtype that
+        # the hierarchy did not return, so they are worth having - last, where
+        # the query cap trims them first rather than the good ones.
+        for e in entries[1:]:
+            if len(alts) >= per_concept - 1:
+                break
+            if e.get("unique_id") in have:
+                continue
+            have.add(e.get("unique_id"))
+            alts.append({"descriptor": e.get("descriptor"),
+                         "unique_id": e.get("unique_id"),
+                         "relation": "label_match"})
 
         out.append({
             "input": term, "expanded": True, "vocabulary": vocab,
