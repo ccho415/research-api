@@ -305,6 +305,89 @@ def finish_run(run_id, status="done"):
             **{k: (round(v, 4) if v is not None else None) for k, v in metrics.items()}}
 
 
+def project_concepts(project_id):
+    """What this project was searched for, and what those searches returned.
+
+    `record_expansion` has written `project.vocab_expansion` since migration 002
+    and nothing has ever read it back. So the one question a person asks after a
+    run - "what did I actually search for?" - had no answer anywhere in the
+    system, while the answer sat in a column.
+
+    Two layers, and they are not the same thing:
+
+      concepts  what a person typed, and the controlled-vocabulary descriptor it
+                resolved to. `expanded: false` means it resolved in neither MeSH
+                nor OpenAlex, so that axis searched one raw string and has
+                roughly a tenth of the coverage of a normal one.
+      queries   what was actually sent. The crossing of descriptors with their
+                hierarchy produces many queries per concept, so this list is
+                longer than the concept list and is the honest record of the
+                search - a concept is an intention, a query is what ran.
+
+    Every expansion is kept, not just the latest. MeSH is revised yearly and the
+    ranking is ours, so a concept that resolved to a different descriptor on a
+    re-run is a real event, and the only way to see it is to keep both.
+    """
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT id, title, topic, vocab_expansion FROM project WHERE id = %s",
+            (project_id,))
+        p = cur.fetchone()
+        if not p:
+            raise ValueError(f"no project {project_id}")
+
+        cur.execute(
+            "SELECT q.query_text, q.query_angle, q.axis_source, q.domain,"
+            "       q.n_hits, q.executed_at, q.run_id "
+            "FROM search_query q JOIN run r ON r.id = q.run_id "
+            "WHERE r.project_id = %s "
+            "ORDER BY q.executed_at", (project_id,))
+        queries = []
+        for r in cur.fetchall():
+            d = dict(r)
+            d["run_id"] = str(d["run_id"]) if d["run_id"] else None
+            d["executed_at"] = (d["executed_at"].isoformat()
+                                if d["executed_at"] else None)
+            d["n_hits"] = int(d["n_hits"] or 0)
+            queries.append(d)
+
+    history = p["vocab_expansion"] or []
+    if not isinstance(history, list):
+        history = []
+    versions = []
+    for i, e in enumerate(history):
+        if not isinstance(e, dict):
+            continue
+        cs = e.get("concepts") or []
+        versions.append({
+            "version": i + 1,
+            "at": e.get("at"),
+            "concepts": [{"input": c.get("input"),
+                          "descriptor": c.get("descriptor"),
+                          "unique_id": c.get("unique_id"),
+                          # Stored as a boolean by record_expansion. Normalised
+                          # here so a screen can trust it: an older row could
+                          # carry the term list this field used to hold.
+                          "expanded": bool(c.get("expanded"))}
+                         for c in cs if isinstance(c, dict)]})
+
+    latest = versions[-1] if versions else None
+    # Which concept a descriptor came from cannot be recovered from the query
+    # text, so no attempt is made to attribute queries to concepts. Counting
+    # them is honest; guessing the mapping would put a number next to a concept
+    # that nothing supports.
+    return {
+        "project_id": str(p["id"]), "title": p["title"], "topic": p["topic"],
+        "latest": latest,
+        "n_versions": len(versions),
+        "earlier": versions[:-1] if len(versions) > 1 else [],
+        "queries": queries,
+        "n_queries": len(queries),
+        "n_empty_queries": sum(1 for q in queries if not q["n_hits"]),
+        "n_hits_total": sum(q["n_hits"] for q in queries),
+    }
+
+
 def record_expansion(project_id, expansion):
     """Append this run's vocabulary expansion and report what moved since last.
 
