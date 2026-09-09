@@ -143,7 +143,33 @@ def s_pubmed(q, limit, year_from, year_to):
         return []
     time.sleep(0.34)
     u2 = base + f"efetch.fcgi?db=pubmed&retmode=xml&id={','.join(ids)}{key}"
-    root = ET.fromstring(_get(u2))
+    return parse_pubmed_xml(_get(u2))
+
+
+def pubmed_term(q, year_from=None, year_to=None):
+    """The PubMed `term` for this query, year clause included.
+
+    Split out so that a caller which cannot reach E-utilities itself can hand
+    the term to something that can - a browser on the researcher's own machine,
+    which NCBI has not blocked - without rebuilding the syntax at the other end.
+    """
+    term = q
+    if year_from or year_to:
+        term += f" AND ({year_from or 1800}:{year_to or 3000}[dp])"
+    return term
+
+
+def parse_pubmed_xml(xml):
+    """PubMed's efetch XML to the record shape every source here produces.
+
+    Separate from fetching because the fetch and the parse can happen on
+    different machines. NCBI blocks this deployment's IP, so the request has to
+    be made from somewhere else; the parsing has no such problem and stays in
+    one place, which is the point - a second copy of this in JavaScript would
+    drift from this one within a month and nobody would notice, because a
+    slightly-wrongly-parsed paper looks exactly like a correct one.
+    """
+    root = ET.fromstring(xml)
     out = []
     for art in root.findall(".//PubmedArticle"):
         pmid = art.findtext(".//PMID", "")

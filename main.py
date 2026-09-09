@@ -63,6 +63,24 @@ def search_query(body: QueryIn, x_api_key: Optional[str] = Header(None)):
                             body.year_from, body.year_to, body.sort, body.concepts)
 
 
+class PubmedPlanIn(BaseModel):
+    concepts: List[str]
+    domain: str = "clinical"
+    max_queries: int = 10
+    year_from: Optional[int] = None
+
+
+class PubmedIngestIn(BaseModel):
+    run_id: str
+    query_text: str
+    # efetch's reply, verbatim. It is sent here rather than parsed at the other
+    # end because the other end is a browser, and a second implementation of
+    # PubMed's XML in JavaScript would drift from `parse_pubmed_xml` silently -
+    # a slightly-wrongly-parsed paper looks exactly like a correct one.
+    xml: str
+    domain: Optional[str] = None
+
+
 class ExpandIn(BaseModel):
     concepts: List[str]
     domain: str = "general"
@@ -200,6 +218,78 @@ def search_ingest(body: IngestIn, x_api_key: Optional[str] = Header(None)):
     try:
         return db.ingest(body.query_text, body.results, body.run_id, body.domain,
                          body.sources, body.query_angle, body.axis_source)
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.post("/compute/search/pubmed-plan")
+def pubmed_plan(body: PubmedPlanIn, x_api_key: Optional[str] = Header(None)):
+    """The PubMed searches this project would run, for something else to run.
+
+    NCBI blocks this deployment's egress IP from E-utilities - a shared cloud
+    address, blocked in front of the quota, so an API key does not lift it.
+    PubMed therefore answers nothing here while answering normally from the
+    researcher's own machine, and measured on one clinical topic the two
+    sources returned 25 papers each with ONE in common: the records overlap,
+    the relevance ranking does not, so the missing half is most of the corpus.
+
+    This hands out the terms so the browser can make those requests from an
+    address NCBI has not blocked. It is not a way around the block: it is one
+    researcher's own access, at their own rate, which is how E-utilities is
+    meant to be used - NCBI serves it with `Access-Control-Allow-Origin: *`
+    precisely so that pages can call it.
+
+    Only the terms leave here. Parsing and storage stay in `parse_pubmed_xml`
+    and `db.ingest`, so nothing about how a paper is read moves into a browser.
+    """
+    check_key(x_api_key)
+    if not body.concepts:
+        raise HTTPException(400, "need at least 1 concept")
+    import ops
+    import search as lit
+    try:
+        exp = ops.search_expand(body.concepts, domain=body.domain)
+        out = []
+        for p in ops.plan_queries(exp, max_queries=body.max_queries):
+            q = lit.render_query(p["concepts"], "pubmed")
+            if not q:
+                continue
+            out.append({"label": p["label"],
+                        "term": lit.pubmed_term(q, body.year_from, None)})
+        return {"domain": body.domain, "year_from": body.year_from,
+                "degraded": exp.get("degraded"),
+                "unexpanded": exp.get("unexpanded") or [],
+                "n": len(out), "queries": out}
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
+@app.post("/compute/search/pubmed-ingest")
+def pubmed_ingest(body: PubmedIngestIn, x_api_key: Optional[str] = Header(None)):
+    """Parse an efetch reply collected elsewhere, and store it like any other.
+
+    Attached to the run that already exists rather than a new one, so the
+    corpus stays one corpus and `done_queries` can see what has been searched.
+    `sources` records honestly where this came from: a reader six months later
+    should be able to tell that PubMed answered for this row while the server's
+    own attempt at the same query did not.
+    """
+    check_key(x_api_key)
+    import db
+    import search as lit
+    try:
+        results = lit.parse_pubmed_xml(body.xml)
+    except Exception as e:
+        # A parse failure is the caller's XML, not the server's fault, and
+        # saying which it is saves the next person the wrong investigation.
+        raise HTTPException(400, f"could not parse that as PubMed efetch XML: "
+                                 f"{type(e).__name__}: {str(e)[:200]}")
+    try:
+        res = db.ingest(body.query_text, results, body.run_id, body.domain,
+                        {"attempted": ["pubmed"], "answered": ["pubmed"],
+                         "failed": [], "collected_by": "browser"},
+                        "pubmed via browser", "topic")
+        return dict(res, n_parsed=len(results))
     except Exception as e:
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 

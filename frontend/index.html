@@ -884,6 +884,17 @@ async function screenConcepts(){
       // A project that started is worth saying so even if this leg failed, and
       // the two need different fixes - so they are reported separately.
       const inv=d.project_id?await flushStagedInv(d.project_id):null;
+
+      // Started here, deliberately not awaited. The server's own half is
+      // already running against Europe PMC, and this is the half it cannot
+      // reach: NCBI blocks its IP, not this browser's. Waiting for it would
+      // hold the person on a spinner for a minute for no reason, and the
+      // results land in the same run either way.
+      if(d.project_id&&d.run_id){
+        runPubmedPass(d.project_id,d.run_id,concepts,st.domain,
+          st.year_from===undefined?null:st.year_from);
+      }
+
       unbusy();
       sessionStorage.removeItem('rd_propose');
       toast('開始跑了。'+(d.project_id?('專案 '+String(d.project_id).slice(0,8)):'')
@@ -893,6 +904,117 @@ async function screenConcepts(){
       if(d.project_id) location.hash='#/p/'+d.project_id+'/progress'; else location.hash='#/';
     }catch(e){ unbusy(); fail(e); }
   }
+}
+
+/* ===========================================================================
+   PubMed，從這台機器
+   ===========================================================================
+   NCBI blocks the server's egress IP from E-utilities, so PubMed answers
+   nothing there. It answers normally from here, and NCBI serves eutils with
+   `Access-Control-Allow-Origin: *` precisely so that pages can call it - so
+   this browser makes those requests while the server runs its own half against
+   Europe PMC. Measured on one clinical topic the two sources returned 25
+   papers each with ONE in common: the records overlap, the ranking does not,
+   so the half the server cannot reach is most of the corpus.
+
+   THIS TAB IS A COURIER AND NOTHING MORE. It does not decide what to search
+   for and it does not read a paper. The terms are computed by `pubmed-plan`
+   and the reply goes back verbatim to `pubmed-ingest`, which parses it with
+   the same Python that parses every other source. A second implementation of
+   PubMed's XML here would drift from that one within a month, and nobody would
+   catch it, because a slightly-wrongly-parsed paper looks exactly like a
+   correct one.
+   =========================================================================== */
+const EUTILS = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/';
+// E-utilities asks for at most 3 requests a second without a key. Two requests
+// per query plus this gap keeps a comfortable margin, and this runs beside a
+// pipeline that takes half an hour - there is nothing to gain by hurrying.
+const PUBMED_GAP = 400;
+const PUBMED_KEY_STORE = 'rd_ncbi_key';
+
+function ncbiKey(){
+  try{ return (localStorage.getItem(PUBMED_KEY_STORE)||'').trim(); }
+  catch(e){ return ''; }
+}
+function ncbiSuffix(){
+  const k=ncbiKey();
+  return k?('&api_key='+encodeURIComponent(k)):'';
+}
+const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+
+// State lives outside the screen so navigating away does not abandon the pass.
+// A person who presses start and then opens the concepts page should not
+// silently lose half their corpus.
+const pubmedRun={active:false,project:null,done:0,total:0,stored:0,
+                 failed:0,note:'',finished:false};
+
+function pubmedSummary(){
+  if(!pubmedRun.project) return null;
+  if(pubmedRun.note) return pubmedRun.note;
+  if(pubmedRun.finished){
+    return 'PubMed：'+pubmedRun.stored+' 篇已收錄'
+      +(pubmedRun.failed?('，'+pubmedRun.failed+' 個查詢失敗'):'');
+  }
+  return 'PubMed：第 '+(pubmedRun.done+1)+'/'+pubmedRun.total+' 個查詢…（'
+    +pubmedRun.stored+' 篇）';
+}
+
+async function runPubmedPass(project_id, run_id, concepts, domain, year_from){
+  if(pubmedRun.active) return;
+  Object.assign(pubmedRun,{active:true,project:project_id,done:0,total:0,
+                           stored:0,failed:0,note:'',finished:false});
+  try{
+    const plan=await call('pubmed-plan',{method:'POST',body:{
+      concepts:concepts,domain:domain||'clinical',
+      year_from:year_from===undefined?null:year_from,max_queries:10}});
+    const qs=(plan&&plan.queries)||[];
+    pubmedRun.total=qs.length;
+    if(!qs.length){ pubmedRun.note='PubMed：沒有可跑的查詢'; pubmedRun.finished=true; return; }
+
+    for(const item of qs){
+      try{
+        const su=EUTILS+'esearch.fcgi?db=pubmed&retmode=json&sort=relevance'
+          +'&retmax=25&term='+encodeURIComponent(item.term)+ncbiSuffix();
+        const sr=await fetch(su);
+        if(!sr.ok) throw new Error('esearch HTTP '+sr.status);
+        const ids=(((await sr.json())||{}).esearchresult||{}).idlist||[];
+        if(ids.length){
+          await sleep(PUBMED_GAP);
+          const fu=EUTILS+'efetch.fcgi?db=pubmed&retmode=xml&id='
+            +ids.join(',')+ncbiSuffix();
+          const fr=await fetch(fu);
+          if(!fr.ok) throw new Error('efetch HTTP '+fr.status);
+          const xml=await fr.text();
+          const res=await call('pubmed-ingest',{method:'POST',body:{
+            run_id:run_id,query_text:item.label,domain:domain,xml:xml}});
+          pubmedRun.stored+=(res&&res.n_parsed)||0;
+        }
+      }catch(e){
+        // One query failing must not lose the ones already stored. The count is
+        // shown rather than swallowed, because "PubMed added nothing" and
+        // "PubMed was never asked" are different situations.
+        pubmedRun.failed++;
+      }
+      pubmedRun.done++;
+      if(location.hash.indexOf('/progress')!==-1) paintPubmed();
+      await sleep(PUBMED_GAP);
+    }
+    pubmedRun.finished=true;
+  }catch(e){
+    pubmedRun.note='PubMed 這一半沒跑起來：'+String((e&&e.message)||e);
+    pubmedRun.finished=true;
+  }finally{
+    pubmedRun.active=false;
+    if(location.hash.indexOf('/progress')!==-1) paintPubmed();
+  }
+}
+
+function paintPubmed(){
+  const el=document.getElementById('pubmed_line');
+  if(!el) return;
+  const t=pubmedSummary();
+  el.textContent=t||'';
+  el.style.display=t?'':'none';
 }
 
 /* ===========================================================================
@@ -1040,6 +1162,13 @@ async function screenProgress(pid){
         sechead('01','進度',d.chain_state||null),
         el('p',{style:'font-family:var(--cjk);font-size:17px;line-height:1.8;margin-bottom:10px'},d.title||d.topic||''),
         spendLine(d.spend),
+        // The browser's own half of the literature search, when this tab is
+        // the one running it. Shown beside the server's steps rather than
+        // hidden, because it is the only part of the pipeline that stops if
+        // this tab is closed - and a person cannot weigh that without seeing it.
+        el('p',{id:'pubmed_line',class:'note',
+                style:'margin:10px 0 0;display:'+(pubmedSummary()?'':'none')},
+          pubmedSummary()||''),
         stepList(d.steps||[],pid,tick),
         runningHint(d),
         invSection(d,ds,pid,async()=>{ await reloadDs(); tick(); }),
