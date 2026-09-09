@@ -88,4 +88,57 @@ solo = ops.plan_queries({"concepts": [UNEXPANDED]}, max_queries=4)
 check("a lone unexpanded concept still plans a search, named after itself",
       len(solo) == 1 and solo[0]["label"] == "dual antiplatelet therapy")
 
+# --- UMLS, the tier that only exists when somebody licensed it --------------
+# No network: `_get_json` is replaced, so what is checked is how the response
+# is read, which is where the traps are.
+
+check("with no key configured the tier is inert, whatever else is true",
+      search.UMLS_KEY == "" and search.umls_mesh_names("anything") == [])
+
+_real_get_json = search._get_json
+
+
+def _fake(payload):
+    def f(url, **kw):
+        return payload
+    return f
+
+
+search.UMLS_KEY = "test-key-not-real"
+try:
+    # A UMLS search with no matches answers with a placeholder ROW, not an
+    # empty list. Unguarded, the caller "finds" a concept called NO RESULTS
+    # and goes off to look it up in MeSH.
+    search._get_json = _fake({"result": {"results": [
+        {"ui": "NONE", "name": "NO RESULTS", "rootSource": ""}]}})
+    check("the no-match placeholder row is not treated as a concept",
+          search.umls_mesh_names("wibble frobnicator") == [])
+
+    search._get_json = _fake({"result": {"results": [
+        {"ui": "D000080903", "name": "Dual Anti-Platelet Therapy"},
+        {"ui": "D000080903", "name": "dual anti-platelet therapy"},
+        {"ui": "D000925", "name": "Platelet Aggregation Inhibitors"},
+        {"ui": "D0001", "name": "Fourth Thing"},
+        {"ui": "D0002", "name": "Fifth Thing"},
+    ]}})
+    got = search.umls_mesh_names("dual antiplatelet therapy")
+    check("the MeSH name UMLS proposes comes back",
+          got[0] == "Dual Anti-Platelet Therapy")
+    check("the same name in another case is not proposed twice",
+          [g.lower() for g in got].count("dual anti-platelet therapy") == 1)
+    check("the number of proposals is capped - each costs two MeSH lookups",
+          len(got) <= 3)
+    check("names come back, never ids - MeSH has to confirm the name itself",
+          all(isinstance(g, str) for g in got))
+
+    search._get_json = _fake({})
+    check("an empty or unexpected body is a miss, not a crash",
+          search.umls_mesh_names("x") == [])
+finally:
+    search._get_json = _real_get_json
+    search.UMLS_KEY = ""
+
+check("the key is put back, so nothing after this file is affected",
+      search.UMLS_KEY == "")
+
 print("\nall expansion checks passed")

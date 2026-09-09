@@ -42,6 +42,10 @@ UA = "lit-search-skill/1.0 (academic research; stdlib urllib)"
 MAILTO = os.environ.get("ACADEMIC_MAILTO", "").strip()
 S2_KEY = os.environ.get("SEMANTIC_SCHOLAR_API_KEY", "").strip()
 NCBI_KEY = os.environ.get("NCBI_API_KEY", "").strip()
+# Optional. Absent, every UMLS route below is skipped and nothing else
+# changes - a licence is issued to a named individual, so this cannot be a
+# shared default.
+UMLS_KEY = os.environ.get("UMLS_API_KEY", "").strip()
 
 # --------------------------------------------------------------------------
 # Domain -> source routing.  OpenAlex + Crossref are universal fallbacks and
@@ -528,6 +532,52 @@ def mesh_normalised_match(term):
             for b in rows if not b["dlabel"]["value"].startswith("[")]
 
 
+UMLS_WS = "https://uts-ws.nlm.nih.gov/rest"
+
+
+def umls_mesh_names(term, limit=3):
+    """What MeSH calls the same idea, according to UMLS. Names only.
+
+    The Metathesaurus is the thing actually built for this question: it maps
+    synonyms across 200-odd vocabularies onto one concept, and its
+    `normalizedString` search runs the SPECIALIST Lexicon's normalisation -
+    case, inflection, punctuation, word order - rather than comparing strings.
+    It reaches synonyms MeSH does not register itself, which is exactly where
+    the local normalised match runs out.
+
+    NAMES, not descriptor ids, and that is the whole point of the design.
+    Whatever comes back is looked up in MeSH by the routes already proven
+    above, so this function cannot introduce a wrong descriptor: at worst it
+    proposes a name MeSH does not recognise and the lookup finds nothing. UMLS
+    proposes, MeSH disposes. It also means a mistake in my reading of the UMLS
+    response shape costs a miss rather than a plausible wrong answer.
+
+    Returns [] when no key is configured, which is the normal state until
+    somebody has applied for a licence in their own name.
+    """
+    if not UMLS_KEY:
+        return []
+    u = (f"{UMLS_WS}/search/current?apiKey={urllib.parse.quote(UMLS_KEY)}"
+         f"&string={urllib.parse.quote(term)}"
+         "&searchType=normalizedString&sabs=MSH&pageSize=25")
+    res = (_get_json(u, timeout=25, retries=1) or {}).get("result") or {}
+    out, seen = [], set()
+    for r in res.get("results") or []:
+        name = _norm_space(r.get("name"))
+        # A search with no matches answers with one placeholder row rather than
+        # an empty list, so an unguarded caller "finds" a concept called NO
+        # RESULTS and looks it up.
+        if not name or name.upper() == "NO RESULTS" or r.get("ui") == "NONE":
+            continue
+        if name.lower() in seen:
+            continue
+        seen.add(name.lower())
+        out.append(name)
+        if len(out) >= limit:
+            break
+    return out
+
+
 _STOP = {"of", "the", "and", "a", "an", "in", "for", "with", "to", "on", "by"}
 
 
@@ -633,6 +683,29 @@ def vocab_mesh_rdf(term, limit=10, pool=30):
                     hits.append(h)
         except Exception as e:
             _warn(f"MeSH normalised match failed for {term!r} ({e})")
+
+    # Still nothing: ask UMLS what MeSH calls this, then look THAT up here.
+    #
+    # Everything above compares spellings of the same words. UMLS compares
+    # meanings across two hundred vocabularies, so it is the only route that
+    # reaches a synonym MeSH does not register - which is the case the local
+    # normalisation cannot touch no matter how it normalises.
+    #
+    # The names it proposes go through the same two lookups as any other term,
+    # so nothing here can put a descriptor into the result that MeSH did not
+    # confirm. Skipped entirely without a key.
+    if not hits and UMLS_KEY:
+        for name in umls_mesh_names(term):
+            try:
+                for h in mesh_entry_match(name):
+                    if h["resource"] not in seen:
+                        seen.add(h["resource"])
+                        hits.append(h)
+            except Exception as e:
+                _warn(f"MeSH entry-term lookup failed for UMLS name {name!r} ({e})")
+            label_lookup(name)
+            if hits:
+                break
 
     if not hits:
         return []
