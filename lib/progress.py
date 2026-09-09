@@ -83,7 +83,16 @@ def build_steps(detail, runs, frame_present, harvest_status):
             {"review_point": s.review, "pauses_by_default": s.pause_by_default,
              "error": r.get("error") if r else None,
              "finished_at": (r["finished_at"].isoformat()
-                             if r and r.get("finished_at") else None)}))
+                             if r and r.get("finished_at") else None),
+             # What the stage last said about itself while it was working, and
+             # when. `detail` above counts what reached the database, which a
+             # stage in flight has not written yet - so these two are the only
+             # fields that separate a stage that is busy from one that is
+             # stuck, and the only ones that survive a stage whose findings
+             # (the tournament's gates) are not rows in any table.
+             "reported_at": (r["reported_at"].isoformat()
+                             if r and r.get("reported_at") else None),
+             "report": (r.get("report") if r else None)}))
     return steps
 
 
@@ -183,7 +192,8 @@ def project_progress(project_id):
         n_reports = int(cur.fetchone()["n"] or 0)
 
         cur.execute(
-            "SELECT DISTINCT ON (stage) stage, status, error, finished_at "
+            "SELECT DISTINCT ON (stage) stage, status, error, finished_at,"
+            "       reported_at, report "
             "FROM run WHERE project_id = %s AND stage = ANY(%s) "
             "ORDER BY stage, started_at DESC NULLS LAST",
             (project_id, chain.STAGE_NAMES))

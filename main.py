@@ -1614,6 +1614,34 @@ def chain_pause(body: ChainPauseIn, x_api_key: Optional[str] = Header(None)):
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+class StageReportIn(BaseModel):
+    project_id: str
+    stage: str
+    report: Dict[str, Any]
+
+
+@app.post("/compute/stage/report")
+def stage_report(body: StageReportIn, x_api_key: Optional[str] = Header(None)):
+    """What a stage is doing right now, so that working and stuck look different.
+
+    A stage writes its results when it finishes and nothing before then, which
+    means every screen describes a stage in flight with the same words it uses
+    for one that never began. This is where a long stage says otherwise while
+    it is still going.
+
+    Also where a stage leaves its closing findings when they are not rows in
+    any table - the tournament's quality gates being the case that prompted it.
+    """
+    check_key(x_api_key)
+    import chain
+    try:
+        return chain.record_report(body.project_id, body.stage, body.report)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.post("/compute/tournament/start")
 def tournament_start(body: TournamentStartIn,
                      x_api_key: Optional[str] = Header(None)):

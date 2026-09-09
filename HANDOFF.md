@@ -1,7 +1,24 @@
 # 交接文件 — 研究方向發想系統
 
 **寫給：接手這個專案的任何一個新的 Claude Code 工作階段。**
-最後更新：2026-09-08 凌晨（**API 缺口全部收完並驗過；W10 第一次實跑；LINE 掛了、系統目前是靜音的**）
+最後更新：2026-09-08 深夜（**前端五頁做完並實際用過；search 模式第一次全程實跑；
+抓到並修掉一個我自己引入的 run_id 缺陷**）
+
+## ⏭️ 明天第一件事
+
+測試專案 `82ffbcec-20fc-4377-b1a1-01f5dff6061f`
+（雙抗血小板藥物 · 已花 $0.0394 / $2.00）**停在 W4 之前，方向 15 個都在**。
+缺陷已修好，續跑只要一行：
+
+```
+POST /compute/chain/start
+{ "project_id": "82ffbcec-20fc-4377-b1a1-01f5dff6061f",
+  "stage": "dedup",
+  "params": { "run_id": "8c17853c-0ae6-4519-b241-8eabda0e183a" } }
+```
+
+`run_id` 是**方向所屬的那個 run**，不是文獻檢索那個——理由見下面。
+`chain/start` 刻意沒有放進前端白名單（它會花錢），要用 n8n 或 curl 打。
 
 > **先讀完這一份再動手。** 上一個工作階段沒讀，結果重新踩了一次「thinking token
 > 算在 maxOutputTokens 裡」——那條在本文件的環境備忘裡本來就寫著。
@@ -51,8 +68,417 @@ verdict: "TOKEN BAD - the credential is wrong.
 08-30 憑證外洩處理時 W-LINE 測試（執行 47）是通過的，所以是**那之後才壞的**，
 或者換憑證時 `Bearer ` 前綴掉了而當時沒重測。
 
+> **🔴 修之前先讀這一段。** 建 `W-START` 時 n8n **自動把這把 LINE 憑證綁到了
+> webhook 的入站驗證上**（它是唯一一把 `httpHeaderAuth`）。所以現在
+> 「前端要送什麼標頭才進得來」跟「LINE 要收什麼標頭」是同一個值——
+> **你一改 LINE 的 Value，前端的鑰匙就跟著變**。
+> 正確做法：另外建一把 `httpHeaderAuth` 叫 `Frontend Webhook Token`
+> （Name 自訂如 `X-Frontend-Key`，Value 隨機字串），
+> 換到 `W-START` 的 `Frontend Calls` 節點上，**再去改 LINE 那把**。
+
 **修好之後**：重跑 W-LINE 測試確認，然後補跑一次 W10——今天那次的花費
 因為執行中斷沒被記錄（見下）。
+
+---
+
+## 🔧 前端接線第一天（2026-09-08）
+
+**做這一段的判準**：使用者要「能實際從前端操作、順利跑到報告下載」的成品，
+細節之後再修——**只要不影響實際運行**。所以下面每一項都是「不做就跑不起來」，
+不是「做了比較好」。
+
+### 三個發布，其中一個是修好的東西沒按下去
+
+| 工作流 | 之前 | 現在 |
+|---|---|---|
+| **W-CHAIN** | 已發布版本仍是舊的，`Spread The Claims` 送 `run_id` | 發布了草稿裡的 `chain_run_id` 改名 |
+| **W1 領域框架** | `activeVersionId: null`，**從來沒發布過** | 已發布並啟用 |
+| **W3 缺口組合推理** | 同上，而且名字還叫 `W3-TEST` | 已改名、已發布並啟用 |
+
+**W-CHAIN 那個要特別記**：修正在草稿裡躺了六天沒發布。已發布版本會讓
+`params.run_id`（研究跑動）和頂層 `run_id`（鏈的記帳列）撞名，正規化器挑外層，
+**W4 會去查一個沒有方向的列、去重零筆、然後回報成功**。
+草稿的版本說明是自己寫的，內容完全正確——只是沒按發布。
+
+> **教訓：`versionId !== activeVersionId` 要當成待辦看，不是當成「有草稿」看。**
+> 檢查方式：`get_workflow_details` 比對這兩個欄位。
+> `autosaved: true` 且沒有名稱的是編輯器自動存的（開過就會有），可以忽略；
+> **`autosaved: false` 且有標題的是真的改動，沒發布就是沒生效。**
+
+### 一條過期的筆記：交棒穿透其實早就修完了
+
+本文件原本寫著「W4／W5B／W6／W9 還沒改」。**版本紀錄顯示 09-05 09:46
+一口氣發布了三個**，說明裡寫「補完六段一致」：
+
+- W4「交棒時保留收到的參數，不要只挑自己用得到的」
+- W5B「交棒時保留收到的參數」
+- W6「交棒時保留收到的參數」
+
+W9 沒有這一條，但 W9 是最後一段、沒有下游可以交棒，位置上不會出事。
+**這件事整條劃掉。**
+
+### W1／W3 為什麼不能只按發布
+
+兩個都**只有表單觸發器**，而且 `Route With Sonnet`／`Build The Frame`／
+`Record The Spend`（W1）與 `Load The Harvest`／`Check Against The Record`／
+`Save The Directions`／`Record The Spend`（W3）**直接引用表單節點**。
+
+**引用一個沒有觸發的節點會拋錯**，所以那些引用讓這兩個工作流
+只能從表單啟動——不試就看不出來。照 W4 的形狀補上：
+`executeWorkflowTrigger` 與表單各自接進一個 `Form Or Caller` 正規化節點，
+**下游一律讀正規化節點，不准讀觸發器**。`params` 優先於外層扁平欄位。
+
+順手修掉 W3 的一個硬編碼：四處 `Number(...) || 2015` 是肺腺癌那次驗證留下的。
+換題目而呼叫端忘了帶 `cutoff`，新穎性會**安靜地以 2015 為界**，結果看起來完全正常。
+現在正規化節點驗不過就拋錯，**沒有預設值是刻意的**。表單的預設值也一併清掉。
+
+### W2：畫面 ② 本來就存在，它是工作流中間的一個表單頁
+
+`Confirm Concepts` 這個 `n8n-nodes-base.form` 節點就是「確認檢索概念」那一頁，
+夾在 `Split Topic Into Concepts` 和 `Normalise Input` 之間。
+**前端要自己做那一頁，就得從中間切開。**
+
+做法（**表單那條路一個節點都沒刪**，手動跑體驗完全不變）：
+
+```
+                    ┌─ Literature Search Request（表單，原封不動）
+Split Topic ← ──────┤
+                    └─ Called By The Frontend → Read The Caller → Propose Or Search
+                                                                    ├ propose → 上排
+                                                                    └ search  → Normalise Input
+```
+
+兩種模式：
+
+- **`propose`** — 只把題目拆成概念就回手。**不建專案、不建 run、不繼續花錢。**
+  概念確認頁上的修改與重查因此是免費的，這是它會被真的使用而不是被點過去的前提。
+- **`search`** — 收下已經被人改過的概念，直接建 run 開始檢索。
+
+新增三個分岔節點：`Confirm Page Or Return`（表單進來的才看確認頁，
+前端進來的碰到那個節點會停在一個沒有人會打開的網址）、
+`Form Needs A Done Page`（`Search Started` 是表單完成頁，前端這條要繞過）、
+`Propose Or Search`。`Build Confirm Form` 加了 `entered_via`，
+用 try/catch 探測 `Read The Caller` 有沒有跑過。
+
+順帶修掉同一類的舊問題：`Start Run` 直接引用表單觸發器拿預算上限，
+**那一個引用就是讓 W2 後半段只能從表單啟動的原因**，改成從 `Normalise Input` 讀。
+
+**前端這條路沒有表單頁 30 分鐘逾時的限制**——可以下班前交題目，隔天再確認概念。
+
+### W-START 交題目（`ZqtKMxcuCNkFIRvf`）— 新建，已發布
+
+前端面向的第一條 webhook：`POST /webhook/research/start`
+
+```
+Frontend Calls → What Was Asked → Propose Or Start
+   ├ propose → Ask W2 For Concepts → Reply With Concepts
+   └ search  → Create The Project → Reply With The Project ←── 先回應，再繼續
+                 → Hand W2 The Concepts → Run The Literature Layer
+                 → Hand W1 The Topic   → Judge The Domain Frame
+                 → Start The Harvest → Wait 30s → Is The Harvest Done
+                 → Ready Or Wait Again → Harvest Ready ─┬ 否 → 回去等
+                                                        └ 是 → Combine Into Directions
+                 → Put It On The Chain
+```
+
+幾個刻意的決定：
+
+- **先建專案再回應瀏覽器。** `/compute/run/start` 會 adopt，所以先拿到
+  `project_id` 立刻回給前端，後面二十到四十分鐘在背景跑。沒有瀏覽器會等那麼久。
+- **W2 收到的是 `resume_run_id` 而不是 `run_id`。** run 已經建好了，
+  要它接手而不是再開一個；而 `run_id` 在 W2 那邊會被讀成「別人的檢索要續跑」——
+  跟 W-CHAIN 那個撞名是同一類。
+- **採集用輪詢加計次上限**（40 輪 × 30 秒 = 20 分鐘就拋錯）。
+  卡住的採集和很慢的採集**在畫面上長得一模一樣**，只有計次分得出來；
+  無限迴圈會讓執行一直開著，看起來還很正常。
+- **`Put It On The Chain` 一定要帶 `params.run_id`**，否則 W4 查到零筆回報成功。
+- **W3 的 `cutoff` 用當年年份**，因為文獻是幾分鐘前才採集的，
+  語料裡的東西都在那一年或之前。W3 不接受沒有 cutoff。
+
+**實跑驗過（執行 1191／子執行 1192，成本一次 Gemini flash 呼叫）**：
+
+```
+題目：空氣中細懸浮微粒暴露與兒童氣喘發作的關聯
+→ concepts: ["fine particulate matter", "asthma", "child"]
+   nothing_created: true      4.5 秒
+```
+
+這一趟同時驗掉了 W2 的新入口、`Confirm Page Or Return` 有正確避開表單頁
+（沒避開的話執行會掛在那裡等），以及回應節點。
+
+**search 模式還沒實跑過**——那一趟會花約 $0.8–1.5、跑二十到四十分鐘，
+要使用者點頭才跑。
+
+### W-API 前端讀寫（`aH4K0fTV8l6Do59c`）— 新建，已發布
+
+前端唯一的讀寫入口：`GET|POST /webhook/research/api/:route`
+
+**白名單，不是通用轉發器。** `/admin/migrate`、`/admin/backup`、
+`/admin/restore-drill` 跟這些端點住在同一個服務、同一把金鑰後面；
+通用轉發等於把它們一起開給瀏覽器。
+
+十六條路由，每一條都對應某個畫面實際會綁的欄位：
+
+| 畫面 | route | 上游 |
+|---|---|---|
+| ① | `projects` / `runs` / `progress` / `chain-state` | 專案列表、跑動、十步進度、鏈狀態 |
+| ② | `verify-terms`（POST） | `/compute/verify/terms`——**免費、不叫模型** |
+| ③ | `feasibility` / `dataset` / `ideas` / `dedup` | 分級板、資料清單、方向、去重證據 |
+| ④ | `debate` / `debate-state` / `novelty` | 摘要、辯論內文、新穎性判決 |
+| ⑤ | `report` / `watch` / `report-export` | 報告、撞題監看、下載 |
+| ③④ | `release`（POST） | `/compute/chain/resume`——**唯一會讓鏈前進、因而會花錢的路由** |
+
+三個刻意的決定：
+
+- **上游的 HTTP 狀態碼原樣傳回。** `neverError` 開著，400／404 以資料的形式
+  抵達 `Shape The Reply`。沒有這個的話「API 說不行」和「伺服器掛了」
+  在瀏覽器看起來一模一樣，而只有其中一種是 bug。
+- **路由寫錯回 400，不是讓執行死掉。** 這是實測抓到的：`Which Route` 拋錯
+  會讓執行死在回應節點之前，n8n 交給瀏覽器一個通用 500——又是同一個
+  「兩種失敗長得一樣」的問題。改成自己接住並附上已知路由清單。
+- **報告匯出走獨立分支**（Switch 第三個出口 → `responseFormat: file`），
+  因為 PDF 是二進位，跟 JSON 共用一條路會壞。
+
+> **🔴 `multipleMethods` 的坑（實跑抓到的）**
+> 開啟 `multipleMethods` 之後，**webhook 節點每個方法各給一個輸出**：
+> 輸出 0 是 GET、輸出 1 是 POST。**兩個都要接到下游。**
+>
+> 只接輸出 0 的症狀是最難查的那一種：POST 進來，`Frontend Calls` 亮綠燈、
+> 執行狀態 `success`、HTTP 回 200——**但回應是空的，下游一個節點都沒跑**。
+> 沒有錯誤訊息，執行紀錄看起來完全正常。
+> 唯一看得出來的地方是 `lastNodeExecuted` 停在觸發器自己身上。
+>
+> `verify-terms` 和 `release` 都是 POST，所以這條沒接的話，
+> **畫面 ② 和兩個放行鈕會全部靜默無回應**。
+
+### 正確的 webhook 網址
+
+`W-API` 的路徑帶了 `:route` 參數，**n8n 因此會在網址裡插一段 UUID**：
+
+```
+W-API    https://ccho415-research.zeabur.app/webhook/5165edde-989c-4cc2-a500-f5915745ef67/research/api/<route>
+W-START  https://ccho415-research.zeabur.app/webhook/research/start
+```
+
+驗證用的標頭：`X-Frontend-Key`，憑證是 `Frontend Webhook Token`
+（`Kh0DkIvuT0Yh1oZJ`）。**兩條 webhook 共用同一把。**
+
+### 實測回來的欄位（前端只能綁這些）
+
+**畫面 ①** `projects` → `id, title, topic, status, created_at, usd_budget,
+usd_spent, usd_remaining, n_runs, n_papers, n_ideas, chain_state,
+parked{stage,label,review_point,status,awaiting}, n_stages_done, n_stages`
+＋頂層 `n, n_awaiting_you`
+
+**畫面 ③** `feasibility` → 頂層 `n, counts{A,B,C,D},
+doable_now[], needs_acquisition[], parked[], assessments[]`；
+每筆 `id, idea_id, dataset_id, tier, missing[], route_to_tier_a, design,
+power_note, assessed_at, code, title, statement, rank`
+
+> **兩個建置時會踩到的點**（實測資料就長這樣）：
+> ① **排序是錦標賽名次，不是分級**——`tier=C rank=2` 排在 `tier=B rank=6` 前面。
+> 後端註解寫得很明白：「grouped but never reordered」，因為 C 級可能比 A 級值錢。
+> **前端不准重排。**
+> ② **A 級是 0 筆**（counts `{A:0, B:1, C:10, D:0}`）。空清單是常態不是例外，
+> 而且 `dataset_id: null`——沒上傳資料清單時全部會落在 C。
+
+**畫面 ②** `verify-terms`（POST）→ `terms[{term, in_mesh, mesh_label,
+semantic_types[], variants[], papers}]`
+
+> 實測就抓到一個真的：propose 從「空氣中細懸浮微粒」拆出的
+> `fine particulate matter` **不在 MeSH 裡**（8,190 篇），
+> 而正式的 `particulate matter` **在**（`Particulate Matter`，35,940 篇）。
+> 差四倍多，而且沒有階層可以展開。**這就是畫面 ② 存在的理由的活例子。**
+> 對照組：`genetic alteration mutation` → 不在 MeSH、**3 篇**。
+>
+> 判斷「這一軸等於沒有」要看 `in_mesh: false` 加上 `papers` 很小，
+> 不是看 `unique_id` 是不是 null——這個端點沒有回 `unique_id`。
+
+**畫面 ④** `debate` → `project_id, n_debated, drift_max, max_rounds,
+debates[{idea_id, code, title, n_rounds, last_round, terminated, drift,
+n_objections_open, termination_reason, rank}]`
+**但沒有反對意見內文**——那要 `debate-state?idea_id=`。所以 ④ 是
+「一次拿清單、再對展開的那個方向拿內文」，不是一次拿完。
+
+## 🖥 前端：`frontend/index.html`（2026-09-08）
+
+**單檔 HTML，本機直接開。** 沒有建置步驟、沒有相依套件、沒有伺服器。
+
+```
+file:///D:/n8n_Claude/research-api/frontend/index.html
+```
+
+金鑰第一次開會跳輸入框，存在 `localStorage`。**檔案裡沒有寫死金鑰**——
+所以這個檔案本身不是秘密，可以備份、進 git、傳給人看版型。
+
+### 🔴 `docs/frontend-brief.md` 是過期的，不要照它做
+
+那份第 0 節寫「唯一的風格依據是 `dei.azabu-u.ac.jp`」，
+第 1 節整組色票／字體都是從那個網站量的（`#F4EDE7`、Montserrat、虛線分隔、
+扁平插圖、有機色塊）。**但風格後來換過第三次**，
+定案是 `select.daiichisyokuhin.com`，五張稿也是照那個建的。
+
+**真正的依據是 pen.dev 文件本身的變數。**
+本文件較前面那一節（畫面 ③ 已建好）記的是對的，簡報沒跟著更新。
+
+實際代幣（`GetVariables()` 讀出來的，前端 CSS 的 `:root` 與它一一對應）：
+
+```
+s-ground  #F8E2D8   s-ground2 #F1D2C5   s-white  #FFFFFF
+s-camel   #C2A084   s-camel2  #E0CBB6
+s-teal    #4E9A95   s-wine    #7A2233   s-night  #1E1B1A
+s-text    #333333   s-text2   #7A6E68   s-rule   #E2CCC0
+s-ochre   #B0862B   s-ochre-tint #F0DFBE
+
+s-serif Cormorant Garamond   s-sans Jost
+s-cjk   Noto Serif TC        s-cjks Noto Sans TC
+```
+
+分隔線是 **`1px solid #E2CCC0`**，不是虛線（那是舊風格的規格）。
+圓角是 50%（圓點）、16–20px（藥丸）、以及分頁的不對稱 `8px 0 0 0`。
+
+**pen.dev 的算圖／截圖管線仍然壞著**（`TakeScreenshot` 逾時），
+但 `Export(...,"html-css")` 正常，版型是那樣抽出來的。
+
+### 每一格都對得到實測欄位
+
+建置前把每條路由都實跑過一次，欄位清單在上一節。**三處我原本用猜的，都猜錯了**：
+
+| | 我猜的 | 實際 |
+|---|---|---|
+| `watch` | `rows` / `checks` | **`watches[]`**，含 `verdict, n_new_papers, checked_at, coverage_limits` |
+| `dataset` | 整包 JSON 印出來 | **`{n, datasets[]}`** |
+| 報告內文 | 平的鍵值 | **`{report:{sections:{8 節}, citations[], caveats, acquisition, novelty_verdict}}`** |
+
+**`order_flip_rate` 沒有畫**——後端從來沒存過它（G13），所以畫面 ③ 上沒有那一格。
+
+報告的 `caveats`／`acquisition`／`novelty_verdict` 是 migration 018 才加的，
+**舊報告是 null**，所以那三塊是條件顯示的，不是永遠都在。
+
+### 資料清單上傳做進畫面 ③ 了（2026-09-09）
+
+使用者指出畫面 ③ 顯示「你的資料清單」卻沒有任何上傳入口——**功能一直只活在
+`W-DATA` 那張 n8n 表單裡**，跟畫面 ② 當初的狀況一模一樣。
+
+新增三條路由：`dataset-save`、`dataset-template`、`chain-stop`。
+
+**CSV → inventory 的轉換整段搬進瀏覽器，而且是照抄 W-DATA 的邏輯**——
+必要欄 `file`/`column`、可選 `dtype`/`description`/`joins_on`/`personal`、
+BOM 剝除、引號感知的 CSV 解析、`provenance: documented`。
+**形狀不一致不是比較弱的答案，是 W6 讀不懂的答案。**
+
+> **搬到瀏覽器反而更符合原本的前提。** W-DATA 那張表單自己寫著
+> 「這個網頁讀不到你的硬碟（它跑在雲端）」；前端跑在使用者本機，
+> 檔案在瀏覽器裡解析，**送出去的只有欄位名稱與描述，原始資料連送都不會送**。
+> 送出前會先把「將要送出的欄位名稱」列給使用者看——選錯檔案由你發現，
+> 不是由伺服器發現。
+
+三種情況都做了（W-DATA 有三個選項，不是一個）：上傳清單／沒資料但直接繼續／
+沒資料先停著。存完會順手 `release`，因為鏈會停在 W6 前面等清單。
+
+用真的 `tools/inventory_template.csv` 跑過解析：
+2 個檔案、10 個欄位、`personal` 與 `personal_because` 都對、
+**沒有洩漏任何量測欄位**（documented 帶量測值會被 API 拒絕）。
+兩道擋牆也驗過：帶 `rows` 鍵的 JSON 擋下，病歷型 CSV 因為缺 `file`/`column` 擋下。
+
+## 🔴 search 模式第一次全程實跑（2026-09-08 深夜）
+
+使用者交了一個真題目：**雙抗血小板藥物對多重慢性病之腦中風患者的效用與安全性**
+（`82ffbcec-20fc-4377-b1a1-01f5dff6061f`）。
+
+**W-START 整段編排是對的，從頭串到尾：**
+
+| 步驟 | 結果 |
+|---|---|
+| W2 文獻層 | 89 秒 · 9 個查詢 · 217 篇 |
+| W1 領域框架 | $0.0076 · observational · clinical · high |
+| 採集缺口句 | 輪詢 13 次（6 分半）· 200 篇 · 全文 94 · 缺口句 110 |
+| W3 想點子 | 3 分 21 秒 · $0.0318 · **15 個方向** |
+| 上鏈 | W4 排入 pending |
+
+**然後 W4 當場錯掉，而錯的是我。**
+
+### 缺陷：`run_id` 在這裡也有兩個意思
+
+W4 的 `Load The Directions` 回 `{n:0, ideas:[]}`，被 API 的
+`need at least 2 ideas` 擋成硬錯誤。原因：
+
+- W-START 建專案時 `/compute/run/start` 給了一個 run（**文獻檢索用的**）
+  `5c1a8faf-…`
+- W3 的 `Save The Directions` **只送 `project_id`**，於是
+  `/compute/ideas/save` **自己另開了第二個 run** `8c17853c-…`，方向掛在那上面
+- 我的 `Put It On The Chain` 傳了**前者**
+
+> **這跟 W-CHAIN 那個 `run_id` 撞名是同一類缺陷，而且我在讀過那段註解之後
+> 又犯了一次。** 兩個東西都叫 `run_id`，指的卻是不同的 run。
+>
+> 這次是 API 的守門把它擋成硬錯誤，才沒有變成「去重零組然後回報成功」。
+> **守門救了它，不是我的設計救了它。**
+
+**修法**：`Combine Into Directions` 之後插兩個節點——
+`Which Run Owns The Directions`（查 `/compute/ideas?project_id=…&limit=1`）
+與 `The Run W4 Must Look At`（取 `ideas[0].run_id`，**查不到就拋錯而不是傳 null**，
+因為 null 到了 W4 等於「不過濾」，又是靜默失敗）。已發布。
+
+### 另一個副作用：卡在 running 的 run 列
+
+W4 是**內部錯誤**，不是派工失敗，所以 W-CHAIN 的
+`Tell The Chain It Did Not Start` 不會觸發，`advance` 也沒被呼叫——
+那一列從此停在 `running`，十分鐘的安全網也撿不到（它只撿 `pending`）。
+
+已用 `chain/stop` 清掉並寫了理由。**`closed_stages: ["dedup"]`。**
+
+> 值得記的形狀：**階段內部錯誤會讓 run 列永遠停在 `running`。**
+> 派工失敗有人管，階段自己掛掉沒有。
+
+### 順手修掉的：W2 記帳在前端這條路會報錯
+
+`Record The Spend` 引用 `$(Split Topic Into Concepts)`，但前端進來時那個節點
+不執行，於是拋錯，母工作流收到 `{error: Node … hasn't been executed}`。
+
+**實際上沒有漏記錢**——前端這條路 W2 一次模型都沒叫。但訊息會誤導。
+改成先探測有沒有 usage，沒有就回零筆讓記帳整段跳過。
+**不是送 0**：送 0 在帳上跟「真的免費」長得一樣。
+
+## 🖥 前端當天後半段補的東西
+
+- **狀態軸可以點了。** 後三步是某個專案的結果，所以軸記得「當前專案」
+  （`sessionStorage` ＋ 右側直立標籤）。沒選專案就點會說明原因再帶回首頁，
+  **不會丟到一個只會說「沒東西」的頁面**。
+- **「尚未有結果」跟「出錯了」分開。** 4xx 當成「這步還沒跑」，
+  只有網路／5xx 才跳錯誤。
+- **進度頁每 20 秒自動重讀**，顯示「更新於 hh:mm:ss」，
+  跑到 `awaiting_you`／`done`／`failed` 就停止輪詢。
+- **`runningHint`**：偵測到「前面幾步完成、下一步沒紀錄」時直接說明
+  ——鏈之前那四步只在存好結果時才變 `done`，**正在跑的時候看起來跟沒跑一樣**。
+  附上實測耗時（文獻 1–2 分、採集 5–8 分、W1 10 秒、W3 3–5 分）。
+  這是使用者當場問「這樣是還在跑嗎」逼出來的。
+- **五張內嵌 SVG 科研線稿**（星座問號／MeSH 階層樹／名次條／天平／報告頁）。
+  pen.dev 的 AI 圖**不存在硬碟上**，匯不出來，所以自己畫。
+- 深色圓角頁尾、紙紋網點、交錯色帶、卡片左上髮絲刻線、首字放大。
+
+### 還沒做的（接下來）
+
+1. **續跑測試專案**（見本文件最上面那段指令）
+2. 全域花費上限（`lib/budget.py` 只有每專案上限）
+3. `/compute/chain/plan` 的說明字串已過期
+4. 唯讀報告分享連結（要分享給朋友時才需要）
+5. 考慮：**W3 存方向時應該收下傳進來的 `run_id`**，而不是另開一個。
+   現在是靠 W-START 事後查回來補救；從源頭一致會更乾淨，
+   但那要動 W3 與 `/compute/ideas/save` 兩邊，不是今晚該做的事。
+2. **整條 search 模式還沒實跑過**（約 $0.8–1.5、20–40 分鐘）
+3. 全域花費上限（`lib/budget.py` 目前只有每專案上限，
+   金鑰外流或哪個 bug 失控時沒有天花板）
+4. 唯讀報告分享連結（要分享給朋友時才需要，見對話紀錄的 B 案）
+5. `/compute/chain/plan` 的說明字串已過期：它還寫著
+   「W1, W2, harvest and W3 are started by hand」——現在 `W-START` 會串起來
+
+### 現成的測試資料，不用花錢
+
+專案 `88bb63ee-2c6a-4386-9377-608ef62d81bf`（胰臟癌）
+**現在就停在審閱點 ④**（`chain_state: awaiting_you`），
+而且 W6 分級、W7 新穎性、W8 辯論、W9 報告的資料全都在。
+**畫面 ①③④⑤ 可以直接拿它開發**，一毛錢都不用花。
 
 ---
 

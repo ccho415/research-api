@@ -126,6 +126,54 @@ check("undecided matches are counted, not hidden",
 check("an empty tier is a zero, not a missing key",
       by_key["feasibility"]["detail"]["counts"]["A"], 0)
 
+class _T:
+    """Just enough of a timestamp to be .isoformat()-ed."""
+    def __init__(self, v): self.v = v
+    def isoformat(self): return self.v
+
+
+print("\n-- a stage says what it is doing while it does it --")
+# Added 2026-09-09. A tournament sat in a queue for three hours and forty
+# minutes having completed none of its requests, and nothing the backend
+# returned could tell that apart from a stage that had just begun.
+live = {s["key"]: s for s in progress.build_steps(
+    FULL_DETAIL,
+    {"tournament": {"status": "running", "error": None, "finished_at": None,
+                    "reported_at": _T("2026-09-09T10:39:09+00:00"),
+                    "report": {"batch_id": "msgbatch_x", "succeeded": 0,
+                               "processing": 136, "billed_so_far": False}}},
+    True, "done")}
+check("a running stage carries its last report",
+      live["tournament"]["report"]["processing"], 136)
+check("and when it said it", live["tournament"]["reported_at"],
+      "2026-09-09T10:39:09+00:00")
+check("nothing completed means nothing billed yet",
+      live["tournament"]["report"]["billed_so_far"], False)
+
+# Free-shaped on purpose: progress means a different number in every stage,
+# and one schema would force each to report the least useful thing they share.
+gated = {s["key"]: s for s in progress.build_steps(
+    FULL_DETAIL,
+    {"tournament": {"status": "done", "error": None,
+                    "finished_at": _T("2026-09-09T10:45:55+00:00"),
+                    "reported_at": _T("2026-09-09T10:45:55+00:00"),
+                    "report": {"all_gates_pass": False,
+                               "order_flip_rate": 0.23}}},
+    True, "done")}
+check("a finished stage keeps what it found",
+      gated["tournament"]["report"]["all_gates_pass"], False)
+check("order_flip_rate finally has somewhere to live",
+      gated["tournament"]["report"]["order_flip_rate"], 0.23)
+
+print("\n-- silence is null, never zero --")
+# A zero would read as "reported, and the number is zero", which is the one
+# thing this field exists to tell apart from "said nothing at all".
+check("no report is null", by_key["tournament"]["report"], None)
+check("no timestamp is null", by_key["tournament"]["reported_at"], None)
+check("pre-chain steps have no report field at all",
+      "report" in by_key["literature"], False)
+
+
 print("\n-- what the backend cannot measure must not appear --")
 # Field names, not a substring search: "detail" contains the letters of "eta".
 names = set()

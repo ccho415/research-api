@@ -558,3 +558,54 @@ def set_pause(project_id, stage, pause_after):
             "note": ("no queued or running row for that stage yet, so nothing "
                      "was marked. The default for this stage still applies: "
                      f"{stage_at(stage).pause_by_default}.") if not rows else None}
+
+
+def record_report(project_id, stage, report):
+    """What a stage is doing right now, or what it left behind when it ended.
+
+    A running stage writes nothing to the database until it finishes, so every
+    screen shows "still working" and "never started" with the same words. On
+    2026-09-09 a tournament sat in a queue for three hours and forty minutes
+    having completed zero of its requests, and the only thing that could tell
+    stuck from slow was a counter inside an n8n execution log.
+
+    The shape of `report` is deliberately free. Progress means a different
+    number in each stage - requests completed, queries run, debate round - and
+    a fixed schema would force every stage to report the least useful thing
+    they have in common.
+
+    Written to the most recent row for the stage rather than only an active
+    one, because the last thing a stage has to say is usually said as it ends:
+    the tournament's quality gates are computed after its work is done, and
+    before this they were pushed to LINE and then lost.
+    """
+    if stage_at(stage) is None:
+        raise ValueError(f"`{stage}` is not a chain stage. Known stages: "
+                         + ", ".join(STAGE_NAMES))
+    if not isinstance(report, dict):
+        raise ValueError("`report` must be an object")
+
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE run SET reported_at = now(), report = %s "
+                "WHERE id = (SELECT id FROM run"
+                "             WHERE project_id = %s AND stage = %s"
+                "             ORDER BY started_at DESC NULLS LAST LIMIT 1) "
+                "RETURNING id, status, reported_at",
+                (Jsonb(report), project_id, stage))
+            row = cur.fetchone()
+        conn.commit()
+
+    if not row:
+        # Not an error: a stage may report before the chain has a row for it,
+        # and losing a progress note is not worth failing a stage over. Said
+        # plainly so that a caller wiring this up for the first time can tell
+        # "nowhere to write it" from "written".
+        return {"project_id": str(project_id), "stage": stage,
+                "recorded": False,
+                "note": "no run row exists for that stage yet, so the report "
+                        "was not stored."}
+    return {"project_id": str(project_id), "stage": stage, "recorded": True,
+            "run_id": str(row["id"]), "run_status": row["status"],
+            "reported_at": row["reported_at"].isoformat()}
