@@ -182,6 +182,30 @@ input:focus,textarea:focus,select:focus{outline:0;border-bottom-color:var(--wine
 .plist .st.stop{background:var(--wine)}
 .plist .st.wait{background:var(--wine);box-shadow:0 0 0 3px #7A223333}
 
+/* --- what a stage said about itself ------------------------------------- */
+/* Set apart from `detail` on purpose. `detail` counts rows that reached the
+   database; this is the stage's own account of what it is doing, which for a
+   stage in flight is the only account there is. Same visual weight as a quote
+   in the report screens - a left rule, no card - because it is testimony from
+   one step, not a section of the page. */
+.rep{margin-top:10px;padding:9px 0 3px 13px;border-left:2px solid var(--camel2)}
+.rep.fail{border-left-color:var(--wine)}
+.rep.ok{border-left-color:var(--teal)}
+.rep .rl{font-family:var(--sans);font-size:9px;letter-spacing:1.8px;text-transform:uppercase;
+  color:var(--text2);display:block;margin-bottom:7px}
+.rep ul{list-style:none;margin:0;padding:0}
+.rep li{display:grid;grid-template-columns:14px 1fr;gap:9px;padding:3px 0;border:0;
+  font-size:12px;line-height:1.7;color:var(--text)}
+.rep li .mk{font-family:var(--sans);font-size:12px;line-height:1.5;text-align:center}
+.rep li.no .mk{color:var(--wine)}
+.rep li.yes .mk{color:var(--teal)}
+.rep .gv{color:var(--text2);font-variant-numeric:tabular-nums}
+.rep .nums{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:7px;
+  font-family:var(--sans);font-size:11px;letter-spacing:.6px;font-variant-numeric:tabular-nums}
+.rep .nums b{font-weight:500;color:var(--text)}
+.rep .pay{font-size:12px;line-height:1.75;margin-top:8px}
+.rep .pay.spent{color:var(--wine)}
+
 /* --- toast / gate ------------------------------------------------------- */
 #gate{position:fixed;inset:0;background:var(--ground);z-index:90;display:flex;align-items:center;justify-content:center;padding:32px}
 #gate .card{max-width:520px;width:100%}
@@ -799,6 +823,138 @@ function since(iso){
   const h=Math.floor(m/60), r=m%60;
   return h+' 小時'+(r?' '+r+' 分':'');
 }
+// Names for the numbers a stage reports. Anything not listed still gets shown,
+// under its raw key - a stage added later must not go silent just because
+// nobody came back here to name its fields.
+const REP_LABEL={
+  order_flip_rate:'順序翻轉率', cost_usd:'花費', usd_per_match:'每場花費',
+  n_competing:'參賽方向', n_anchors:'錨點', n_matches_built:'建立場次',
+  n_matches_judged:'判決場次', n_matches_played:'計分場次',
+  n_errored_requests:'出錯請求', cache_worked:'快取生效',
+  queued_for_minutes:'排隊分鐘', n_requests:'請求數'
+};
+// Rendered elsewhere in the block, or identifiers nobody reads off a screen.
+const REP_SKIP=new Set(['delivery','finished','gates','all_gates_pass','request_counts',
+  'billed_so_far','billing_note','processing_status','batch_id','tournament_id',
+  'batch_created_at','batch_expires_at','anchor_bands','anchor_order','top_10',
+  'budget','cost','backfilled','note','source']);
+const COUNT_LABEL={succeeded:'完成',processing:'處理中',errored:'出錯',
+                   canceled:'已取消',expired:'逾時'};
+// The gate names are written in the workflow, in English, because that is where
+// they are reasoned about. Translated here rather than there so the wording the
+// workflow keys on never moves - and an unrecognised gate falls through to its
+// own English name rather than disappearing.
+const GATE_ZH={
+  'order_flip_rate in 5-20%':'順序翻轉率落在 5–20%',
+  'every direction lands in a calibration band':'每個方向都落進校準帶',
+  'every match was judged':'每一場都判決了',
+  'no request errored in the batch':'批次裡沒有請求出錯',
+  'no weak anchor outranks a strong one':'沒有弱錨點排在強錨點前面'
+};
+// Same arrangement for the reasons, which only appear on a gate that failed.
+// Anything unlisted keeps its English - a note nobody translated still says
+// more than a blank line.
+const GATE_NOTE_ZH={
+  'no pair was judged in both orderings, so position bias was not measured':
+    '沒有任何一對用兩種順序各判一次，所以位置偏誤根本沒量到。',
+  'suspiciously consistent - check the judge is reading both sides':
+    '一致得可疑——要確認裁判真的兩邊都讀了，而不是只看第一個。',
+  'the judge disagrees with itself too often to rank on':
+    '裁判跟自己意見不合的次數太多，這樣的排名不能拿來用。',
+  'no band means the anchors that played carried only one grade':
+    '沒有校準帶，表示上場的錨點只帶了一種等級，量不出絕對高低。',
+  'a batch answered without a winner field is stored null and skipped in scoring':
+    '批次回來沒有勝方欄位的，會存成沒有勝方並且不計分——猜一個會憑空移動 Elo。',
+  'an errored request loses every match in it; that is a transport failure, not a judging one':
+    '一個出錯的請求會一次吃掉裡面所有場次；那是傳輸失敗，不是判斷失敗。',
+  'an inverted pair means the scale itself is unreliable, whatever the band means say':
+    '出現倒置的配對，表示這把尺本身就不可靠，不管校準帶說了什麼。'
+};
+function repVal(k,v){
+  if(v===null||v===undefined) return '—';
+  if(typeof v==='boolean') return v?'是':'否';
+  if(k==='order_flip_rate') return fmt.pct(v);
+  if(k==='cost_usd') return fmt.usd(v);
+  if(k==='usd_per_match') return v===null?'—':'$'+Number(v).toFixed(5);
+  if(typeof v==='object') return JSON.stringify(v);
+  return String(v);
+}
+// What the stage itself said, as opposed to what reached the database. For a
+// stage still in flight this is the only account there is, so it is rendered
+// even when every count in it is zero - "0 of 150 done after three hours" is
+// the finding, not an empty state.
+function reportBlock(s){
+  const r=s.report;
+  if(!r||typeof r!=='object'||Array.isArray(r)||!Object.keys(r).length) return null;
+  const gates=Array.isArray(r.gates)?r.gates:null;
+  const cls=r.all_gates_pass===false?' fail':(r.all_gates_pass===true?' ok':'');
+  const box=el('div',{class:'rep'+cls});
+
+  const when=since(s.reported_at);
+  box.append(el('span',{class:'rl'},
+    (r.finished?'這一段的結果':'這一段的回報')+(when?'　'+when+'前':'')));
+
+  // Batch counts first: this is the row that separates "queued and moving" from
+  // "queued and stuck", which is the question this whole block exists for.
+  const c=r.request_counts;
+  if(c&&typeof c==='object'){
+    const nums=el('div',{class:'nums'});
+    if(r.processing_status) nums.append(el('span',{},'批次 ',el('b',{},String(r.processing_status))));
+    for(const k of ['succeeded','processing','errored','canceled','expired']){
+      const v=c[k]; if(v===undefined||v===null) continue;
+      if(!v&&(k==='canceled'||k==='expired'||k==='errored')) continue;
+      nums.append(el('span',{},(COUNT_LABEL[k]||k)+' ',el('b',{},fmt.int(v))));
+    }
+    box.append(nums);
+  }
+
+  // The one thing the user asked for by name: whether cancelling now would save
+  // anything. Written from the count rather than echoed from the workflow's
+  // English note, which is there for the LINE message.
+  if(r.billed_so_far!==undefined&&r.billed_so_far!==null){
+    const n=(c&&c.succeeded)||0;
+    box.append(el('p',{class:'pay'+(r.billed_so_far?' spent':'')},
+      r.billed_so_far
+        ? ('已經有 '+fmt.int(n)+' 個請求跑完，這部分的錢已經付掉了——現在取消只省下還沒跑的部分。')
+        : '還沒有任何請求跑完，現在取消不會花到錢。'));
+  }else if(r.billing_note){
+    box.append(el('p',{class:'pay'},String(r.billing_note)));
+  }
+
+  if(gates&&gates.length){
+    const bad=gates.filter(g=>!g.pass).length;
+    box.append(el('p',{class:'pay'+(bad?' spent':'')},
+      bad?(gates.length+' 條守門有 '+bad+' 條沒過。')
+         :(gates.length+' 條守門全過。')));
+    const ul=el('ul',{});
+    for(const g of gates){
+      ul.append(el('li',{class:g.pass?'yes':'no'},
+        el('span',{class:'mk'},g.pass?'✓':'✕'),
+        el('span',{},
+          GATE_ZH[g.gate]||String(g.gate||''),
+          g.value?el('span',{class:'gv'},'　'+String(g.value)):null,
+          // The note explains why a gate matters. Shown only where it failed -
+          // on the ones that passed it is five lines of prose about a
+          // non-problem.
+          (!g.pass&&g.note)?el('p',{class:'hint',style:'margin-top:2px'},
+            GATE_NOTE_ZH[g.note]||String(g.note)):null)));
+    }
+    box.append(ul);
+  }
+
+  const rest=el('div',{class:'nums',style:'margin:8px 0 0'});
+  let any=false;
+  for(const [k,v] of Object.entries(r)){
+    if(REP_SKIP.has(k)) continue;
+    if(v===null||v===undefined) continue;
+    rest.append(el('span',{},(REP_LABEL[k]||k)+' ',el('b',{},repVal(k,v))));
+    any=true;
+  }
+  if(any) box.append(rest);
+  if(r.backfilled) box.append(el('p',{class:'hint',style:'margin-top:6px'},
+    '這份是事後補上的'+(r.note?('——'+String(r.note)):'。')));
+  return box;
+}
 function stepList(steps,pid,onChange){
   if(!steps.length) return emptyNote('這個專案還沒有任何階段紀錄。');
   const ul=el('ul',{class:'plist'});
@@ -822,9 +978,15 @@ function stepList(steps,pid,onChange){
       clock=a?(a+'前完成'):null;
     }
 
+    // For a running stage the age of the last report is the stall signal: the
+    // elapsed time only says how long it has been going, and a stage that has
+    // been going three hours but spoke a minute ago is fine.
+    const spoke=(s.status==='running'&&s.reported_at)?since(s.reported_at):null;
+
     const right=el('div',{style:'text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end'},
       el('span',{class:'meta'},s.status),
-      clock?el('span',{class:'meta',style:s.status==='running'?'color:var(--wine)':''},clock):null);
+      clock?el('span',{class:'meta',style:s.status==='running'?'color:var(--wine)':''},clock):null,
+      spoke?el('span',{class:'meta'},'回報於 '+spoke+'前'):null);
 
     // The switch only writes to a row that is already pending or running.
     // Offered only there, because a button that silently does nothing on the
@@ -854,6 +1016,7 @@ function stepList(steps,pid,onChange){
         s.review_point?el('span',{class:'chip calm',style:'margin-left:10px'},'審閱 '+s.review_point):null,
         detail?el('p',{class:'meta',style:'margin-top:4px'},detail):null,
         s.error?el('p',{class:'hint',style:'color:var(--wine);margin-top:6px'},s.error):null,
+        reportBlock(s),
         pauseBtn),
       right));
 
