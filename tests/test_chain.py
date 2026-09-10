@@ -69,6 +69,15 @@ check("novelty parks so the PubMed pass can land before the debate",
 check("...and says what it is waiting for, rather than 'a pause set on this "
       "stage', which would send somebody looking for a setting they never made",
       "PubMed" in chain.decide_next("novelty")[2], True)
+# The frontend routes to a review screen by this exact label. A pause with a
+# label nothing routes on is a stage that stops and cannot be reached - which
+# is what novelty was between being made to pause and getting this code.
+check("the novelty pause carries a review label the frontend can route on",
+      chain.stage_at("novelty").review, "③b")
+check("...and the four original review points are unchanged, because renumbering "
+      "them would silently break every screen and document that names one",
+      [s.review for s in chain.STAGE_PLAN],
+      ["①", "②", "③", "③b", "④", None])
 # The successor is unchanged - only whether it starts by itself. A pause that
 # also quietly reordered the chain would be very hard to see.
 check("the stage after novelty is still the debate",

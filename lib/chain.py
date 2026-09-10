@@ -86,7 +86,7 @@ STAGE_PLAN = (
     # is the same state review points ③ and ④ use: visible on the progress
     # screen, released by the same button. The cost of the worker never running
     # is one fewer cross-check, not a stuck pipeline.
-    Stage("novelty",     "W7 新穎性驗證", "1PrxDrB7760V5vom", 0.25, None, True),
+    Stage("novelty",     "W7 新穎性驗證", "1PrxDrB7760V5vom", 0.25, "③b", True),
     Stage("debate",      "W8 唱反調",     "PSqvLA7DS4huNrSU", 0.50, "④", True),
     Stage("report",      "W9 最終報告",   "FIWgMalCUagYln9M", 0.30, None, False),
 )
@@ -145,14 +145,21 @@ def decide_next(stage, ok=True, pause_after=None):
     nxt = successor(stage)
 
     if pause:
-        if s.review:
+        if stage == "novelty":
+            # The only stop that exists to prevent a decision being made on
+            # information that has not arrived yet. Feasibility grades and
+            # novelty verdicts are both known here, and the debate - the single
+            # most expensive thing this pipeline does, about $0.40 a direction
+            # against $0.066 for a novelty check - has not started.
+            #
+            # Before this stop existed, review point ③ asked which directions
+            # to carry forward while `scooped` was still unknown, because W7
+            # ran afterwards. On 2026-09-10 that cost a debate on a direction
+            # PubMed already showed had been done.
+            where = ("審閱點 ③b PubMed 補查與選擇（分級和新穎性判定都齊了，"
+                     "辯論還沒開始花錢。挑你真正要辯的那幾個）")
+        elif s.review:
             where = f"審閱點 {s.review}"
-        elif stage == "novelty":
-            # Named, because "a pause set on this stage" would send somebody
-            # looking for a setting they did not make.
-            where = ("PubMed 補查（這台主機連不到 E-utilities，所以 W7 的每一輪"
-                     "都是在沒有 PubMed 的情況下判的。補查完會自動放行；"
-                     "不想等就自己按放行）")
         else:
             where = "a pause set on this stage"
         if nxt is None:

@@ -243,22 +243,22 @@ def one_pass(dry=False, only=None, max_projects=2):
         for code, why in flagged:
             log(f"    ⚠ {code}　{why}")
 
-        # Released only when the chain is actually parked there and the novelty
-        # work is done. Releasing something that is not parked is how a chain
-        # gets pushed past a review point nobody looked at, so the condition is
-        # the server's `parked_after_novelty` rather than this worker's guess.
-        if p.get("parked_after_novelty") and not dry:
-            if p.get("novelty"):
-                try:
-                    call("release", method="POST", body={"project_id": p["project_id"]})
-                    log("    補查完成，已放行給 W8")
-                except Exception as e:
-                    log(f"    放行失敗（鏈仍在等你，進度頁按放行即可）：{e}")
-            else:
-                # Parked with nothing to merge. Left alone deliberately: it may
-                # be waiting for a person, and a worker that releases every
-                # pause it meets is a worker that walks the chain past reviews.
-                log("    鏈在等放行，但沒有待補查的項目——留給你決定")
+        # NOT released. This worker used to release the chain here, and that was
+        # right while the pause existed only to let the PubMed pass land -
+        # nothing was being decided, so waiting for a person bought nothing.
+        #
+        # The pause is now review point ③b, where a person picks which
+        # directions go on to the debate. Releasing it automatically would
+        # carry forward the selection made at ③, which was made before any
+        # novelty verdict existed - and that is the exact blind pick this stop
+        # was added to prevent. On 2026-09-10 it cost a full debate on a
+        # direction PubMed had already shown was scooped.
+        #
+        # So the worker's job ends at making the information complete. The
+        # decision is not its to make, and a worker that releases every pause
+        # it meets is a worker that walks a chain past its reviews.
+        if p.get("parked_after_novelty"):
+            log("    鏈停在審閱點 ③b 等你挑要辯論的方向（補查已完成）")
     return len(projects)
 
 

@@ -1579,7 +1579,11 @@ function stepList(steps,pid,onChange){
 }
 function parkedCta(d){
   const p=d.parked; if(!p||d.chain_state!=='awaiting_you') return null;
-  const to=p.review_point==='③'?'tiers':p.review_point==='④'?'debate':null;
+  // A pause whose label nothing routes on is a stage that stops and cannot be
+  // reached. ③b was exactly that between being made to pause and this line.
+  const to=p.review_point==='③'?'tiers'
+          :p.review_point==='③b'?'pick'
+          :p.review_point==='④'?'debate':null;
   return el('div',{class:'blocked',style:'margin-top:34px'},
     el('p',{class:'eyebrow on-dark',style:'margin-bottom:8px'},'AWAITING YOU'),
     el('h3',{style:'margin-bottom:12px'},'停在審閱點 '+(p.review_point||'')+'　'+(p.label||'')),
@@ -2162,22 +2166,139 @@ function releaseBlock(pid,point,warn,sel,nTotal){
   function sync(){
     const n=sel.size;
     line.innerHTML='';
+    // What is still ahead differs by review point, and saying the wrong one is
+    // worse than saying nothing: at ③b the novelty check has already run and
+    // been paid for, so quoting its price again would make the remaining cost
+    // look higher than it is and push somebody to tick fewer than they should.
+    const after3b = point === '③b';
+    const per = after3b ? (PER_DIRECTION.debate + PER_DIRECTION.report)
+                        : PER_DIRECTION_TOTAL;
     line.append(n
-      ? ('已勾選 '+n+' 個方向，共 '+nTotal+' 個。只有勾選的會進到 W7 新穎性驗證，'
-         +'然後一路到 W8 辯論與 W9 報告——沒勾的就停在這份分級板上。')
+      ? ('已勾選 '+n+' 個方向，共 '+nTotal+' 個。'
+         + (after3b
+            ? '只有勾選的會進到 W8 唱反調，然後是 W9 報告——新穎性已經全部驗過了，'
+              +'沒勾的方向那份判定仍然留著，只是不會被拿去辯論。'
+            : '只有勾選的會進到 W7 新穎性驗證，'
+              +'然後一路到 W8 辯論與 W9 報告——沒勾的就停在這份分級板上。'))
       : ('還沒勾選任何方向。勾了哪些，就只有哪些往下跑。'));
     money.innerHTML='';
     money.append(n
-      ? ('每個方向往下跑約 $'+PER_DIRECTION_TOTAL.toFixed(2)
-         +'（W7 約 $'+PER_DIRECTION.novelty.toFixed(2)
-         +'、W8 約 $'+PER_DIRECTION.debate.toFixed(2)
-         +'、W9 約 $'+PER_DIRECTION.report.toFixed(2)+'），'
-         +n+' 個約 $'+(PER_DIRECTION_TOTAL*n).toFixed(2)+'。'
+      ? ('每個方向往下跑約 $'+per.toFixed(2)
+         + (after3b
+            ? '（W8 約 $'+PER_DIRECTION.debate.toFixed(2)
+              +'、W9 約 $'+PER_DIRECTION.report.toFixed(2)+'）'
+            : '（W7 約 $'+PER_DIRECTION.novelty.toFixed(2)
+              +'、W8 約 $'+PER_DIRECTION.debate.toFixed(2)
+              +'、W9 約 $'+PER_DIRECTION.report.toFixed(2)+'）')
+         +'，'+n+' 個約 $'+(per*n).toFixed(2)+'。'
          +'這是估算——超過專案上限的話，每一段自己的預算護欄會在花錢之前擋下來。')
       : '　');
     go.disabled=!n;
   }
   return {node:b,sync:sync};
+}
+
+/* ===========================================================================
+   ③b 審閱點三之二 — 挑要辯論的方向
+   ===========================================================================
+   The only screen where both halves of the evidence are on the table at once.
+
+   Review point ③ asks which directions to carry forward while `scooped` is
+   still unknown, because W7 runs afterwards. On 2026-09-10 that cost a full
+   debate — about $0.40 — on a direction PubMed had already shown was done, and
+   the person who ticked it had no way to know.
+
+   So the cheap check runs on a generous selection at ③ ($0.066 a direction),
+   and the expensive one is chosen here, with the verdicts in front of you.
+   =========================================================================== */
+const VERDICT_TXT = {
+  scooped: '已經有人做過',
+  incremental: '有前案，差異不大',
+  adjacent: '鄰近但不同',
+  no_prior_art: '沒找到前案',
+};
+const VERDICT_TONE = { scooped: 'bad', incremental: 'warn', adjacent: 'ok',
+                       no_prior_art: 'ok' };
+
+async function screenPick(pid) {
+  setProject(pid); paintSteps(3);
+  const box = el('div', {});
+  view(hero({ tone: 'teal', mark: 'P', plate: 'Q',
+      eyebrow: 'REVIEW ③b — PICK WHAT GETS ARGUED',
+      title: '挑要辯論的方向',
+      body: '分級和新穎性都在了，辯論還沒開始花錢。'
+          + '新穎性一個 $0.066，辯論一個約 $0.40——這裡是把錢花在對的地方的機會。',
+      vlabel: 'STATE 03b' }),
+    shell(el('section', {}, box)), footer());
+
+  try {
+    busy('讀分級與新穎性…');
+    const [fe, nv] = await Promise.all([
+      call('feasibility', { query: { project_id: pid } }),
+      call('novelty', { query: { project_id: pid } }),
+    ]);
+    unbusy();
+
+    const board = fe.assessments || [];
+    if (!board.length) { box.append(notYet('W6 可行性分級')); return; }
+
+    const byId = {};
+    ((nv.checks || nv.rows || nv.items) || []).forEach(c => {
+      if (c && c.idea_id) byId[String(c.idea_id)] = c;
+    });
+
+    const sel = new Set();
+    const rows = [];
+
+    // Checked defaults to on for anything not scooped. A screen that starts
+    // empty makes "I agree with what the machine found" cost the same number
+    // of clicks as disagreeing with it, and the common case should be cheap.
+    board.forEach(a => {
+      const nvc = byId[String(a.idea_id)] || {};
+      const v = (nvc.verdict || '').toLowerCase();
+      const checked = Boolean(v) && v !== 'scooped';
+      if (checked) sel.add(a.idea_id);
+
+      const cb = el('input', { type: 'checkbox', ...(checked ? { checked: '' } : {}),
+        onchange: e => { e.target.checked ? sel.add(a.idea_id) : sel.delete(a.idea_id); sync(); } });
+
+      rows.push(el('label', { class: 'row', style: 'display:block;cursor:pointer' },
+        el('div', { style: 'display:flex;gap:10px;align-items:flex-start' },
+          el('div', { style: 'padding-top:2px' }, cb),
+          el('div', { style: 'flex:1' },
+            el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px' },
+              el('span', { class: 'chip calm' }, String(a.code)),
+              el('span', { class: 'chip ' + (a.tier === 'A' || a.tier === 'B' ? 'ok' : 'calm') },
+                '資料 ' + (a.tier || '—')),
+              el('span', { class: 'chip ' + (VERDICT_TONE[v] || 'calm') },
+                v ? (VERDICT_TXT[v] || v) : '沒驗過'),
+              // `rounds` is the stored blob, not a count - reading n_rounds
+              // here showed nothing at all until it was checked against a real
+              // response. The rounds live one level in.
+              (nvc.rounds && nvc.rounds.rounds)
+                ? el('span', { class: 'meta' }, nvc.rounds.rounds.length + ' 輪檢索')
+                : null),
+            el('p', { style: 'font-family:var(--cjk);font-size:14px;line-height:1.8' },
+              a.title || ''),
+            // The reason the verdict is what it is. A tag alone asks to be
+            // trusted; the coverage note is what makes it checkable.
+            nvc.coverage_limits
+              ? el('p', { class: 'meta', style: 'margin-top:6px' },
+                  String(nvc.coverage_limits).slice(0, 200))
+              : null))));
+    });
+
+    box.append(sechead('01', '分級與新穎性', board.length + ' 個方向'),
+      el('p', { class: 'hint', style: 'margin-bottom:18px' },
+        '「已經有人做過」預設不勾。那是機械數出來的——符合這個方向詞組的論文'
+        + '達到門檻——不是誰的意見。要推翻它，去辯論頁看它引用了哪幾篇。'),
+      ...rows);
+
+    const rb = releaseBlock(pid, '③b',
+      '放行之後會跑 W8 唱反調，每個方向約 $0.40。', sel, board.length);
+    box.append(rb.node);
+    rb.sync();
+  } catch (e) { unbusy(); fail(e); }
 }
 
 /* ===========================================================================
@@ -2358,6 +2479,7 @@ function route(){
   if(m){
     const [,pid,what]=m;
     if(what==='tiers') return screenTiers(pid);
+    if(what==='pick') return screenPick(pid);
     if(what==='debate') return screenDebate(pid);
     if(what==='report') return screenReport(pid);
     // A project's concepts. Matched before the bare #/concepts below, which is
