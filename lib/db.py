@@ -1464,7 +1464,7 @@ def pubmed_work(limit=12):
     out = []
     with connect() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT p.id, p.topic, p.title FROM project p "
+            "SELECT p.id, p.topic, p.title, p.vocab_expansion FROM project p "
             "WHERE p.status IS NULL OR p.status NOT IN ('archived','stopped') "
             "ORDER BY p.created_at DESC LIMIT %s", (int(limit),))
         projects = cur.fetchall()
@@ -1483,7 +1483,12 @@ def pubmed_work(limit=12):
                 "LIMIT 1", (PUBMED_ANGLE_PREFIX + "%", pid))
             lit = cur.fetchone()
             literature = None
-            if lit and not lit["n_pubmed"]:
+            # A project with no recorded expansion has no concepts to plan a
+            # PubMed crossing from, so this can never be done for it. Without
+            # this it stays on the list for ever, is picked every five minutes,
+            # skipped, and picked again - and while the bounded worker spends
+            # its slots on those, real work behind them waits.
+            if lit and not lit["n_pubmed"] and p["vocab_expansion"]:
                 literature = {"run_id": str(lit["id"]),
                               "domain": lit["domain"] or "clinical"}
 

@@ -154,37 +154,61 @@ DOI/PMID/標題聯集進原本那一輪。**刻意不動 `closest_papers`**—�
 
 其他判定只回報篇數。
 
-### 明天要設的排程工作
+### ✅ 排程工作已經設好並驗過（2026-09-10 深夜）
+
+```
+工作名稱  PubMed 補查 worker
+執行      C:\Users\popo1\AppData\Local\Programs\Python\Python312\python.exe
+          "D:\n8n_Claude\research-api\tools\pubmed_worker.py"
+間隔      每 5 分鐘（PT5M）
+```
+
+**實際觸發過一次，結果碼 0。** 它清空了 `88bb63ee`（胰臟癌那個專案）——
+文獻補查加 6 筆新穎性 × 14 輪全部做完，從待辦清單消失。**排程環境讀得到
+使用者層級的 `RESEARCH_FRONTEND_KEY`**，這是最容易出錯的一點，已驗證。
+
+要重設或改間隔：
 
 ```powershell
 $py  = (Get-Command python).Source
 $job = "D:\n8n_Claude\research-api\tools\pubmed_worker.py"
-
 $act = New-ScheduledTaskAction -Execute $py -Argument "`"$job`"" `
         -WorkingDirectory "D:\n8n_Claude\research-api"
 $trg = New-ScheduledTaskTrigger -Once -At (Get-Date) `
         -RepetitionInterval (New-TimeSpan -Minutes 5)
 $set = New-ScheduledTaskSettingsSet -StartWhenAvailable `
         -DontStopIfGoingOnBatteries -AllowStartIfOnBatteries `
-        -ExecutionTimeLimit (New-TimeSpan -Minutes 30)
-
-Register-ScheduledTask -TaskName "PubMed 補查 worker" `
-  -Action $act -Trigger $trg -Settings $set -Description `
-  "研究系統的 PubMed 那一半。NCBI 封了 Zeabur 的 IP，這台沒有。"
+        -ExecutionTimeLimit (New-TimeSpan -Minutes 30) -MultipleInstances IgnoreNew
+Unregister-ScheduledTask -TaskName "PubMed 補查 worker" -Confirm:$false
+Register-ScheduledTask -TaskName "PubMed 補查 worker" -Action $act -Trigger $trg -Settings $set
 ```
 
-**先手動試一次確認沒問題**（`--dry-run` 什麼都不寫）：
+看它做了什麼：
 
 ```powershell
-cd D:\n8n_Claude\research-api
-python tools\pubmed_worker.py --dry-run
+Get-ScheduledTaskInfo -TaskName "PubMed 補查 worker"   # LastTaskResult 0 = 成功
+python tools\pubmed_worker.py --dry-run               # 什麼都不寫，只說會做什麼
+python tools\pubmed_worker.py --project 82ffbcec      # 只跑一個專案
 ```
 
-環境變數 `RESEARCH_FRONTEND_KEY` 必須設在**使用者層級**（排程工作讀得到）。
-`NCBI_API_KEY` 可選——沒設是每秒 3 次上限，而 worker 節流後本來就在限制內。
+**每次醒來最多處理 2 個專案**（`--max-projects`）。第一次跑發現有 8 個專案
+積著待辦，其中一個有 6 筆新穎性——一次做完約 170 個請求。NCBI 已經因為
+突發流量封過一個位址了，所以刻意分成好幾次慢慢消化。
+
+`ed3f8f68` 那類沒有記錄概念的舊測試專案已經不會再被提出來——它們永遠做不完，
+會一直佔用名額而讓後面真正的工作等著。
 
 > ⚠️ 排程工作跑的是**當下磁碟上的程式碼**，不是部署版。改了 `tools/` 底下的
 > 東西會立刻生效，不需要等 Zeabur。但它打的 API 是線上的。
+
+### ✅ 預算已經調高
+
+`82ffbcec` 從 $2.00 調到 **$3.00**，已花 $1.272562，**剩 $1.727438**——
+覆蓋剩下三階段的 $1.05 還有餘裕。
+
+W-API 補了 `budget-set` 路由（以前只讀得到、改不了，碰到上限的人只能停在那裡）。
+上限 $20，多打一個零會被擋下來並說明理由。
+
 
 ### 還沒解決的
 
@@ -407,8 +431,8 @@ W7 跑完**不會**直接接 W8 了——`novelty` 階段現在 `pause_by_defaul
 
 **所以明天的驗證順序是：**
 
-1. 調高預算
-2. 設好 Windows 排程工作（指令在下面那一節）
+1. ~~調高預算~~ ✅ 已做（$3.00）
+2. ~~設好 Windows 排程工作~~ ✅ 已設好並實際觸發驗過（結果碼 0）
 3. 在審閱點 ③ 勾選方向、放行
 4. 等 W7 跑完 → 鏈停在 PubMed 補查
 5. worker 醒來 → 補查十四輪 → 合併 → 自動放行給 W8

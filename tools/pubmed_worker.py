@@ -187,12 +187,29 @@ def do_novelty(p, dry):
     return flagged
 
 
-def one_pass(dry=False):
+def one_pass(dry=False, only=None, max_projects=2):
+    """One wake-up: take at most `max_projects` projects' worth of work.
+
+    Bounded on purpose. The first unattended run of this found eight projects
+    with outstanding work, one of them with six novelty checks - about 170
+    requests if done in one go. NCBI has already blocked one address in this
+    story, and a burst is exactly what gets an address blocked. A backlog
+    drained two projects per five-minute tick is finished within the hour and
+    never looks like abuse.
+    """
     work = call("pubmed-work", query={"limit": 12})
     projects = work.get("projects") or []
+    if only:
+        projects = [p for p in projects if p["project_id"].startswith(only)]
+        if not projects:
+            log(f"{only} 沒有待辦，或不在最近 12 個專案裡")
+            return 0
+    total = len(projects)
+    projects = projects[:max_projects]
     if not projects:
         return 0
-    log(f"{len(projects)} 個專案有待辦")
+    log(f"{total} 個專案有待辦" +
+        (f"，這次處理 {len(projects)} 個" if total > len(projects) else ""))
     for p in projects:
         log(f"  {p['project_id'][:8]}　{(p.get('topic') or '')[:40]}")
         if p.get("literature"):
@@ -227,10 +244,16 @@ def main():
     ap.add_argument("--loop", type=int, default=0, metavar="SECONDS",
                     help="stay resident and repeat. Omit for one pass and exit, "
                          "which is what the scheduled task wants.")
+    ap.add_argument("--project", metavar="ID",
+                    help="only this project. A prefix is enough.")
+    ap.add_argument("--max-projects", type=int, default=2, metavar="N",
+                    help="how many projects one wake-up may work through. "
+                         "Bounded so a backlog drains over several ticks "
+                         "instead of arriving at NCBI as a burst.")
     a = ap.parse_args()
     while True:
         try:
-            n = one_pass(a.dry_run)
+            n = one_pass(a.dry_run, a.project, a.max_projects)
             if not n and a.loop:
                 log("沒有待辦")
         except urllib.error.HTTPError as e:
