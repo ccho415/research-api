@@ -3,36 +3,82 @@
 **寫給：接手這個專案的任何一個新的 Claude Code 工作階段。**
 最後更新：2026-09-09（**批次 2「進度回報」做完並部署；W5B 的守門結果第一次存得下來**）
 
-## 🔴 最要緊的一項：資料庫大約 11 天沒有備份離開伺服器
+## ✅ 備份已恢復（原本是「11 天沒有備份」，2026-09-10 當天解決）
 
-**W-BACKUP 每晚都失敗，從 2026-08-30 撤銷 Google Drive 授權那天起。**
+**W-BACKUP 從 08-30 撤銷 Google Drive 授權起每晚失敗，到 09-10 才被發現並修好——
+中間大約 11 天，資料庫沒有任何備份離開伺服器。**
 
-2026-09-10 03:30 那次（執行 2024）的實際狀況：
+匯出一直是正常的（26 張表、4486 列、1.62 MB 的 dump 每晚都產得出來），壞的只有
+上傳。但 n8n 的執行紀錄會被清掉，所以那些 dump 也留不住。
+
+**為什麼躺了 11 天**：這一條在「待辦 0a」早就寫著。沒有被處理，是因為沒有人看得到
+它每晚在失敗——直到 LINE 告警把它推到手機上。這是這個專案一直在防的那種
+「少掉的那一半在輸出上看不出來」，而這次防住它的是告警而不是任何檢查。
+
+解法與判斷依據見下一節。
+
+---
+
+## 🔧 修法：重新 Connect 就好，不用重建 OAuth 用戶端
+
+**舊的 OAuth 2.0 用戶端 `n8n-research-backup` 完全可用。** 壞掉的是 refresh
+token，不是用戶端——錯誤訊息說的是 *"the connected account has revoked access,
+the refresh token expired"*。
+
+那是兩個不同的東西，而先前的交接把它們混在一起，害人以為要進 GCP 重建：
+
+| | 是什麼 | 08-30 之後 |
+|---|---|---|
+| OAuth 2.0 用戶端 | 應用程式註冊（Client ID／Secret） | 還在，08-30 當天建的 |
+| Refresh token | 按 Connect 授權後拿到的票 | 被撤銷 |
+
+**修法就是在 n8n 按 Disconnect → Connect。** 驗證：手動跑 W-BACKUP，
+執行 2289 成功，`research-2026-09-10.dump` 1,786,347 bytes 已上傳
+（Drive id `1dfObHqXhQdvwQwFjPk05rNsCa3uEwqpy`）。資料庫 26 張表、4958 列、16 MB。
+
+**判斷依據，下次遇到照這個分**：
+
+- 只有 refresh token 失效 → 重新 Connect 就好
+- Client Secret 本身外洩 → 才需要重建用戶端
+
+---
+
+## 🔑 後端 API 金鑰已輪替（2026-09-10），原因值得記住
+
+讀 W-BACKUP 的執行資料時，後端金鑰以**明文**出現在存下來的 HTTP 標頭裡：
 
 ```
-✅ Check Database Health   26 張表、4486 列、15.4 MB
-✅ Download Dump           research-20260909T193014Z.dump  1.62 MB
-❌ Upload To Drive         The credential "Google Drive account" needs to be reconnected
+X-API-Key: <舊值>
 ```
 
-**匯出本身完全正常，壞的只有目的地。** 但 n8n 的執行紀錄會被清掉（09-10 當下只
-剩兩筆），所以那些 dump 也留不住——等於這 11 天裡跑出來的方向、辯論、報告，
-全都只存在一個沒有備份的資料庫裡。
+那是能打 `/admin/migrate`、`/admin/backup`、`/admin/restore` 的那一把。它出現在
+n8n 的執行紀錄裡，是因為 W-BACKUP 開了 `saveExecutionProgress: true`。
 
-### 修法（只有使用者做得了，要進 Google Cloud Console）
+已經兩邊換掉並驗證：
 
-1. GCP → APIs & Services → Credentials → 建立新的 **OAuth 2.0 Client ID**（Web application）
-2. 授權重新導向 URI 填 n8n 憑證編輯畫面顯示的那一個
-3. **Scope 只勾 `drive.file`。** 舊的那組給了「所有雲端硬碟檔案」外加 **Google 相簿**，
-   遠超過備份需要——那正是 08-30 外洩處理時要收斂的東西
-4. n8n → Credentials → `Google Drive account`（`tgUuL2avuGxFtJHi`）→ 貼新的
-   Client ID／Secret → **Connect**
-5. **手動執行一次 W-BACKUP** 確認 `Upload To Drive` 過了，不要等半夜
+```
+Zeabur → research-api → 環境變數 API_KEY   （main.py:22 讀的就是它）
+n8n    → Credentials → Research API Key    （Pt36z1ZQwT84ARd5）
+```
 
-### 這件事在待辦裡躺了 11 天
+驗證方式（兩條不同的路由都要過）：
 
-HANDOFF 的「待辦 0a」早就寫著這一條。它沒有被處理，是因為**沒有人看得到它每晚
-在失敗**——直到 LINE 告警把它推到手機上。見下一節。
+```
+W-API → /compute/projects   200
+W-BACKUP → /admin/backup    success（執行 2300）
+```
+
+### 🕳 這不是單一工作流的問題（還沒處理）
+
+`saveExecutionProgress: true` 會把 HTTP 節點的完整請求標頭存進執行紀錄，而用到
+`Research API Key` 的工作流有十幾支。所以任何人能讀執行紀錄，就能讀到那把金鑰。
+
+沒有立刻處理，因為能讀 n8n 執行紀錄的人本來就能讀憑證。但它會讓金鑰**外流到
+n8n 之外**——這次就是這樣跑進一段對話紀錄的。
+
+值得考慮的方向：關掉不需要進度的工作流的 `saveExecutionProgress`，或改用
+n8n 會遮蔽的傳遞方式。
+
 
 ---
 
@@ -3616,7 +3662,8 @@ Gemini 的配對         11 / 15
    確認方式不是 `applied: true` 而是另外讀一次 `/compute/debate`（執行 171），
    回 `n_rounds: 0`。`0788a78a` 的辯論狀態回到未開始，W8 不會再無聲跳過它。
 
-0a. 🔴 **外洩處理的兩個收尾——第一項已經害備份停了 11 天，見本檔開頭**
+0a. ✅ **Google Drive 那一項 2026-09-10 已解決**（重新 Connect，見本檔開頭）。
+    Postgres 對外埠那一項仍未處理
 
     （原文保留在下面）
 
