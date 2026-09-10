@@ -2095,11 +2095,26 @@ function paintObjections(box,s){
         el('span',{class:'chip '+(o.citation_support==='strong'?'ok':'calm')},'引用 '+(o.citation_support||'—')),
         el('span',{class:'chip '+(o.status==='unresolved'?'warn':'ok')},STATUS_TXT[o.status]||o.status||'—'),
         el('span',{class:'meta'},'第 '+(o.round_no??'—')+' 輪 · 反駁分 '+(o.rebuttal_score??'—'))),
-      el('p',{style:'font-size:13px;line-height:1.9'},o.statement||'')));
+      el('p',{style:'font-size:13px;line-height:1.9'},o.statement||''),
+      // The cited paper, when the objection has one. `引用 strong` without the
+      // paper is a claim about evidence the reader cannot check.
+      o.cited?el('p',{class:'meta',style:'margin-top:6px'},
+        '引用：'+[o.cited.title,o.cited.year,o.cited.doi||o.cited.pmid]
+          .filter(Boolean).join('　·　')):null,
+      // The defender's answer. Shown because everything above it is a summary
+      // OF this, and the score is one the defender gave its own attacker - so
+      // a reader with only the score is being asked to trust it. Whether a
+      // rebuttal holds up is the one judgement that cannot be delegated.
+      o.rebuttal?el('div',{style:'margin-top:12px;padding-left:14px;border-left:3px solid var(--line,#00000022)'},
+        el('p',{class:'eyebrow',style:'margin-bottom:6px'},'辯護方的回應'),
+        el('p',{style:'font-size:13px;line-height:1.9'},o.rebuttal))
+       :el('p',{class:'meta',style:'margin-top:10px'},'（辯護方沒有回應這一條）')));
   }
   if(s.n_evidence!==undefined)
     box.append(el('p',{class:'note',style:'margin-top:14px'},
-      '這場辯論可以引用的論文有 '+fmt.int(s.n_evidence)+' 篇。沒有引用的反對意見不能結束辯論。'));
+      '這場辯論可以引用的論文有 '+fmt.int(s.n_evidence)+' 篇。沒有引用的反對意見不能結束辯論。'
+      +'　反駁分是辯護方替攻擊自己的人打的，結構上偏向自己——4 分以上才准讓步，'
+      +'所以「未解決 · 3 分」的意思是「你說得有道理但沒證據，我不改」。讀回應本身，不要只讀分數。'));
 }
 
 /* --- release ------------------------------------------------------------ */

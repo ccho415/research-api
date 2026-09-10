@@ -165,9 +165,17 @@ def debate_state(idea_id):
             "FROM debate_round WHERE idea_id = %s ORDER BY round_no", (idea_id,))
         rounds = cur.fetchall()
 
+        # `rebuttal` is selected because without it this endpoint returns half
+        # a debate: the attack, a score, and a status, but not the answer the
+        # score is a score OF. The rebuttal has been written since the table
+        # existed and nothing read it back, so every screen showed objections
+        # with no replies - and the reader was left to trust a number the
+        # defender gave its own attacker. Whether a rebuttal holds up is the
+        # one thing a person has to judge for themselves, and they could not
+        # see it.
         cur.execute(
             "SELECT o.statement, o.severity, o.axis, o.citation_support,"
-            "       o.status, o.rebuttal_score, r.round_no "
+            "       o.status, o.rebuttal, o.rebuttal_score, o.cited, r.round_no "
             "FROM objection o JOIN debate_round r ON r.id = o.debate_round_id "
             "WHERE r.idea_id = %s ORDER BY r.round_no", (idea_id,))
         objections = [dict(o) for o in cur.fetchall()]
