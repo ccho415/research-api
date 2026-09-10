@@ -3,3 +3,6 @@ __pycache__/
 .venv/
 venv/
 .env
+
+# worker 的執行紀錄：一台機器的本地檔案，不該進版本庫
+tools/pubmed_worker.log

@@ -79,8 +79,29 @@ GAP = 0.4
 DEFAULT_YEARS = 5
 
 
+# Under Task Scheduler nothing captures stdout, so the first unattended runs
+# left no record of what they did at all - and a worker whose failures are
+# invisible is exactly the kind of thing that quietly stops working. Kept
+# beside the code rather than in a temp directory, and trimmed rather than
+# rotated: this is one machine and a few lines a day.
+LOG = os.path.join(HERE, "tools", "pubmed_worker.log")
+LOG_MAX = 400_000
+
+
 def log(msg):
-    print(time.strftime("%H:%M:%S "), msg, sep="", flush=True)
+    line = time.strftime("%Y-%m-%d %H:%M:%S ") + str(msg)
+    print(line, flush=True)
+    try:
+        if os.path.exists(LOG) and os.path.getsize(LOG) > LOG_MAX:
+            with open(LOG, encoding="utf-8", errors="replace") as fh:
+                keep = fh.readlines()[-2000:]
+            with open(LOG, "w", encoding="utf-8") as fh:
+                fh.writelines(keep)
+        with open(LOG, "a", encoding="utf-8") as fh:
+            fh.write(line + chr(10))
+    except Exception:
+        # Never let bookkeeping stop the work it is bookkeeping for.
+        pass
 
 
 def call(route, method="GET", query=None, body=None):
@@ -199,6 +220,12 @@ def one_pass(dry=False, only=None, max_projects=2):
     """
     work = call("pubmed-work", query={"limit": 12})
     projects = work.get("projects") or []
+    if not projects:
+        # Written even though there is nothing to say. "Nothing to do" and
+        # "never ran" look identical in an empty log, and telling them apart is
+        # the whole reason to keep one.
+        log("沒有待辦")
+        return 0
     if only:
         projects = [p for p in projects if p["project_id"].startswith(only)]
         if not projects:
@@ -206,8 +233,6 @@ def one_pass(dry=False, only=None, max_projects=2):
             return 0
     total = len(projects)
     projects = projects[:max_projects]
-    if not projects:
-        return 0
     log(f"{total} 個專案有待辦" +
         (f"，這次處理 {len(projects)} 個" if total > len(projects) else ""))
     for p in projects:
