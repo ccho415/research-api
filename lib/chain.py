@@ -637,3 +637,78 @@ def record_report(project_id, stage, report):
     return {"project_id": str(project_id), "stage": stage, "recorded": True,
             "run_id": str(row["id"]), "run_status": row["status"],
             "reported_at": row["reported_at"].isoformat()}
+
+
+def fail_running_stage(workflow_id=None, error=None, execution_id=None):
+    """Fail the chain run a crashed n8n execution was running, if there is one.
+
+    Called by W-FAIL, which n8n starts when any stage workflow's execution
+    fails. It exists because a stage that dies mid-flight reports nothing:
+    every stage's `Tell The Chain` node sits after its loop, so a crash inside
+    the loop skips it entirely. The run row stays `running`, migration 017
+    refuses to queue the same stage twice, and the chain waits for ever while
+    the progress screen still says the stage is working.
+
+    That is not hypothetical. On 2026-09-10 W8 died at `Read The Attack` and
+    the chain sat still for two hours looking healthy; it took a hand-built
+    workflow calling `advance(ok=False)` to release it.
+
+    The match is by stage rather than by execution, because nothing writes an
+    n8n execution id anywhere this process can read. That is exact whenever one
+    project is running a stage, and ambiguous when several are:
+
+      one running row   -> failed, and the chain moves on
+      no running row    -> nothing to do; the execution was a hand-run form,
+                           not a dispatched stage
+      several           -> NOTHING is failed, and the ambiguity is returned
+
+    The last case refuses on purpose. Failing every project running that stage
+    because one of them crashed would corrupt the other chains' history to
+    save a lookup, and a wrong `failed` is harder to notice than a stuck
+    `running` - the chain would move on, and the stage that really did finish
+    would be re-run and re-charged. The caller alerts instead.
+    """
+    if not workflow_id:
+        raise ValueError("fail_running_stage needs the workflow_id that failed")
+
+    stage = None
+    for s in STAGE_PLAN:
+        if s.workflow_id == workflow_id:
+            stage = s
+            break
+    if stage is None:
+        # Not a stage workflow at all - W0, W2, the harvester, a hand-built
+        # tool. Not an error: those fail without a chain run behind them.
+        return {"workflow_id": workflow_id, "stage": None, "failed": None,
+                "note": "not a chain stage workflow, so no run row to fail"}
+
+    with connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, project_id FROM run "
+                "WHERE stage = %s AND status = 'running' "
+                "ORDER BY started_at", (stage.name,))
+            rows = cur.fetchall()
+
+    if not rows:
+        return {"workflow_id": workflow_id, "stage": stage.name, "failed": None,
+                "note": "no chain run of this stage is running - the execution "
+                        "was probably started by hand from the stage's own form"}
+
+    if len(rows) > 1:
+        return {"workflow_id": workflow_id, "stage": stage.name, "failed": None,
+                "ambiguous": [str(r["project_id"]) for r in rows],
+                "note": f"{len(rows)} projects are running {stage.name}, so "
+                        "which one crashed cannot be told apart from here. "
+                        "Nothing was failed: a wrong `failed` re-runs and "
+                        "re-charges a stage that actually finished. Fail the "
+                        "right one by hand with /compute/chain/advance."}
+
+    project_id = str(rows[0]["project_id"])
+    detail = ("the n8n execution failed and the stage never reported back"
+              + (f" (execution {execution_id})" if execution_id else "")
+              + (f": {str(error)[:400]}" if error else ""))
+    out = advance(project_id=project_id, stage=stage.name, ok=False, error=detail)
+    out["failed_run"] = str(rows[0]["id"])
+    out["matched_by"] = "the only project running this stage"
+    return out

@@ -1631,6 +1631,35 @@ def chain_advance(body: ChainAdvanceIn, x_api_key: Optional[str] = Header(None))
         raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
 
 
+class ChainFailIn(BaseModel):
+    workflow_id: Optional[str] = None
+    error: Optional[str] = None
+    execution_id: Optional[str] = None
+
+
+@app.post("/compute/chain/fail-running")
+def chain_fail_running(body: ChainFailIn, x_api_key: Optional[str] = Header(None)):
+    """An n8n execution crashed - fail the chain run it was in the middle of.
+
+    Every stage's `Tell The Chain` node runs after its loop, so a crash inside
+    the loop skips it and the run row stays `running` for ever. This is the
+    only path by which a stage that dies mid-flight ever gets reported, and
+    W-FAIL - n8n's error workflow for all six stages - is what calls it.
+
+    Matches by stage, and refuses when more than one project is running that
+    stage rather than guessing. See `chain.fail_running_stage`.
+    """
+    check_key(x_api_key)
+    import chain
+    try:
+        return chain.fail_running_stage(body.workflow_id, body.error,
+                                        body.execution_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {str(e)[:400]}")
+
+
 @app.post("/compute/chain/claim")
 def chain_claim(limit: int = 5, x_api_key: Optional[str] = Header(None)):
     """What the dispatcher should start now - and marks it taken, atomically.

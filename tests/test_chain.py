@@ -155,9 +155,34 @@ for stage in chain.STAGE_NAMES + ["nope"]:
     check(f"`{stage}` does not query", cur.asked, None)
 
 print()
+
+# ---------------------------------------------------------------------------
+# W-FAIL: a stage that dies mid-flight
+# ---------------------------------------------------------------------------
+# The gap this closes: every stage reports through a `Tell The Chain` node that
+# sits AFTER its loop, so a crash inside the loop skips it. The run row stays
+# `running`, migration 017 refuses to queue the stage again, and the chain
+# waits for ever while the progress screen still says it is working. Observed
+# 2026-09-10 on W8 execution 2233.
+print("\n-- a crashed execution maps back to its stage --")
+check("every stage workflow id is unique, or the lookup would fail the wrong "
+      "stage",
+      len(set(s.workflow_id for s in chain.STAGE_PLAN)), len(chain.STAGE_PLAN))
+check("a workflow that is not a chain stage is not an error - W0, W2 and the "
+      "harvester fail without a chain run behind them",
+      chain.fail_running_stage("not-a-stage-workflow")["stage"], None)
+_raised = None
+try:
+    chain.fail_running_stage(None)
+except ValueError as e:
+    _raised = str(e)
+check("...but no workflow_id at all is a caller bug, not an empty result",
+      bool(_raised), True)
+
 if fails:
     print(f"{len(fails)} FAILED")
     for f in fails:
         print("  " + f)
     sys.exit(1)
 print("all checks passed")
+
