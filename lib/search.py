@@ -188,6 +188,12 @@ def parse_pubmed_xml(xml):
                  url=f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
                  ptype=", ".join(t.text or "" for t in art.findall(".//PublicationType"))[:120])
         r["mesh"] = [m for m in mesh if m]
+        # `_rec` puts the identifier in `id`, and `id` means a different thing
+        # for every source, so the writer cannot tell a pmid from an arXiv id.
+        # Named here because `db._upsert_paper` reads `pmid` - without this the
+        # column stayed empty on every PubMed paper ever stored, and nothing
+        # errored: the papers had DOIs, so they still matched and de-duplicated.
+        r["pmid"] = str(pmid).strip() or None
         out.append(r)
     return out
 
@@ -263,6 +269,11 @@ def s_europepmc(q, limit, year_from, year_to):
         m = _epmc_mesh(it)
         if m:
             r["mesh"] = m
+        # Europe PMC indexes MEDLINE, so most of its hits carry a pmid and it
+        # is the same identifier PubMed would give. Keeping it means a paper
+        # found both ways is one row rather than two.
+        if it.get("pmid"):
+            r["pmid"] = str(it["pmid"]).strip()
         out.append(r)
     return out
 

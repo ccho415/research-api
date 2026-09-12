@@ -49,6 +49,24 @@ def title_key(title):
     return _PUNCT.sub(" ", t).strip() or None
 
 
+def openalex_id_of(r):
+    """The OpenAlex id of a record, or None if it does not have one.
+
+    A function rather than an inline expression so a test can call the same
+    code the writer calls. It used to be `r.get("openalex_id") or r.get("id")`,
+    and `id` is whatever the source calls its own identifier - so a pmid, an
+    arXiv id, a Crossref DOI, a Europe PMC id and a Semantic Scholar paperId
+    were all filed in the OpenAlex column, five of the six sources.
+
+    That was not a cosmetic mix-up. The UPSERT COALESCEs this column, so the
+    first wrong value stuck permanently: a paper first seen through PubMed kept
+    a pmid here even after OpenAlex later returned its real id, and nothing
+    ever errored because no reader checked the shape.
+    """
+    return (r.get("openalex_id")
+            or (r.get("id") if r.get("source") == "openalex" else None))
+
+
 def _upsert_paper(cur, r):
     """Return (paper_id, was_new).
 
@@ -62,7 +80,7 @@ def _upsert_paper(cur, r):
     tkey = None if (doi or pmid) else title_key(r.get("title"))
 
     cols = dict(
-        doi=doi, pmid=pmid, openalex_id=r.get("openalex_id") or r.get("id"),
+        doi=doi, pmid=pmid, openalex_id=openalex_id_of(r),
         title=(r.get("title") or "").strip() or "(untitled)",
         abstract=r.get("abstract"), year=r.get("year"), venue=r.get("venue"),
         authors=psycopg.types.json.Jsonb(r.get("authors") or []),
